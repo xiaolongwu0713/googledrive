@@ -21,24 +21,27 @@ valdata = valdata.transpose(2, 0, 1) # (8, 20, 15000)
 testdata = testdata.transpose(2, 0, 1)  # (8, 20, 15000)
 trainx, trainy = traindata[:, :-2, :], traindata[:, -2, :] #-2 is real force, -1 is target
 valx, valy = valdata[:, :-2, :], valdata[:, -2, :]
-testx, testy = testdata[:, -2, :], testdata[:, -2, :]
+testx, testy = testdata[:, :-2, :], testdata[:, -2, :]
 
-dataset_train = SEEGDataset(trainx, trainy)
-dataset_val = SEEGDataset(valx, valy)
-dataset_test = SEEGDataset(testx, testy)
+chnNum=trainx.shape[1]
+step=500 #ms
+T=1000 #ms
+totalLen=trainx.shape[2] #ms
+batch_size=int((totalLen-T)/step) # 280
+
+dataset_train = SEEGDataset(trainx, trainy,T, step)
+dataset_val = SEEGDataset(valx, valy,T, step)
+dataset_test = SEEGDataset(testx, testy,T, step)
 
 # Dataloader for training process
 train_loader = DataLoader(dataset=dataset_train, batch_size=1, shuffle=True, pin_memory=False)
 val_loader = DataLoader(dataset=dataset_val, batch_size=1, pin_memory=False)
 test_loader = DataLoader(dataset=dataset_test, batch_size=1, pin_memory=False)
 
-chnNum=trainx.shape[1]
+
 learning_rate=0.001
 epochs=100
-step=500 #ms
-T=1000 #ms
-totalLen=trainx.shape[2] #ms
-batch_size=int((totalLen-T)/step) # 280
+
 num_T = 3 # (6 conv2d layers) * ( 3 kernel each layer)
 num_S = 3
 hidden_size=222
@@ -48,7 +51,7 @@ Lambda = 1e-6
 # __init__(self,input_size, sampling_rate, num_T, num_S, hiden, dropout_rate)
 #net = IMVTensorLSTM(X_train.shape[2], 1, 128)
 #net = IMVTensorLSTM(114, 1, 500)
-net = TSception2(chnNum,sampling_rate, num_T, num_S,batch_size).float()
+net = TSception2(T, step, sampling_rate,chnNum, num_T, num_S,batch_size).float()
 optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
 criterion = nn.MSELoss()
 

@@ -23,14 +23,49 @@ def parameterNum(model):
 class SEEGDataset(Dataset):
     # x_tensor: (sample, channel, datapoint(feature)) type = torch.tensor
     # y_tensor: (sample,) type = torch.tensor
-    def __init__(self, x_tensor, y_tensor):
+    def __init__(self, x_tensor, y_tensor, T, step):
         self.x = x_tensor
         self.y = y_tensor
+        self.chnNum=x_tensor.shape[1]
+        self.T=T
+        self.step=step
+        self.totalLen = x_tensor.shape[2]  # ms
+        self.batch_size = int((self.totalLen - T) / step)  # 280
         assert self.x.shape[0] == self.y.shape[0]
     def __getitem__(self, index):
-        return self.x[index], self.y[index]
+        trainx=self.x[index]
+        trainy=self.y[index]
+        x = np.zeros((self.batch_size, 1, self.chnNum, self.T))  # 4D:(280,1,19,1000ms):(batch_size, planes, height, weight)
+        y = np.zeros((self.batch_size, 1))  # (280, 1)
+        yd = np.zeros((self.batch_size, 1))  # (280, 1)
+        for bs in range(self.batch_size):
+            x[bs, 0, :, :] = trainx[:, bs*self.step:(bs*self.step + self.T)]
+            y[bs, 0] = trainy[bs * self.step + self.T + 1] # force
+            yd[bs,0] = abs(trainy[bs*self.step + self.T +1] - trainy[bs*self.step + self.T -50])*10+0.05 # force derative
+        yd[:,0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd[:,0]]
+        #return np.squeeze(x, axis=0), np.squeeze(y, axis=0) # 0 dimm is batch for dataloader, but not the real batch.
+        return x,y # x shape: ([1, 28, 1, 110, 1000]), y shape: ([1, 28, 1])
+
     def __len__(self):
         return self.y.shape[0]
+
+
+def windTo3D(x,y,wind,step):
+    totalLen = x.shape[2]  # ms
+    batch_size = int((totalLen - wind) / step)  # 280
+    chnNum = x.shape[1]
+
+    x_tmp = np.zeros((batch_size, 1, chnNum, wind))  # 4D:(280,1,19,1000ms):(batch_size, planes, height, weight)
+    y_tmp = np.zeros((batch_size, 1))  # (280, 1)
+    yd_tmp = np.zeros((batch_size, 1))  # (280, 1)
+    for bs in range(batch_size):
+        x_tmp[bs, 0, :, :] = x[:, bs * step:(bs * step + wind)]
+        y_tmp[bs, 0] = y[bs * step + wind + 1]  # force
+        yd_tmp[bs, 0] = abs(
+            y[bs * step + wind + 1] - y[bs * step + wind - 50]) * 10 + 0.05  # force derative
+    yd_tmp[:, 0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd_tmp[:, 0]]
+    return x_tmp,y_tmp
+
 
 def read_rawdata():
     datafile1 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move1TrainRawData.mat'
@@ -229,26 +264,6 @@ def rawData(split=True,move2=True): # del
         return traindata, valdata, testdata
     return data #  #
 
-
-# convert 2D signle trial data in channelx*times to channels*windSize*steps
-# input traildata contains seeg data and 1 channel of force data
-def windTo3D(trialdata,wind,step=1):
-    trainy=trialdata[-1,:] # force
-    trainy=trainy[wind:]
-
-    channs=trialdata.shape[0] -1
-    T = trialdata.shape[1] # T: 15000
-    slides = T - wind  # 14500
-    trainx = np.zeros((channs, slides, wind))  # (19, 14500, 500)
-
-    for i in range(wind):
-        # print(i)
-        if i == (wind - 1):
-            trainx[:, :, i] = trialdata[:, i:-1]
-        else:
-            trainx[:, :, i] = trialdata[:, i:-(wind - i)]
-
-    yield trainx, trainy
 def rawData2(rawOrBand,activeChannels,split=True,move2=True):
     #call: rawData2('raw'/'band',[list]/'all',split=True,move2=True)
     #basedir='/Users/long/BCI/python_scripts/grasp/process/'

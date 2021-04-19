@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from grasp.utils import windTo3D
 
 
 ################################################## TSception ######################################################
@@ -10,16 +11,9 @@ def init_weights(m):
     if (type(m) == nn.Linear or type(m) == nn.Conv2d):
         torch.nn.init.xavier_uniform_(m.weight)
 
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-
-
 ################################################## TSception ######################################################
 class TSception(nn.Module):
-    def __init__(self, chnNum, sampling_rate, num_T, num_S, batch_size):  # sampling_rate=1000
+    def __init__(self,sampling_rate, chnNum,  num_T, num_S):  # sampling_rate=1000
         # input_size: EEG channel x datapoint
         super(TSception, self).__init__()
         # try to use shorter conv kernel to capture high frequency
@@ -122,18 +116,14 @@ class TSception(nn.Module):
         return pred
 
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-
-
-################################################## TSception ######################################################
 # concate along the plan channel, not the time. Try to test if result is better if reserve physical meaning.
 class TSception2(nn.Module):
-    def __init__(self, chnNum, sampling_rate, num_T, num_S, batch_size):  # sampling_rate=1000
+    def __init__(self, wind_size, step,  sampling_rate, chnNum, num_T, num_S, batch_size):  # sampling_rate=1000
         # input_size: EEG channel x datapoint
         super(TSception2, self).__init__()
+        self.wind=wind_size
+        self.step=step
+        self.batch_size=batch_size
         # try to use shorter conv kernel to capture high frequency
         self.inception_window = [0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125]
         win = [int(tt * sampling_rate) for tt in self.inception_window]
@@ -172,11 +162,11 @@ class TSception2(nn.Module):
             nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
 
         self.Sception1 = nn.Sequential(
-            nn.Conv2d(num_T * 6, num_T * 6, kernel_size=(chnNum, 1), stride=1, padding=0),
+            nn.Conv2d(num_S * 6, num_T * 6, kernel_size=(chnNum, 1), stride=1, padding=0),
             nn.ReLU(),
             nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
         self.Sception2 = nn.Sequential(
-            nn.Conv2d(num_T * 6, num_T * 6, kernel_size=(int(chnNum * 0.5), 1), stride=(int(chnNum * 0.5), 1),
+            nn.Conv2d(num_S * 6, num_T * 6, kernel_size=(int(chnNum * 0.5), 1), stride=(int(chnNum * 0.5), 1),
                       padding=0),
             nn.ReLU(),
             nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
@@ -198,6 +188,10 @@ class TSception2(nn.Module):
             nn.ReLU())
 
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
+
+        # convert 2D to 3D by sliding a window
+        #x=windTo3D(x,self.wind,self.step)
+        x=torch.squeeze(x,dim=0)
         # y1 = self.Tception1(x)
         y2 = self.Tception2(x)
         y3 = self.Tception3(x)
@@ -226,10 +220,11 @@ class TSception2(nn.Module):
         out = out.permute(0, 3, 1, 2)  # (batchsize, seq, height, width), ([280, 38, 3, 7])
         seqlen = out.shape[1]
         input_size = int(out.shape[2] * out.shape[3])
-        out = out.reshape(280, seqlen, input_size)  # ([280, 38, 21])
+        out = out.reshape(self.batch_size, seqlen, input_size)  # ([280, 38, 21])
 
         out, _ = self.lstm1(out)
         pred = self.linear1(torch.squeeze(out[:, -1, :]))
+        pred=torch.unsqueeze(pred,dim=0) # used in skorch
         return pred
 
 

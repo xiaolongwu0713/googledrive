@@ -20,6 +20,35 @@ def parameterNum(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
+class SEEGDataset1(Dataset):
+    # x_tensor: (sample, channel, datapoint(feature)) type = torch.tensor
+    # y_tensor: (sample,) type = torch.tensor
+    def __init__(self, x_tensor, y_tensor, T, step):
+        self.x = x_tensor
+        self.y = y_tensor
+        self.chnNum=x_tensor.shape[1]
+        self.T=T
+        self.step=step
+        self.totalLen = x_tensor.shape[2]  # ms
+        self.batch_size = int((self.totalLen - T) / step)  # 280
+        assert self.x.shape[0] == self.y.shape[0]
+    def __getitem__(self, index):
+        trainx=self.x[index]
+        trainy=self.y[index]
+        x = np.zeros((self.batch_size, 1, self.chnNum, self.T))  # 4D:(280,1,19,1000ms):(batch_size, planes, height, weight)
+        y = np.zeros((self.batch_size, 1))  # (280, 1)
+        yd = np.zeros((self.batch_size, 1))  # (280, 1)
+        for bs in range(self.batch_size):
+            x[bs, 0, :, :] = trainx[:, bs*self.step:(bs*self.step + self.T)]
+            y[bs, 0] = trainy[bs * self.step + self.T + 1] # force
+            yd[bs,0] = abs(trainy[bs*self.step + self.T +1] - trainy[bs*self.step + self.T -50])*10+0.05 # force derative
+        yd[:,0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd[:,0]]
+        #return np.squeeze(x, axis=0), np.squeeze(y, axis=0) # 0 dimm is batch for dataloader, but not the real batch.
+        return x.astype(np.float32),y.astype(np.float32) # x shape: ([1, 28, 1, 110, 1000]), y shape: ([1, 28, 1])
+
+    def __len__(self):
+        return self.y.shape[0]
+
 class SEEGDataset(Dataset):
     # x_tensor: (sample, channel, datapoint(feature)) type = torch.tensor
     # y_tensor: (sample,) type = torch.tensor

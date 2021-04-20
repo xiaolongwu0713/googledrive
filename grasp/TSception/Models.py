@@ -198,6 +198,7 @@ class TSception2(nn.Module):
             nn.ReLU())
 
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
+        x = torch.squeeze(x, dim=0)
         # y1 = self.Tception1(x)
         y2 = self.Tception2(x)
         y3 = self.Tception3(x)
@@ -230,6 +231,7 @@ class TSception2(nn.Module):
 
         out, _ = self.lstm1(out)
         pred = self.linear1(torch.squeeze(out[:, -1, :]))
+        pred = torch.unsqueeze(pred, dim=0)
         return pred
 
 

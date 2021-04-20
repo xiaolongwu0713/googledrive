@@ -7,14 +7,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from grasp.TSception.Models import TSception2
-from grasp.utils import rawData2
+from grasp.utils import rawData2,SEEGDataset,set_random_seeds,cuda_or_cup
 from grasp.config import activeChannels, root_dir, tmp_dir
 
 
-torch.manual_seed(0)
-#torch.cuda.manual_seed(0)
+device=cuda_or_cup()
+seed = 123456789  # random seed to make results reproducible
+# Set random seed to be able to reproduce results
+set_random_seeds(seed=seed)
 
-result_dir=root_dir+'grasp/TSception/skorch/'
+
+
+result_dir=root_dir+'grasp/TSception/skorchs/'
 sampling_rate=1000
 traindata, valdata, testdata = rawData2('band',activeChannels,move2=True)  # (chns, 15000/15001, 118) (channels, time, trials)
 ##traindata, valdata, testdata = rawData2('raw','all',move2=True)
@@ -30,11 +34,9 @@ np.save(tmp_dir+'testdata',testdata[:5,:,:])
 #valdata=np.load(tmp_dir+'valdata.npy')
 #testdata=np.load(tmp_dir+'testdata.npy')
 
-
 trainx, trainy = traindata[:, :-1, :], traindata[:, -1, :] #-2 is real force, -1 is target
 valx, valy = valdata[:, :-1, :], valdata[:, -1, :]
 testx, testy = testdata[:, :-1, :], testdata[:, -1, :]
-
 
 # (10, 110, 15001)
 samples=trainx.shape[0]
@@ -44,6 +46,11 @@ T=1000 #ms
 totalLen=trainx.shape[2] #ms
 batch_size=int((totalLen-T)/step) # 280
 
+train_ds = SEEGDataset(trainx, trainy,T, step)
+val_ds = SEEGDataset(valx, valy,T, step)
+test_ds = SEEGDataset(testx, testy,T, step)
+
+'''
 xx=[]
 yy=[]
 for sample in range(samples):
@@ -60,11 +67,13 @@ for sample in range(samples):
     yy.append(target)
 xx=np.asarray(xx).astype(np.float32) # (118, 28, 1, 110, 1000)
 yy=np.asarray(yy).astype(np.float32) # (118, 28, 1)
+'''
 
 num_T = 3 # (6 conv2d layers) * ( 3 kernel each layer)
 num_S = 3
+dropout=0.5
 
-model=TSception2(T, step, sampling_rate,chnNum, num_T, num_S,batch_size).float()
+model=TSception2(T, step, sampling_rate,chnNum, num_T, num_S,batch_size,dropout).float()
 
 from skorch.callbacks import Callback
 
@@ -84,7 +93,7 @@ class plotPrediction(Callback):
             step=kwargs
             loss=step['loss']
             y_pred=step['y_pred']
-            y_pred=y_pred.squeeze().detach().numpy()
+            y_pred=y_pred.squeeze().cpu().detach().numpy()
             preds.append(y_pred)
             targets.append(target)
 
@@ -105,13 +114,13 @@ net = NeuralNetRegressor(
     model,
     #train_split=predefined_split(valid_set),
     iterator_train__shuffle=True,
-    #train_split=5,
+    train_split=predefined_split(val_ds),
     max_epochs=2,
     lr=0.001,
     batch_size=1,
     optimizer=torch.optim.Adam,
     criterion = nn.MSELoss,
     callbacks=[('plotPrediction', plotPrediction()),],
-    #device='cuda',  # uncomment this to train with CUDA
+    device = device
 )
-net.fit(xx, yy)
+net.fit(train_ds)

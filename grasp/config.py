@@ -4,8 +4,8 @@ MNE_LOGGING_LEVEL='ERROR' # or mne.set_log_level(verbose='ERROR'), then mne.set_
 tmp_dir='/tmp/'
 root_dir='/Users/long/BCI/python_scripts/googleDrive/' # this is project root
 data_raw='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/' #raw data and processed data
-data_dir='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/data/' # preprocessed data
-#data_dir='/content/drive/MyDrive/data/' # googleDrive
+#data_dir='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/data/' # preprocessed data
+data_dir='/content/drive/MyDrive/data/' # googleDrive
 mode=1
 processed_data=data_dir
 

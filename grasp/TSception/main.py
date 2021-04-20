@@ -4,7 +4,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader
-from grasp.TSception.utils import regulization
+from grasp.utils import regulization
 from grasp.utils import SEEGDataset
 from grasp.TSception.Models import TSception2
 from examples.IMV_LSTM.networks import IMVTensorLSTM

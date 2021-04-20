@@ -1,5 +1,5 @@
 import random
-
+import torch
 import mne
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset, DataLoader
@@ -15,6 +15,27 @@ import sys, importlib
 importlib.reload(sys.modules['grasp.config'])
 from grasp.config import activeChannels,badtrials,data_dir
 from grasp.config import data_raw
+
+def regulization(net, Lambda):
+    w = torch.cat([x.view(-1) for x in net.parameters()])
+    err = Lambda * torch.sum(torch.abs(w))
+    return err
+
+def cuda_or_cup():
+    cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
+    print('GPU computing:  ', cuda)
+    device = 'cuda' if cuda else 'cpu'
+    if cuda:
+        torch.backends.cudnn.benchmark = True
+    return device
+
+def set_random_seeds(seed):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    cuda = torch.cuda.is_available()
+    if cuda:
+        torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
 
 def parameterNum(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -44,7 +65,7 @@ class SEEGDataset(Dataset):
             yd[bs,0] = abs(trainy[bs*self.step + self.T +1] - trainy[bs*self.step + self.T -50])*10+0.05 # force derative
         yd[:,0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd[:,0]]
         #return np.squeeze(x, axis=0), np.squeeze(y, axis=0) # 0 dimm is batch for dataloader, but not the real batch.
-        return x,y # x shape: ([1, 28, 1, 110, 1000]), y shape: ([1, 28, 1])
+        return x.astype(np.float32),y.astype(np.float32) # x shape: ([1, 28, 1, 110, 1000]), y shape: ([1, 28, 1])
 
     def __len__(self):
         return self.y.shape[0]

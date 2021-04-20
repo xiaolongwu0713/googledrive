@@ -118,7 +118,7 @@ class TSception(nn.Module):
 
 # concate along the plan channel, not the time. Try to test if result is better if reserve physical meaning.
 class TSception2(nn.Module):
-    def __init__(self, wind_size, step,  sampling_rate, chnNum, num_T, num_S, batch_size):  # sampling_rate=1000
+    def __init__(self, wind_size, step,  sampling_rate, chnNum, num_T, num_S, batch_size,drop):  # sampling_rate=1000
         # input_size: EEG channel x datapoint
         super(TSception2, self).__init__()
         self.wind=wind_size
@@ -179,7 +179,7 @@ class TSception2(nn.Module):
         self.BN_t = nn.BatchNorm2d(num_T * 6)
         self.BN_s = nn.BatchNorm2d(num_T * 6)
 
-        self.drop = nn.Dropout(0.5)
+        self.drop = nn.Dropout(drop)
         self.avg = nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8))
         self.lstm1 = nn.LSTM(90, 45, batch_first=True)
 

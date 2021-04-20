@@ -29,3 +29,18 @@ fbands.append([8, 12])
 fbands.append([13, 30])
 fbands.append([60, 140])
 
+# some cross module variables, you can import this variable as:
+# import grasp.config as myVar, then myVar.preds=...
+# OR, just make them global
+#preds=[]
+#targets=[]
+
+learning_rate=0.002
+num_T = 3 # (6 conv2d layers) * ( 3 kernel each layer)
+num_S = 3
+dropout=0.5
+Lambda = 1e-6
+preds=[]
+targets=[]
+
+

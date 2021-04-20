@@ -1,4 +1,5 @@
 import torch
+from skorch.callbacks import Callback
 from skorch.helper import predefined_split
 from torch import nn
 import torch.nn.functional as F
@@ -7,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from grasp.TSception.Models import TSception2
+from grasp.myskorch import plotPrediction, MyRegressor
 from grasp.utils import rawData2,SEEGDataset,set_random_seeds,cuda_or_cup
 from grasp.config import activeChannels, root_dir, tmp_dir
 
@@ -20,19 +22,19 @@ set_random_seeds(seed=seed)
 
 result_dir=root_dir+'grasp/TSception/skorchs/'
 sampling_rate=1000
-traindata, valdata, testdata = rawData2('band',activeChannels,move2=True)  # (chns, 15000/15001, 118) (channels, time, trials)
+#traindata, valdata, testdata = rawData2('band',activeChannels,move2=True)  # (chns, 15000/15001, 118) (channels, time, trials)
 ##traindata, valdata, testdata = rawData2('raw','all',move2=True)
-traindata = traindata.transpose(2, 0, 1)  # (118, 20, 15000) (trials,channels,  time)
-valdata = valdata.transpose(2, 0, 1) # (8, 20, 15000)
-testdata = testdata.transpose(2, 0, 1)  # (8, 20, 15000)
+#traindata = traindata.transpose(2, 0, 1)  # (118, 20, 15000) (trials,channels,  time)
+#valdata = valdata.transpose(2, 0, 1) # (8, 20, 15000)
+#testdata = testdata.transpose(2, 0, 1)  # (8, 20, 15000)
 
-np.save(tmp_dir+'traindata',traindata[:5,:,:])
-np.save(tmp_dir+'valdata',valdata[:5,:,:])
-np.save(tmp_dir+'testdata',testdata[:5,:,:])
+#np.save(tmp_dir+'traindata',traindata[:5,:,:])
+#np.save(tmp_dir+'valdata',valdata[:5,:,:])
+#np.save(tmp_dir+'testdata',testdata[:5,:,:])
 
-#traindata=np.load(tmp_dir+'traindata.npy')
-#valdata=np.load(tmp_dir+'valdata.npy')
-#testdata=np.load(tmp_dir+'testdata.npy')
+traindata=np.load(tmp_dir+'traindata.npy')
+valdata=np.load(tmp_dir+'valdata.npy')
+testdata=np.load(tmp_dir+'testdata.npy')
 
 trainx, trainy = traindata[:, :-1, :], traindata[:, -1, :] #-2 is real force, -1 is target
 valx, valy = valdata[:, :-1, :], valdata[:, -1, :]
@@ -69,58 +71,21 @@ xx=np.asarray(xx).astype(np.float32) # (118, 28, 1, 110, 1000)
 yy=np.asarray(yy).astype(np.float32) # (118, 28, 1)
 '''
 
-num_T = 3 # (6 conv2d layers) * ( 3 kernel each layer)
-num_S = 3
-dropout=0.5
+from grasp.config import *
 
 model=TSception2(T, step, sampling_rate,chnNum, num_T, num_S,batch_size,dropout).float()
 
-from skorch.callbacks import Callback
-
-preds=[]
-targets=[]
-tracking=[]
-
-class plotPrediction(Callback):
-    def on_epoch_begin(self, net,dataset_train=None, dataset_valid=None, **kwargs):
-        preds.clear()
-        targets.clear()
-
-    def on_batch_end(self, net, X=None, y=None, training=None, **kwargs):
-        print('haha')
-        if training==False:
-            target=y.squeeze().numpy()
-            step=kwargs
-            loss=step['loss']
-            y_pred=step['y_pred']
-            y_pred=y_pred.squeeze().cpu().detach().numpy()
-            preds.append(y_pred)
-            targets.append(target)
-
-    def on_epoch_end(self, net,dataset_train=None, dataset_valid=None, **kwargs):
-        fig, ax = plt.subplots(figsize=(6, 3))
-        plt.ion()
-        ax.clear()
-        a=np.concatenate(targets)
-        b=np.concatenate(preds)
-        ax.plot(a, label="True", linewidth=1)
-        ax.plot(b, label='Predicted - Test', linewidth=1)
-        ax.legend(loc='upper left')
-        figname = result_dir + 'prediction' + str(len(net.history)) + '.png'
-        fig.savefig(figname)
-        plt.close(fig)
-
-net = NeuralNetRegressor(
+net = MyRegressor(
     model,
     #train_split=predefined_split(valid_set),
     iterator_train__shuffle=True,
     train_split=predefined_split(val_ds),
     max_epochs=2,
-    lr=0.001,
+    lr=learning_rate,
     batch_size=1,
     optimizer=torch.optim.Adam,
     criterion = nn.MSELoss,
-    callbacks=[('plotPrediction', plotPrediction()),],
+    callbacks=[('plotPrediction', plotPrediction(result_dir)),],
     device = device
 )
-net.fit(train_ds)
+net.fit(train_ds,y=None)

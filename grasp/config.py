@@ -1,8 +1,8 @@
 import numpy as np
-MNE_LOGGING_LEVEL='ERROR' # or mne.set_log_level(verbose='ERROR'), then mne.set_log_level(return_old_level=True)
-
+# total PF[1,2,6,10,16] subjuects
+sid=6 #subject_id
 root_dir='/Users/long/BCI/python_scripts/googleDrive/' # this is project root
-data_raw='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/' #raw data and processed data
+data_raw='/Volumes/Samsung_T5/seegData/PF6_SYF_2018_08_09_Simply/' #raw data and processed data
 #data_dir='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/data/' # preprocessed data
 data_dir='/content/drive/MyDrive/data/' # googleDrive
 mode=1
@@ -28,3 +28,4 @@ fbands.append([8, 12])
 fbands.append([13, 30])
 fbands.append([60, 140])
 
+MNE_LOGGING_LEVEL='ERROR' # or mne.set_log_level(verbose='ERROR'), then mne.set_log_level(return_old_level=True)

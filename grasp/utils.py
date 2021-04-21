@@ -66,7 +66,8 @@ class SEEGDataset(Dataset):
             yd[bs,0] = abs(trainy[bs*self.step + self.T +1] - trainy[bs*self.step + self.T -50])*10+0.05 # force derative
         yd[:,0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd[:,0]]
         #return np.squeeze(x, axis=0), np.squeeze(y, axis=0) # 0 dimm is batch for dataloader, but not the real batch.
-        return x.astype(np.float32),y.astype(np.float32) # x shape: ([1, 28, 1, 110, 1000]), y shape: ([1, 28, 1])
+        #return x.astype(np.float32),y.astype(np.float32) # x shape: ([1, 28, 1, 110, 1000]), y shape: ([1, 28, 1])
+        return x,y
 
     def __len__(self):
         return self.y.shape[0]

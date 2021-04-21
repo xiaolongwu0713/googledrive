@@ -3,8 +3,8 @@ import numpy as np
 import os
 import scipy.io
 from scipy import signal
-
-from grasp.config import raw_data, processed_data, mode
+import matplotlib.pyplot as plt
+from grasp.config import processed_data, mode
 from grasp.process.config import result_dir
 
 ## usage: aa=loadData(31,1,'good'/'bad'/'power'/'epoch61'), then load the data part by checking aa.keys()
@@ -46,29 +46,55 @@ def loadData(pn, session, *args):
 
 
 def get_trigger(triggerChannel):
-    from sklearn.preprocessing import MinMaxScaler
-    triggerTmp = np.zeros((triggerChannel.shape[0]))
+    trigger = np.zeros((triggerChannel.shape[0]))
     triggerChannel[abs(triggerChannel) > 10000] = 0
     triggerChannel[abs(triggerChannel) < 2000] = 0
     triggerChannel[triggerChannel < 0] = 0
-    triggerTmp[triggerChannel > 2000] = 100
-    prev_trigger = 254765
-    next_trigger = 284887
-    estimate = int((prev_trigger + next_trigger) / 2)
-    triggerTmp[prev_trigger + 1:next_trigger - 1] = 0
-    triggerTmp[estimate] = 100
-    tindex = np.nonzero(triggerTmp)[0]  # nonzero returns tuple
+    trigger[triggerChannel > 2000] = 100
+    plt.plot(trigger)
+    # tindex has continue non-zero points
+    tindex = np.nonzero(trigger)[0]  # nonzero returns tuple
 
-    trigger=np.zeros((triggerChannel.shape[0]))
+    # index has isolated non-zero points
     index = []
     for i in range(tindex.shape[0]):
         if i == 0:
             index.append(tindex[0])
         if (tindex[i] - tindex[i - 1]) > 2000:
             index.append(tindex[i])
-    trigger[index]=100
-    lastone=np.nonzero(trigger)[0][-1]
-    trigger[lastone]=0
+
+    plt.plot(index, [50] * len(index), 'ro')
+    ax = plt.gcf().get_axes()[0]
+    for i in range(len(index)):
+        ax.text(index[i], 49.6, str(i), fontsize=10)
+
+    trigger = np.zeros((triggerChannel.shape[0]))
+    trigger[index] = 100
+
+    middle_point = [int((index[i] + index[i + 1]) / 2) for i in range(len(index) - 1)]
+    span = [int((index[i + 1] - index[i])) for i in range(len(index) - 1)]
+    for i in range(len(middle_point)):
+        ax.text(middle_point[i], 50.5, str(span[i]), fontsize=5)
+
+    # number 15 and 19 are correct trigger
+    prev_trigger = index[15]  # 254765
+    next_trigger = index[19]  # 284887
+    plt.plot(prev_trigger, 49.5, 'bo')
+    plt.plot(next_trigger, 49.5, 'bo')
+    estimate = int((prev_trigger + next_trigger) / 2)
+
+    trigger[prev_trigger + 1:next_trigger] = 0
+    trigger[estimate] = 100
+    ax.clear()
+    plt.plot(trigger)
+
+    points = np.nonzero(trigger)[0]
+    for i in range(len(points)):
+        ax.text(points[i], -2, str(i), fontsize=5)
+    # delete last trigger
+    trigger[points[-1]] = 0
+    ax.clear()
+    plt.plot(trigger)
     return trigger
 
 def get_trigger_normal(triggerChannel):
@@ -144,6 +170,19 @@ def getRawData(seegfile,useChannels):
     myraw = signal.decimate(myraw, 2, axis=1,ftype='iir',zero_phase=True)  # (110, 648081)
     triggerRaw = signal.decimate(mat['Data'][29, :], 2)
     fs = int(mat['Fs'][0][0] / 2)  # 1000
+    chnRaw = mat['ChnName']
+    channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
+    channels = channels[useChannels]  # (110,)
+    ch_names = [channelsName.strip() for channelsName in channels]
+    return myraw, triggerRaw, ch_names
+
+# no down sampling
+def getRawData2(seegfile,useChannels):
+    mat = hdf5storage.loadmat(seegfile)
+    myraw = mat['Data'][useChannels, :]  # (110, 1296162)
+    #myraw = signal.decimate(myraw, 2, axis=1,ftype='iir',zero_phase=True)  # (110, 648081)
+    triggerRaw = mat['Data'][29, :]
+    fs = int(mat['Fs'][0][0])  # 1000
     chnRaw = mat['ChnName']
     channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
     channels = channels[useChannels]  # (110,)

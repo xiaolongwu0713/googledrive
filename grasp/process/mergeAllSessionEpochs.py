@@ -1,6 +1,6 @@
 import mne
 import numpy as np
-from grasp.config import activeChannels, stim,badtrials,data_raw,data_dir,root
+from grasp.config import activeChannels, stim,badtrials,data_raw,data_dir
 import matplotlib.pyplot as plt
 
 plot_dir = 'grasp/process/mergeAllSessionEpochs/'
@@ -8,7 +8,7 @@ sessions=4
 movements=4
 
 print("Load all movement epoch")
-moveMix=[] # don't understand this...
+moveMix=[]
 for movement in range(movements):
     moveMix.append([])
     for session in range(sessions):

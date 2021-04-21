@@ -1,27 +1,35 @@
 import numpy as np
-from types import ModuleType
+
 
 MNE_LOGGING_LEVEL='ERROR' # or mne.set_log_level(verbose='ERROR'), then mne.set_log_level(return_old_level=True)
 
 tmp_dir='/tmp/'
 root_dir='/Users/long/BCI/python_scripts/googleDrive/' # this is project root
-data_raw='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/' #raw data and processed data
+data_raw='/Volumes/Samsung_T5/seegData/' #raw data and processed data
 #data_dir='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/data/' # preprocessed data
 data_dir='/content/drive/MyDrive/data/' # googleDrive
 mode=1
 processed_data=data_dir
 
 # Todo: All variable should be indexed begin with 0.
-useChannels=np.concatenate((np.arange(0,15),np.arange(16,29),np.arange(37,119)))
-activeChannels = [8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107,108, 109, 110] # 111 is force channel, index start from 1
+sid=[1,2,6,10,16] #6 is the first subject
+
+# matlab: useChannels=[1:15,17:29,38:119];
+# useChannels[sid]=[channel list]
+useChannels=[0]*999 # initilize with 999 subject
+useChannels[6]=np.concatenate((np.arange(0,15),np.arange(16,29),np.arange(37,119)))
+
+activeChannels=[0]*999
+activeChannels[6] = [i-1 for i in [8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107,108, 109, 110]]# 111 is force channel, index start from 1
+
 stim=30 - 1
-activeChannels=[chn -1 for chn in activeChannels]
-badtrials=[]
-badtrials.append([12, 13, 21, 22, 23, 24, 26])
-badtrials.append([23, 24, 28])
-badtrials.append([3, 4, 8, 11, 16, 21, 22, 23, 24, 25, 29])
-badtrials.append([4, 21, 24, 25, 29])
-badtrials=[[i-1 for i in sublist] for sublist in badtrials]
+
+# badtrials[sid][trialNum]
+badtrials=[[]]*999
+badtrials[6].append([i-1 for i in [12, 13, 21, 22, 23, 24, 26]])
+badtrials[6].append([i-1 for i in [23, 24, 28]])
+badtrials[6].append([i-1 for i in [3, 4, 8, 11, 16, 21, 22, 23, 24, 25, 29]])
+badtrials[6].append([i-1 for i in [4, 21, 24, 25, 29]])
 
 
 fbands=[] #delta, theta, alpha,beta,gamma
@@ -37,10 +45,7 @@ fbands.append([60, 140])
 #preds=[]
 #targets=[]
 
-learning_rate=0.002
-num_T = 3 # (6 conv2d layers) * ( 3 kernel each layer)
-num_S = 3
-dropout=0.5
+# Lambda is used by skorch get_loss function
 Lambda = 1e-6
 preds=[]
 targets=[]

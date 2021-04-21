@@ -1,11 +1,14 @@
 from mne.time_frequency import tfr_morlet
 from grasp.process.utils import get_trigger, genSubTargetForce, getRawData, getMovement, getForceData, \
     get_trigger_normal
+from grasp.config import sid
 import numpy as np
 import mne
 import matplotlib.pyplot as plt
 from grasp.process.config import result_dir
-import hdf5storage
+
+# first subject: sid=6
+sid=6
 
 # info
 # useChannels=[1:15,17:29,38:119]
@@ -52,7 +55,6 @@ for i in range(4):
         trigger[i] = get_trigger_normal(triggerRaw[i])
         tindex = np.nonzero(trigger[i])[0]
         trigger[i][tindex] = movement[i]
-
 
 ### 5, force data
 force={}

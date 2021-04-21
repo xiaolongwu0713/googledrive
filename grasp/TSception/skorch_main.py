@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 from grasp.TSception.Models import TSception2
 from grasp.myskorch import plotPrediction, MyRegressor
 from grasp.utils import rawData2,SEEGDataset,set_random_seeds,cuda_or_cup
-from grasp.config import activeChannels, root_dir, tmp_dir
+from grasp.config import *
+
 
 
 device=cuda_or_cup()
 seed = 123456789  # random seed to make results reproducible
 # Set random seed to be able to reproduce results
 set_random_seeds(seed=seed)
-
 
 
 result_dir=root_dir+'grasp/TSception/skorchs/'
@@ -40,7 +40,12 @@ trainx, trainy = traindata[:, :-1, :], traindata[:, -1, :] #-2 is real force, -1
 valx, valy = valdata[:, :-1, :], valdata[:, -1, :]
 testx, testy = testdata[:, :-1, :], testdata[:, -1, :]
 
-# (10, 110, 15001)
+
+learning_rate=0.002
+num_T = 3 # (6 conv2d layers) * ( 3 kernel each layer)
+num_S = 3
+dropout=0.5
+Lambda = 1e-6
 samples=trainx.shape[0]
 chnNum=trainx.shape[1]
 step=50 #ms
@@ -51,27 +56,6 @@ batch_size=int((totalLen-T)/step) # 280
 train_ds = SEEGDataset(trainx, trainy,T, step)
 val_ds = SEEGDataset(valx, valy,T, step)
 test_ds = SEEGDataset(testx, testy,T, step)
-
-'''
-xx=[]
-yy=[]
-for sample in range(samples):
-    x = np.zeros((batch_size, 1, chnNum, T)) # 4D:(280,1,19,1000ms):(batch_size, planes, height, weight)
-    targetd = np.zeros((batch_size,1)) # (280, 1)
-    target = np.zeros((batch_size, 1))  # (280, 1)
-
-    # format 1 trial into 3D tensor
-    # result: regress to force derative not good at all
-    for bs in range(batch_size):
-        x[bs, 0, :, :] = trainx[0, :, bs*step:(bs*step + T)]
-        target[bs, 0] = trainy[0, bs * step + T + 1] # force
-    xx.append(x)
-    yy.append(target)
-xx=np.asarray(xx).astype(np.float32) # (118, 28, 1, 110, 1000)
-yy=np.asarray(yy).astype(np.float32) # (118, 28, 1)
-'''
-
-from grasp.config import *
 
 model=TSception2(T, step, sampling_rate,chnNum, num_T, num_S,batch_size,dropout).float()
 

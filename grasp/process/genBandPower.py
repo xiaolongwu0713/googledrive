@@ -2,7 +2,7 @@ import hdf5storage
 import mne
 import numpy as np
 from mne.time_frequency import tfr_morlet, tfr_multitaper, tfr_stockwell
-from grasp.config import activeChannels, stim,badtrials,data_raw,data_dir,fbands
+from grasp.config import activeChannels, stim,badtrials,data_raw,data_dir,fbands,root_dir
 from grasp.process.utils import get_trigger, getMovement, get_trigger_normal, getForceData, \
     genSubTargetForce, getRawData
 import matplotlib.pyplot as plt
@@ -67,7 +67,7 @@ freqs = (150,250,350,450)
 raw.notch_filter(freqs=freqs, picks=['seeg']) # no stim
 raw.plot_psd(tmin=None, tmax=None,picks=[0],ax=ax,average=False,spatial_colors=False,color='red')
 ax[0].text(0.5,0.9,'Black:before. Red:after.',fontsize=15,transform=fig.transFigure)
-figname = root+plot_dir + str(session)+'psdOfchannel0WithNotch.png'
+figname = root_dir+plot_dir + str(session)+'psdOfchannel0WithNotch.png'
 fig.savefig(figname,dpi=400)
 plt.close(fig)
 
@@ -92,7 +92,7 @@ alpha.plot_psd(tmin=None, tmax=None,picks=[0],ax=ax,xscale='log',average=False,s
 beta.plot_psd(tmin=None, tmax=None,picks=[0],ax=ax,xscale='log',average=False,spatial_colors=False,color='red')
 gamma.plot_psd(tmin=None, tmax=None,picks=[0],ax=ax,xscale='log',average=False,spatial_colors=False,color='blue')
 ax[0].text(0.5,0.9,'psd after 5 passbands on one random channel',fontsize=15,transform=fig.transFigure)
-figname = root+plot_dir + str(session)+'psdOfchannel0With5Passbands.png'
+figname = root_dir+plot_dir + str(session)+'psdOfchannel0With5Passbands.png'
 fig.savefig(figname,dpi=400)
 plt.close(fig)
 
@@ -101,7 +101,7 @@ fig,ax=plt.subplots()
 ax.plot(alpha.copy().pick(picks=[0,])[0][0][0,:5000]) #.plot(events=events,scalings=5e+3)
 ax.plot(alpha.copy().pick(picks=[0,]).apply_hilbert(envelope=True)[0][0][0,:5000]) #.plot(events=events,scalings=5e+3,ax=ax)
 plt.title('Hilbert of alpha segment')
-figname= root+plot_dir + str(session)+'hilbertOfAlphaSegment.png'
+figname= root_dir+plot_dir + str(session)+'hilbertOfAlphaSegment.png'
 fig.savefig(figname,dpi=400)
 plt.close(fig)
 # Question: how to use apply_function??
@@ -145,7 +145,7 @@ fig,ax=plt.subplots()
 plt.plot(forces[0,:],label='real force',linewidth=0.2)
 plt.plot(forces[1,:],label='target force',linewidth=0.2)
 plt.plot(trigger[0,:],label='trigger',linewidth=0.2)
-figname = root+plot_dir + str(session)+'forceAndTriggerInfo.png'
+figname = root_dir+plot_dir + str(session)+'forceAndTriggerInfo.png'
 fig.savefig(figname,dpi=400)
 plt.close(fig)
 

@@ -1,4 +1,6 @@
 import numpy as np
+from types import ModuleType
+
 MNE_LOGGING_LEVEL='ERROR' # or mne.set_log_level(verbose='ERROR'), then mne.set_log_level(return_old_level=True)
 
 tmp_dir='/tmp/'
@@ -43,4 +45,15 @@ Lambda = 1e-6
 preds=[]
 targets=[]
 
+
+def printVariables(variable_names):
+    for k in variable_names:
+        max_name_len = max([len(k) for k in variable_names])
+        print(f'  {k:<{max_name_len}}:  {globals()[k]}')
+
+if __name__ == "__main__":
+    ks = [k for k in dir() if (k[:2] != "__" and k !='np' and not callable(globals()[k]))]
+    #for k in ks:
+    #    print(type(k))
+    printVariables(ks)
 

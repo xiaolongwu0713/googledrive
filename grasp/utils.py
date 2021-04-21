@@ -16,7 +16,6 @@ importlib.reload(sys.modules['grasp.config'])
 from grasp.config import activeChannels,badtrials,data_dir
 from grasp.config import data_raw
 
-
 def regulization(net, Lambda):
     w = torch.cat([x.view(-1) for x in net.parameters()])
     err = Lambda * torch.sum(torch.abs(w))

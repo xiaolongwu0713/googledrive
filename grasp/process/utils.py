@@ -96,7 +96,35 @@ def get_trigger(triggerChannel):
     trigger[points[-1]] = 0
     return trigger
 
-def get_trigger_normal(triggerChannel):
+def get_trigger_normal(sid,triggerChannel):
+    if sid==6:
+        cut_above=10000
+        cut_blow=2000
+        threshold=2000
+    elif sid==1:
+        cut_above=1e7
+        cut_blow=2e6
+        threshold=2e6
+    triggerTmp = np.zeros((triggerChannel.shape[0]))
+    triggerChannel[abs(triggerChannel) > cut_above] = 0
+    triggerChannel[abs(triggerChannel) < cut_blow] = 0
+    triggerChannel[triggerChannel < 0] = 0
+    triggerTmp[triggerChannel > threshold] = 100
+
+    tindex = np.nonzero(triggerTmp)[0]  # nonzero returns tuple
+    trigger=np.zeros((triggerChannel.shape[0]))
+    index = []
+    for i in range(tindex.shape[0]):
+        if i == 0:
+            index.append(tindex[0])
+        if (tindex[i] - tindex[i - 1]) > 2000:
+            index.append(tindex[i])
+    trigger[index]=100
+    lastone = np.nonzero(trigger)[0][-1]
+    trigger[lastone] = 0
+    return np.squeeze(trigger)
+# subject 6
+def get_trigger_bak(triggerChannel):
     triggerTmp = np.zeros((triggerChannel.shape[0]))
     triggerChannel[abs(triggerChannel) > 10000] = 0
     triggerChannel[abs(triggerChannel) < 2000] = 0
@@ -202,7 +230,7 @@ def getMovement(triggerfile):
     movement = mat['Info']['Exp_Seq'][0][0]  # trial type, e.g 1,2,3,4. (1, 40) movement type
     return list(movement[0])
 
-def getForceData(forcefile,trigger,fs):
+def getForceData(sid,forcefile,trigger,fs):
     import matplotlib.pyplot as plt
     mat = hdf5storage.loadmat(forcefile)
     key=list(mat.keys())[-1] # keys are different for different file
@@ -221,7 +249,7 @@ def getForceData(forcefile,trigger,fs):
     firstvalue=force[0,0]
     lastvalue=force[-1,0]
     force = np.concatenate( (np.ones((1, paddingBefore))*firstvalue, force.T, np.ones((1, paddingEnd))*lastvalue), axis=1).T  # (648081, 1)
-    return force.T
+    return np.squeeze(force)
 
 
 def add_arrows(axes):

@@ -6,7 +6,7 @@ from grasp.config import *
 
 # Epoch the data before doing this.
 
-sid=6
+sid=1
 plot_dir=data_raw + 'PF' + str(sid) +'/tfPlot/'
 import os
 if not os.path.exists(plot_dir):
@@ -22,6 +22,7 @@ movementEpochs=[] # movementEpochs[0] is the epoch of move 1
 #print('Reading all 4 movement epochs.')
 #for movement in range(movements):
 #    movementEpochs.append(mne.read_epochs(data_raw + 'PF' + str(sid) + '/data/' + 'move'+str(movement)+'epoch.fif').pick(picks=['seeg']))
+
 ## just read one will be OK, save memory
 chooseOneMovement=0
 movementEpochs.append(mne.read_epochs(data_raw + 'PF' + str(sid) + '/data/' + 'move'+str(chooseOneMovement)+'epoch.fif').pick(picks=['seeg']))
@@ -80,16 +81,16 @@ def getIndex(fMin,fMax,fstep,freq):
     index=distance.index(min(distance))
     return index
 
-
+# convert MNE to numpy and
+# crop the original power data because there is artifect at the begining and end of the trial.
 power=[]
 crop1=0.5
 crop2=14.5
 for channel in range(len(ch_names)):
     power.append([])
     # Crop here will cause the movement line mis-aligned.
-    #averagePower[channel].crop(tmin=crop1,tmax=crop2) # artifact at the begining and the end.
     power[channel]=np.squeeze(averagePower[channel].data)
-    # crop will zeros.
+    # crop to zeros.
     power[channel][:,:int(crop1*new_fs)]=0
     power[channel][:,int(crop2*new_fs):]=0
 

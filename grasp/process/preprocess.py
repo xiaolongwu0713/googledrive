@@ -7,12 +7,14 @@ Process workflow:
 '''
 
 from mne.time_frequency import tfr_morlet
+from sklearn import preprocessing
+
 from grasp.process.utils import get_trigger, genSubTargetForce, getRawData, getMovement, getForceData, get_trigger_normal
 import numpy as np
 import mne
 import matplotlib.pyplot as plt
 from grasp.config import *
-
+from channel_settings import *
 
 # first subject: sid=6
 sid=1
@@ -55,7 +57,7 @@ for i in range(sessions):
     chn_names.append(chn_namesTmp)
 chn_names=chn_names[0] # channles will remain the same in all sessions.
 chnNumber=len(chn_names)
-
+del rawTmp
 ### 2, experiment setting
 movements=[]
 for i in range(sessions):
@@ -63,42 +65,80 @@ for i in range(sessions):
 
 allMovements=np.concatenate(movements)
 ### 4 format the trigger channel
+fig,ax=plt.subplots(2,2)
 triggers=[]
 for i in range(sessions):
-    if i==0:
-        triggers.append(get_trigger(triggerRaw[i]))
-        tindex = np.nonzero(triggers[i])[0]
-        triggers[i][tindex] = movements[i]
+    if sid==6: # session 0 of sid=6 need some special treatment.
+        if i==0:
+            tmp=get_trigger(triggerRaw[i])
+            triggers.append(tmp)
+            tindex = np.nonzero(triggers[i])[0]
+            triggers[i][tindex] = movements[i]
     else:
-        triggers.append(get_trigger_normal(triggerRaw[i]))
+        tmp=get_trigger_normal(sid,triggerRaw[i])
+        triggers.append(tmp)
         tindex = np.nonzero(triggers[i])[0]
         triggers[i][tindex] = movements[i]
+    trialNum=len(np.nonzero(tmp)[0])
+    ax[i//2][i-(i//2)*2].plot(tmp) # // means round down to int.
+    ax[i//2][i-(i//2)*2].text(0.8, 0.8, str(trialNum)+' trials.', fontsize=10, transform=ax[i//2][i-(i//2)*2].transAxes)
+figname = plot_dir+'_trigger_of_all_sessions.png'
+fig.savefig(figname,dpi=400)
+plt.close(fig)
 
 ### 5, force data
 # padding force data equal to trigger lenght
 forces=[]
+fig,ax=plt.subplots(2,2)
 for i in range(sessions):
-    forces.append(getForceData(forcefiles[i], triggers[i],fs)) # will down sample to fs
+    tmp=getForceData(sid,forcefiles[i], triggers[i],fs)
+    forces.append(tmp) # will down sample to fs
+    ax[i // 2][i - (i // 2) * 2].plot(tmp)  # // means round down to int.
+    ax[i // 2][i - (i // 2) * 2].text(0.8, 0.8, 'Session '+str(i) , fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
+figname = plot_dir+'_force_of_all_sessions.png'
+fig.savefig(figname,dpi=400)
+plt.close(fig)
 
 ### 6 generate the target force
 targetForces=[]
+fig,ax=plt.subplots(2,2)
 for i in range(sessions):
     # create target force data equal to trigger lenght
-    targetForces.append(np.ones((triggers[i].shape[0]))*0.05) # (648081,)
+    tmp=np.ones((triggers[i].shape[0]))*0.05 # 1 D.
     indexAll=np.nonzero(triggers[i])[0] # 40
     for (index,j) in zip(indexAll,np.arange(indexAll.shape[0])):
-        targetForces[i][index:index+15000]=genSubTargetForce(movements[i][j],fs)
+        tmp[index:index+15000]=genSubTargetForce(movements[i][j],fs)
+    targetForces.append(tmp)  # (648081,)
+    ax[i // 2][i - (i // 2) * 2].plot(tmp)  # // means round down to int.
+    ax[i // 2][i - (i // 2) * 2].text(0.8, 0.8, 'Session ' + str(i), fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
+figname = plot_dir +'_targetForce_of_all_sessions.png'
+fig.savefig(figname, dpi=400)
+plt.close(fig)
 
 print("Plotting of force, target and trigger.")
 for i in range(sessions):
+    scaler = preprocessing.MinMaxScaler(feature_range=(0, 2))
+    forces[i] = np.squeeze(scaler.fit_transform(forces[i][:,None]))
+    targetForces[i] = np.squeeze(scaler.fit_transform(targetForces[i][:,None]))
+    tindex=np.nonzero(triggers[i])[0]
     fig, ax = plt.subplots()
     plt.ion()
     ax.clear()
-    ax.plot(triggers[i][:,], label='Trigger', linewidth=0.1) # (648081,)
-    ax.plot(forces[i][0,:], label='Force',linewidth=0.1) # (1, 648081)
-    ax.plot(targetForces[i][:,], label='TargetForce',linewidth=0.1) #(648081,)
-    plt.legend()
-    figname = plot_dir + str(sid)+'triggerAndForceAndTargetS' + str(i) + '.png'
+    ax2 = ax.twiny()
+
+    ax.plot(triggers[i], label='Trigger', linewidth=0.1) # (648081,)
+    ax.plot(np.squeeze(forces[i]), label='Force',linewidth=0.1) # (1, 648081)
+    ax.plot(np.squeeze(targetForces[i]), label='TargetForce',linewidth=0.1) #(648081,)
+    # mark the movement type
+    ax2.set_xlim(ax.get_xlim())
+    ax2.set_xticks(tindex)
+    ax2.set_xticklabels(movements[i])
+    # index trial
+    ax.xaxis.set_tick_params(labelsize=5)
+    ax.set_xticks(tindex)
+    ax.set_xticklabels([*range(len(tindex))])
+    #plt.legend()
+    figname = plot_dir+'triggerAndForceAndTargetS' + str(i) + '.png'
     fig.savefig(figname,dpi=400)
     plt.close(fig)
 
@@ -107,25 +147,26 @@ for i in range(sessions):
 print("Concatenate data from all 4 sessions.")
 rawOf4=np.concatenate((myraw[0],myraw[1],myraw[2],myraw[3]),axis=1) #(110, 2742378)
 del myraw
-forceOf4=np.concatenate((forces[0],forces[1],forces[2],forces[3]),axis=1) #(1, 2742378)
+forceOf4=np.concatenate((forces[0],forces[1],forces[2],forces[3])) #(1, 2742378)
 targetForceOf4=np.concatenate((targetForces[0],targetForces[1],targetForces[2],targetForces[3])) #(2742378,)
 triggerOf4=np.concatenate((triggers[0],triggers[1],triggers[2],triggers[3])) #(2742378,)
+
 
 print("Plotting of force for all 4 session.")
 fig, ax = plt.subplots()
 plt.ion()
 ax.clear()
-ax.plot(triggerOf4[:,], label='Trigger', linewidth=0.01) # (648081,)
-ax.plot(forceOf4[0,:], label='Force',linewidth=0.01) # (1, 648081)
-ax.plot(targetForceOf4[:,], label='TargetForce',linewidth=0.01) #(648081,)
+ax.plot(triggerOf4, label='Trigger', linewidth=0.01) # (648081,)
+ax.plot(forceOf4, label='Force',linewidth=0.01) # (1, 648081)
+ax.plot(targetForceOf4, label='TargetForce',linewidth=0.01) #(648081,)
 plt.legend()
-figname = plot_dir + str(sid)+'ALLtriggerAndForceAndTarget.pdf'
+figname = plot_dir+'ALLtriggerAndForceAndTarget.pdf'
 fig.savefig(figname)
 plt.close(fig)
 
 
 ### 7 concatenat: seeg data + real force + target force + trigger
-myraw=np.concatenate((rawOf4,forceOf4, targetForceOf4[np.newaxis,:],triggerOf4[np.newaxis,:]),axis=0) #(113, 648081)
+myraw=np.concatenate((rawOf4,forceOf4[None,:], targetForceOf4[None,:],triggerOf4[None,:]),axis=0) #(113, 648081)
 del rawOf4
 
 
@@ -159,11 +200,7 @@ if (allMovementt==allMovements).all():
 # PSD: power spectral density
 #fig = raw.copy().pick_types(seeg=True).plot_psd(tmin=0,tmax=15, fmin=0.1, fmax=250,average=True)
 
-## notch filter
-chn = mne.pick_types(raw.info, seeg=True)
-freqs = (50, 150, 250)
-raw.notch_filter(freqs=freqs, picks=chn)
-
+# Notch filter
 # plot some psd before notch. fmax can be ignored
 print("Plot psd before and after notch filter.")
 raw.plot_psd(tmin=None, tmax=None,picks=['seeg'],average=True,spatial_colors=False,color='black', show=False)
@@ -171,7 +208,7 @@ fig=plt.gcf()
 ax=plt.gcf().get_axes()
 plt.ion()
 # notch filter
-freqs = (150,250,350,450)
+freqs = (50,150,250,350)
 raw.notch_filter(freqs=freqs, picks=['seeg']) # no stim
 raw.plot_psd(tmin=None, tmax=None,picks=['seeg'],ax=ax,average=True,spatial_colors=False,color='red')
 ax[0].text(0.5,0.9,'Black:before. Red:after.',fontsize=15,transform=fig.transFigure)
@@ -200,8 +237,8 @@ for i in range(4):
     plt.ion()
     ax.clear()
     epoch=epochs[str(i+1)].get_data()
-    targetforce=np.reshape(epoch[:,111,:],(1,-1))
-    realforce=np.reshape(epoch[:,110,:],(1,-1))
+    targetforce=np.reshape(epoch[:,-2,:],(1,-1))
+    realforce=np.reshape(epoch[:,-3,:],(1,-1))
     plt.plot(targetforce[0, :], label='Target')
     plt.plot(realforce[0,:], label='Target')
     plt.title("Force of Epoch "+str(i))

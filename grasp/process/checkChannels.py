@@ -4,12 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from grasp.config import *
+from channel_settings import *
 from grasp.process.utils import getRawData, get_trigger
 
 '''
 Function: pick up the non-signal channel and trigger channel by plotting and visual check.
 '''
-sid=1
+sid=2
 sessions=4 # 4 sessions
 movements=4 # 4 movements
 session=0 # evaluate the channle on one session
@@ -32,8 +33,8 @@ raw = mne.io.RawArray(raw, info)
 # use plot to check data and pick useChannels and triggerChannel
 rawd=raw.copy().resample(100)
 del mat, raw
-rawd.plot(scalings='auto',n_channels=3,duration=10.0,start=0.0)
-#useChannels[6]=np.concatenate((np.arange(0,15),np-------.arange(16,29),np.arange(37,119)))
+rawd.plot(scalings='auto',n_channels=3,duration=30.0,start=50.0)
+#useChannels[6]=np.co---------ncatenate((np.arange(0,15),np-------.arange(16,29),np.arange(37,119)))
 # find out the trigger channel: 29-36. Pick 29
 badChannels=[14,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,145,146] # 19
 channelTemp1=[item for item in ch_index if item not in badChannels] #147-1=128

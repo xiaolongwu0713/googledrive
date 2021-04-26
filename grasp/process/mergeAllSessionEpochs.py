@@ -30,7 +30,9 @@ for i in range(movements):
     targetIndex=ch_names.index('target') # 20
     stimIndex=ch_names.index('stimulation') # 21
     indexAll=list(range(len(ch_names)))
-    indexAll.pop(forceIndex),indexAll.pop(forceIndex),indexAll.pop(forceIndex) # pop the same index. out: (19, 20, 21)
+    indexAll.pop(forceIndex)
+    indexAll.pop(forceIndex)
+    indexAll.pop(forceIndex) # pop the same index. out: (19, 20, 21)
     indexAll.append(forceIndex),indexAll.append(targetIndex),indexAll.append(stimIndex) # append to the end
     moves[i].reorder_channels([ch_names[j] for j in indexAll])
 

@@ -12,9 +12,11 @@ import matplotlib.pyplot as plt
 from scipy.ndimage.interpolation import shift
 
 import sys, importlib
+
+from grasp.process.channel_settings import badtrials
+
 importlib.reload(sys.modules['grasp.config'])
-from grasp.config import activeChannels,badtrials,data_dir
-from grasp.config import data_raw
+from grasp.config import data_dir
 
 def regulization(net, Lambda):
     w = torch.cat([x.view(-1) for x in net.parameters()])
@@ -286,7 +288,7 @@ def rawData(split=True,move2=True): # del
         return traindata, valdata, testdata
     return data #  #
 
-def rawData2(rawOrBand,activeChannels,split=True,move2=True):
+def rawData2(sid,rawOrBand,activeChannels,split=True,move2=True):
     #call: rawData2('raw'/'band',[list]/'all',split=True,move2=True)
     #basedir='/Users/long/BCI/python_scripts/grasp/process/'
     #from grasp.config import raw_data, activeChannels
@@ -294,14 +296,14 @@ def rawData2(rawOrBand,activeChannels,split=True,move2=True):
     movements=4
 
     if rawOrBand=='raw':
-        file_suffix='epoch.fif'
+        file_suffix='Epoch.fif'
     elif rawOrBand=='band':
         file_suffix = 'BandEpoch.fif'
     moves=[]
     for i in range(movements):
         moves.append([])
         # ignore the stim channel
-        moves[i]=mne.read_epochs(data_dir+ 'move'+str(i)+file_suffix).get_data(picks=['seeg', 'emg']).transpose(1,2,0)
+        moves[i]=mne.read_epochs(data_dir+ 'PF'+str(sid)+'/data/'+'move'+str(i)+file_suffix).get_data(picks=['seeg', 'emg']).transpose(1,2,0)
 
     # take target force only
     if isinstance(activeChannels,list):
@@ -316,7 +318,7 @@ def rawData2(rawOrBand,activeChannels,split=True,move2=True):
     for i in allmove:
         #movecode=str(int(float(i)) + 1)
         alltrialidx = range(moves[i].shape[2])  # 0--39
-        trialidx = np.setdiff1d(alltrialidx, badtrials[i])
+        trialidx = np.setdiff1d(alltrialidx, badtrials[sid][i])
         moves[i] = moves[i][activeChannels, :, :]
         moves[i] = moves[i][:, :, trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
     if split==True:

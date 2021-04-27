@@ -101,9 +101,9 @@ def get_trigger_normal(sid,triggerChannel):
         cut_above=10000
         cut_blow=2000
         threshold=2000
-    elif sid==1:
+    elif sid==1 or sid==2:
         cut_above=1e7
-        cut_blow=2e6
+        cut_blow=3e6
         threshold=2e6
     triggerTmp = np.zeros((triggerChannel.shape[0]))
     triggerChannel[abs(triggerChannel) > cut_above] = 0

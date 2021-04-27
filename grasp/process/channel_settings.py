@@ -21,20 +21,35 @@ chnNum[1]=147
 badChannels[1]=[14,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,145,146] #19
 # not entirelly noise, but very unlikely
 anomalys[1]=[98]
-useChannels[1]=[item for item in [*range(147)] if item not in badChannels[1] if item not in anomalys[1]] # 127
+useChannels[1]=[item for item in [*range(chnNum[1])] if item not in badChannels[1] if item not in anomalys[1]] # 127
 #matlab: useChannels=[1:14,16:30,47:145]
 #aa=[*range(0,14)]+[*range(15,30)]+[*range(46,145)]. Same as mine.
 triggerChannels[1]=38 # 37-42 all trigger channels
 
+
+# subject 2
+#SubInfo.UseChn=[1:15,17:30,40:146]; % H9 is missing, create one virtual channel H9 for P25
+#SubInfo.EmgChn=[147:148];
+#SubInfo.TrigChn=[32:36];
+matlabUseChn=[*range(0,15)]+[*range(16,30)]+[*range(39,145)] # 135
+matlabTriggerChn=[*range(31,36)]
 FS[2]=2000
-chnNum[1]=147
-badChannels[1]=[14,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,145,146] #19
+chnNum[2]=148
+# [15, 30, 31, 32, 33, 34, 35, 36, 37, 38, 145, 146, 147]
+#mine: [15,31,32,33,34, 35,36,37,38,146,147]
+badChannels[2]=[15, 30, 31, 32, 33, 34, 35, 36, 37, 38, 145, 146, 147] #13
 # not entirelly noise, but very unlikely
-anomalys[1]=[98]
-useChannels[1]=[item for item in [*range(147)] if item not in badChannels[1] if item not in anomalys[1]] # 127
+anomalys[2]=[]
+useChannels[2]=[item for item in [*range(chnNum[2])] if item not in badChannels[2] if item not in anomalys[2]] # 128
 #matlab: useChannels=[1:14,16:30,47:145]
 #aa=[*range(0,14)]+[*range(15,30)]+[*range(46,145)]. Same as mine.
-triggerChannels[1]=38 # 37-42 all trigger channels
+triggerChannels[2]=31 # 31-38 all trigger channels
+activeChannels[2]=[*range(55,59)] +[69]+ [*range(118,128)]#15 channels: 127-118,69,58-55
+# specify the badtrials for all 4 movements.
+badtrials[2].append([])
+badtrials[2].append([])
+badtrials[2].append([])
+badtrials[2].append([])
 
 
 # subject 6

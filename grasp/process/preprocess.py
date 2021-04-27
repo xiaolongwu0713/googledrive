@@ -1,11 +1,12 @@
 '''
 Process workflow:
 1, choose the useChannels, trigger channels and discard any invalide channels using checkChannels.py
-2, update useChannels, trigger channels in the grasp.config file
+2, update useChannels, trigger channels in the grasp.channel_settings.py file
 3, run preprocess.py to generate epoch data. One epoch means one movement type.
 4, choose activeChannels
 '''
-
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 from mne.time_frequency import tfr_morlet
 from sklearn import preprocessing
 
@@ -14,15 +15,15 @@ import numpy as np
 import mne
 import matplotlib.pyplot as plt
 from grasp.config import *
-from channel_settings import *
+from grasp.process.channel_settings import *
 
 # first subject: sid=6
-sid=1
+sid=6
 sessions=4
 movements=4
 
 #plot_dir=root_dir+'grasp/process/result/'
-plot_dir=data_raw + 'PF' + str(sid) +'/process/'
+plot_dir=data_dir + 'PF' + str(sid) +'/process/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -30,18 +31,17 @@ if not os.path.exists(plot_dir):
 # info
 # useChannels=[1:15,17:29,38:119]
 fs=1000 # downsample to fs=1000
-sampling_rate = 1000
 
 ## load channel
 seegfiles=[]
 triggerfiles=[]
 forcefiles=[]
 for i in range(sessions):
-    seegfiles.append(data_raw+'PF'+str(sid)+'/SEEG_Data/PF'+str(sid)+'_F_'+str(i+1)+'.mat')
+    seegfiles.append(data_dir+'PF'+str(sid)+'/SEEG_Data/PF'+str(sid)+'_F_'+str(i+1)+'.mat')
 for i in range(sessions):
-    triggerfiles.append(data_raw+'PF'+str(sid)+'/Trigger_Data/Trigger_Information_'+str(i+1)+'.mat')
+    triggerfiles.append(data_dir+'PF'+str(sid)+'/Trigger_Data/Trigger_Information_'+str(i+1)+'.mat')
 for i in range(sessions):
-    forcefiles.append(data_raw+'PF'+str(sid)+'/Force_Data/'+str(i+1)+'-'+str(i+2)+'.mat')
+    forcefiles.append(data_dir+'PF'+str(sid)+'/Force_Data/'+str(i+1)+'-'+str(i+2)+'.mat')
 
 
 ### 1, raw data
@@ -62,8 +62,8 @@ del rawTmp
 movements=[]
 for i in range(sessions):
     movements.append(getMovement(triggerfiles[i]))
-
 allMovements=np.concatenate(movements)
+
 ### 4 format the trigger channel
 fig,ax=plt.subplots(2,2)
 triggers=[]
@@ -174,7 +174,7 @@ del rawOf4
 ch_names=np.append(chn_names,['force','target','stim']) # events, emg. total 112 channels = 110+2
 #ch_types=np.repeat(np.array('seeg'),126)
 ch_types=np.concatenate((np.repeat(np.array('seeg'),chnNumber),np.repeat(np.array('emg'),2),np.repeat(np.array('stim'),1)))
-info = mne.create_info(ch_names=list(ch_names), ch_types=list(ch_types), sfreq=sampling_rate)
+info = mne.create_info(ch_names=list(ch_names), ch_types=list(ch_types), sfreq=fs)
 raw = mne.io.RawArray(myraw, info)
 
 ### events
@@ -226,10 +226,12 @@ epoch1=epochs['2']
 epoch2=epochs['3']
 epoch3=epochs['4']
 print("Saving epochings...")
-epoch0.save(data_raw+'PF'+str(sid)+'/data/'+'move0epoch.fif', overwrite=True)
-epoch1.save(data_raw+'PF'+str(sid)+'/data/'+'move1epoch.fif', overwrite=True)
-epoch2.save(data_raw+'PF'+str(sid)+'/data/'+'move2epoch.fif', overwrite=True)
-epoch3.save(data_raw+'PF'+str(sid)+'/data/'+'move3epoch.fif', overwrite=True)
+if not os.path.exists(data_dir+'PF'+str(sid)+'/data/'):
+    os.makedirs(data_dir+'PF'+str(sid)+'/data/')
+epoch0.save(data_dir+'PF'+str(sid)+'/data/'+'moveEpoch0.fif', overwrite=True)
+epoch1.save(data_dir+'PF'+str(sid)+'/data/'+'moveEpoch1.fif', overwrite=True)
+epoch2.save(data_dir+'PF'+str(sid)+'/data/'+'moveEpoch2.fif', overwrite=True)
+epoch3.save(data_dir+'PF'+str(sid)+'/data/'+'moveEpoch3.fif', overwrite=True)
 
 print("Plotting force after epoching.")
 for i in range(4):

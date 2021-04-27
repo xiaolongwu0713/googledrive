@@ -6,7 +6,7 @@ from grasp.config import *
 
 # Epoch the data before doing this.
 
-sid=1
+sid=2
 plot_dir=data_raw + 'PF' + str(sid) +'/tfPlot/'
 import os
 if not os.path.exists(plot_dir):
@@ -58,6 +58,7 @@ for chIndex,chName in enumerate(ch_names):
     # decim will decrease the sfreq, so 15s will becomes 5s afterward.
     averagePower[chIndex]=tfr_morlet(singleMovementEpoch, picks=[chIndex],
                freqs=freqs, n_cycles=n_cycles,use_fft=True,return_itc=False, average=True, decim=decim, n_jobs=1)
+
 '''
 # use my one zscore function to plot because there is no different between mine and MNE.
 # plot tf for all channels
@@ -100,7 +101,8 @@ vmin=-4
 vmax=4
 baseline = [int(13*new_fs), int(14.5*new_fs)]
 #(300, 5001)
-fig, ax = plt.subplots(2)
+fig, ax = plt.subplots(nrows=2,ncols=1, sharex=True)
+#fig, ax = plt.subplots(2)
 ax0=ax[0]
 ax1=ax[1]
 for channel in range(len(ch_names)):
@@ -109,7 +111,7 @@ for channel in range(len(ch_names)):
     basestd=np.std(base,1)
     power[channel]=power[channel]-basemean[:,None]
     power[channel]=power[channel]/basestd[:,None]
-    pos=ax0.imshow(power[channel],origin='lower',cmap='RdBu_r',vmin=vmin, vmax=vmax)
+    im=ax0.imshow(power[channel],origin='lower',cmap='RdBu_r',vmin=vmin, vmax=vmax)
     ax0.set_aspect('auto')
 
     # xtick shoule include common points and vertical line points.
@@ -132,7 +134,8 @@ for channel in range(len(ch_names)):
     #plot vertical lines
     for x_value in movementLines:
         ax0.axvline(x=x_value*new_fs)
-    fig.colorbar(pos, ax=ax0)
+    #fig.colorbar(im, ax=ax0)
+    fig.colorbar(im, orientation="horizontal",fraction=0.046, pad=0.2,ax=ax0)
 
     # ERD/DRS plot
     erd0 = getIndex(fMin, fMax, fstep, ERD[0])
@@ -154,5 +157,6 @@ for channel in range(len(ch_names)):
     ax0.images[-1].colorbar.remove()
     ax0.cla()
     ax1.cla()
+plt.close(fig)
 
 

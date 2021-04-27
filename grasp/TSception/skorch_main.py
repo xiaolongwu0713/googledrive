@@ -13,28 +13,31 @@ from grasp.utils import rawData2,SEEGDataset,set_random_seeds,cuda_or_cup
 from grasp.config import *
 
 
-
+sid=2
 device=cuda_or_cup()
 seed = 123456789  # random seed to make results reproducible
 # Set random seed to be able to reproduce results
 set_random_seeds(seed=seed)
 
 
-result_dir=root_dir+'grasp/TSception/skorchs/'
+result_dir=root_dir+'grasp/TSception/result_subject2/'
+import os
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir)
 sampling_rate=1000
-#traindata, valdata, testdata = rawData2('band',activeChannels,move2=True)  # (chns, 15000/15001, 118) (channels, time, trials)
+traindata, valdata, testdata = rawData2(sid,'band',activeChannels,move2=True)  # (chns, 15000/15001, 118) (channels, time, trials)
 ##traindata, valdata, testdata = rawData2('raw','all',move2=True)
-#traindata = traindata.transpose(2, 0, 1)  # (118, 20, 15000) (trials,channels,  time)
-#valdata = valdata.transpose(2, 0, 1) # (8, 20, 15000)
-#testdata = testdata.transpose(2, 0, 1)  # (8, 20, 15000)
+traindata = traindata.transpose(2, 0, 1)  # (118, 20, 15000) (trials,channels,  time)
+valdata = valdata.transpose(2, 0, 1) # (8, 20, 15000)
+testdata = testdata.transpose(2, 0, 1)  # (8, 20, 15000)
 
 #np.save(tmp_dir+'traindata',traindata[:5,:,:])
 #np.save(tmp_dir+'valdata',valdata[:5,:,:])
 #np.save(tmp_dir+'testdata',testdata[:5,:,:])
 
-traindata=np.load(tmp_dir+'traindata.npy')
-valdata=np.load(tmp_dir+'valdata.npy')
-testdata=np.load(tmp_dir+'testdata.npy')
+#traindata=np.load(tmp_dir+'traindata.npy')
+#valdata=np.load(tmp_dir+'valdata.npy')
+#testdata=np.load(tmp_dir+'testdata.npy')
 
 trainx, trainy = traindata[:, :-1, :], traindata[:, -1, :] #-2 is real force, -1 is target
 valx, valy = valdata[:, :-1, :], valdata[:, -1, :]

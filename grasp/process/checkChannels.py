@@ -16,7 +16,7 @@ movements=4 # 4 movements
 session=0 # evaluate the channle on one session
 
 print("Read raw data from disk.")
-seegfile=data_raw+'PF'+str(sid)+'/SEEG_Data/PF'+str(sid)+'_F_'+str(session+1)+'.mat'
+seegfile=data_dir+'PF'+str(sid)+'/SEEG_Data/PF'+str(sid)+'_F_'+str(session+1)+'.mat'
 mat = hdf5storage.loadmat(seegfile)
 raw = mat['Data']
 #triggerRaw = mat['Data'][29, :]

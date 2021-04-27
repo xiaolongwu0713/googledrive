@@ -59,8 +59,12 @@ triggerChannels[6]=29
 activeChannels[6] = [i-1 for i in [8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107,108, 109, 110]]# 111 is force channel, index start from 1
 
 # badtrials[sid][trialNum]
-badtrials[6].append([i-1 for i in [12, 13, 21, 22, 23, 24, 26]])
-badtrials[6].append([i-1 for i in [23, 24, 28]])
-badtrials[6].append([i-1 for i in [3, 4, 8, 11, 16, 21, 22, 23, 24, 25, 29]])
-badtrials[6].append([i-1 for i in [4, 21, 24, 25, 29]])
+badtrials[6].append([])
+badtrials[6][0]=[i-1 for i in [12, 13, 21, 22, 23, 24, 26]]
+badtrials[6].append([])
+badtrials[6][1]=[i-1 for i in [23, 24, 28]]
+badtrials[6].append([])
+badtrials[6][2]=[i-1 for i in [3, 4, 8, 11, 16, 21, 22, 23, 24, 25, 29]]
+badtrials[6].append([])
+badtrials[6][3]=[i-1 for i in [4, 21, 24, 25, 29]]
 stim=30 - 1

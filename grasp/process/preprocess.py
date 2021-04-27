@@ -7,6 +7,7 @@ Process workflow:
 '''
 import sys; print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+
 from mne.time_frequency import tfr_morlet
 from sklearn import preprocessing
 
@@ -68,12 +69,11 @@ allMovements=np.concatenate(movements)
 fig,ax=plt.subplots(2,2)
 triggers=[]
 for i in range(sessions):
-    if sid==6: # session 0 of sid=6 need some special treatment.
-        if i==0:
-            tmp=get_trigger(triggerRaw[i])
-            triggers.append(tmp)
-            tindex = np.nonzero(triggers[i])[0]
-            triggers[i][tindex] = movements[i]
+    if sid==6 and i==0: # session 0 of sid=6 need some special treatment.
+        tmp=get_trigger(triggerRaw[i])
+        triggers.append(tmp)
+        tindex = np.nonzero(triggers[i])[0]
+        triggers[i][tindex] = movements[i]
     else:
         tmp=get_trigger_normal(sid,triggerRaw[i])
         triggers.append(tmp)
@@ -144,7 +144,7 @@ for i in range(sessions):
 
 
 ## 7 concatenate all 4 session
-print("Concatenate data from all 4 sessions.")
+print("Concatenate raw data from all 4 sessions.")
 rawOf4=np.concatenate((myraw[0],myraw[1],myraw[2],myraw[3]),axis=1) #(110, 2742378)
 del myraw
 forceOf4=np.concatenate((forces[0],forces[1],forces[2],forces[3])) #(1, 2742378)

@@ -1,7 +1,9 @@
 import numpy as np
-
-
-MNE_LOGGING_LEVEL='ERROR' # or mne.set_log_level(verbose='ERROR'), then mne.set_log_level(return_old_level=True)
+import mne
+try:
+    mne.set_config('MNE_LOGGING_LEVEL', 'ERROR')
+except TypeError as err:
+    print(err)
 
 tmp_dir='/tmp/'
 root_dir='/Users/long/BCI/python_scripts/googleDrive/' # this is project root

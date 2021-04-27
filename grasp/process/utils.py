@@ -45,7 +45,7 @@ def loadData(pn, session, *args):
 
 
 
-def get_trigger(triggerChannel):
+def exam_trigger(triggerChannel):
     trigger = np.zeros((triggerChannel.shape[0]))
     triggerChannel[abs(triggerChannel) > 10000] = 0
     triggerChannel[abs(triggerChannel) < 2000] = 0
@@ -92,6 +92,38 @@ def get_trigger(triggerChannel):
     points = np.nonzero(trigger)[0]
     for i in range(len(points)):
         ax.text(points[i], -2, str(i), fontsize=5)
+    # delete last trigger
+    trigger[points[-1]] = 0
+    return trigger
+
+def get_trigger(triggerChannel):
+    trigger = np.zeros((triggerChannel.shape[0]))
+    triggerChannel[abs(triggerChannel) > 10000] = 0
+    triggerChannel[abs(triggerChannel) < 2000] = 0
+    triggerChannel[triggerChannel < 0] = 0
+    trigger[triggerChannel > 2000] = 100
+    # tindex has continue non-zero points
+    tindex = np.nonzero(trigger)[0]  # nonzero returns tuple
+
+    # index has isolated non-zero points
+    index = []
+    for i in range(tindex.shape[0]):
+        if i == 0:
+            index.append(tindex[0])
+        if (tindex[i] - tindex[i - 1]) > 2000:
+            index.append(tindex[i])
+
+    trigger = np.zeros((triggerChannel.shape[0]))
+    trigger[index] = 100
+
+    # number 15 and 19 are correct trigger
+    prev_trigger = index[15]  # 254765
+    next_trigger = index[18]  # 284887
+    estimate = int((prev_trigger + next_trigger) / 2)
+    trigger[prev_trigger + 1:next_trigger] = 0
+    trigger[estimate] = 100
+
+    points = np.nonzero(trigger)[0]
     # delete last trigger
     trigger[points[-1]] = 0
     return trigger

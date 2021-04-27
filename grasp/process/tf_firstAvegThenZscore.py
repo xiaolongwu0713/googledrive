@@ -1,3 +1,6 @@
+import sys; print('Python %s on %s' % (sys.version, sys.platform))
+sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+
 from mne.time_frequency import tfr_morlet, tfr_multitaper
 import numpy as np
 import mne
@@ -6,8 +9,9 @@ from grasp.config import *
 
 # Epoch the data before doing this.
 
-sid=2
-plot_dir=data_raw + 'PF' + str(sid) +'/tfPlot/'
+sid=6
+
+plot_dir=data_dir + 'PF' + str(sid) +'/tfPlot/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -23,9 +27,10 @@ movementEpochs=[] # movementEpochs[0] is the epoch of move 1
 #for movement in range(movements):
 #    movementEpochs.append(mne.read_epochs(data_raw + 'PF' + str(sid) + '/data/' + 'move'+str(movement)+'epoch.fif').pick(picks=['seeg']))
 
-## just read one will be OK, save memory
+## You can change this to evaluate other movement epoch.
 chooseOneMovement=0
-movementEpochs.append(mne.read_epochs(data_raw + 'PF' + str(sid) + '/data/' + 'move'+str(chooseOneMovement)+'epoch.fif').pick(picks=['seeg']))
+print('Evaluate on epoch '+str(chooseOneMovement)+'.')
+movementEpochs.append(mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + 'moveEpoch'+str(chooseOneMovement)+'.fif').pick(picks=['seeg']))
 ch_names=movementEpochs[0].ch_names
 
 
@@ -36,6 +41,7 @@ movementLines=movementsLines[oneEpoch]
 # pick some channel doing some testing or pick all channel during process.
 #pickSubChannels=[4,5,6,7,8,9]
 pickSubChannels=list(range(len(ch_names)))
+print('Evaluate on '+str(int(len(pickSubChannels)))+' channels.')
 ch_names=[ch_names[i] for i in pickSubChannels]
 singleMovementEpoch=movementEpochs[oneEpoch].pick(picks=pickSubChannels)
 
@@ -54,6 +60,8 @@ n_cycles = freqs #np.linspace(cycleMin,cycleMax, num=cycleNum)  # different numb
 baseline=[13,14.5]
 averagePower=[]
 for chIndex,chName in enumerate(ch_names):
+    if chIndex%20 == 0:
+        print('TF analysis on '+str(chIndex)+'th channel.')
     averagePower.append([])
     # decim will decrease the sfreq, so 15s will becomes 5s afterward.
     averagePower[chIndex]=tfr_morlet(singleMovementEpoch, picks=[chIndex],
@@ -105,6 +113,7 @@ fig, ax = plt.subplots(nrows=2,ncols=1, sharex=True)
 #fig, ax = plt.subplots(2)
 ax0=ax[0]
 ax1=ax[1]
+print('Ploting out to '+plot_dir+'.')
 for channel in range(len(ch_names)):
     base=power[channel][:,baseline[0]:baseline[1]]
     basemean=np.mean(base,1)

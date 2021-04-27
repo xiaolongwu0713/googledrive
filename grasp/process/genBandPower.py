@@ -1,7 +1,7 @@
-import sys;
-
+import sys
 print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+
 import hdf5storage
 import mne
 import numpy as np
@@ -12,8 +12,8 @@ from grasp.process.utils import get_trigger, getMovement, get_trigger_normal, ge
 import matplotlib.pyplot as plt
 from grasp.process.channel_settings import *
 
-sid=2
-plot_dir=data_raw + 'PF' + str(sid) +'/process/'
+sid=6
+plot_dir=data_dir + 'PF' + str(sid) +'/process/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -27,7 +27,7 @@ for i in [-3,-2,-1]: channels.append(i) # real, target and stim
 movements=4
 movementEpochs=[] # movementEpochs[0] is the epoch of move 1
 for movement in range(movements):
-    tmp=mne.read_epochs(data_raw + 'PF' + str(sid) + '/data/' + 'move'+str(movement)+'epoch.fif')
+    tmp=mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + 'moveEpoch'+str(movement)+'.fif')
     tmp.pick(picks=channels)
     movementEpochs.append(tmp)
 
@@ -113,7 +113,7 @@ plt.plot(trials[0,0,:])
 #Save epochs
 print('Saving all 4 epochs.')
 for movement in range(movements):
-    moveAndBandEpochs[movement].save(data_raw + 'PF' + str(sid) + '/data/' + 'move'+str(movement)+'BandEpoch'+'.fif', overwrite=True)
+    moveAndBandEpochs[movement].save(data_dir + 'PF' + str(sid) + '/data/' + 'moveBandEpoch'+str(movement)+'.fif', overwrite=True)
 
 #a=mne.read_epochs('/Volumes/Samsung_T5/seegData/PF2/data/moveAndBandEpoch0.fif', preload=False)
 #a.load_data()

@@ -4,6 +4,8 @@
 *.png
 .idea/
 data/
+Colab*/
 result_*/
 *.ipynb
+*/*.ipynb/*
 __pycache__/

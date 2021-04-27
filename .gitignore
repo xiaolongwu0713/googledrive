@@ -2,6 +2,8 @@
 *.npy
 *.mat
 *.png
+*.pdf
 .idea/
 data/
+result_*/
 __pycache__/

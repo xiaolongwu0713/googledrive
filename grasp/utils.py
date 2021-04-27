@@ -287,14 +287,14 @@ def rawData2(rawOrBand,activeChannels,split=True,move2=True):
     movements=4
 
     if rawOrBand=='raw':
-        file_suffix='epoch.fif'
+        file_prefix='moveEpoch'
     elif rawOrBand=='band':
-        file_suffix = 'BandEpoch.fif'
+        file_prefix = 'moveBandEpoch'
     moves=[]
     for i in range(movements):
         moves.append([])
         # ignore the stim channel
-        moves[i]=mne.read_epochs(data_dir+ 'move'+str(i)+file_suffix).get_data(picks=['seeg', 'emg']).transpose(1,2,0)
+        moves[i]=mne.read_epochs(data_dir+file_prefix+str(i)+'.fif').get_data(picks=['seeg', 'emg']).transpose(1,2,0)
 
     # take target force only
     if isinstance(activeChannels,list):

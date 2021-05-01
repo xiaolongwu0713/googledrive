@@ -1,25 +1,22 @@
 import numpy as np
-# total PF[1,2,6,10,16] subjuects
-sid=6 #subject_id
+import mne
+try:
+    mne.set_config('MNE_LOGGING_LEVEL', 'ERROR')
+except TypeError as err:
+    print(err)
+
+tmp_dir='/tmp/'
 root_dir='/Users/long/BCI/python_scripts/googleDrive/' # this is project root
-data_raw='/Volumes/Samsung_T5/seegData/PF6_SYF_2018_08_09_Simply/' #raw data and processed data
-#data_dir='/Users/long/BCI/data/grasp_data/PF6_SYF_2018_08_09_Simply/data/' # preprocessed data
-data_dir='/content/drive/MyDrive/data/' # googleDrive
+
+import os, re
+location=os.getcwd()
+if re.compile('/Users/long/').match(location):
+    data_dir='/Volumes/Samsung_T5/seegData/' # preprocessed data
+elif re.compile('/content/drive').match(location):
+    data_dir='/content/drive/MyDrive/data/' # googleDrive
+
 mode=1
 processed_data=data_dir
-
-# Todo: All variable should be indexed begin with 0.
-useChannels=np.concatenate((np.arange(0,15),np.arange(16,29),np.arange(37,119)))
-activeChannels = [8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107,108, 109, 110] # 111 is force channel, index start from 1
-stim=30 - 1
-activeChannels=[chn -1 for chn in activeChannels]
-badtrials=[]
-badtrials.append([12, 13, 21, 22, 23, 24, 26])
-badtrials.append([23, 24, 28])
-badtrials.append([3, 4, 8, 11, 16, 21, 22, 23, 24, 25, 29])
-badtrials.append([4, 21, 24, 25, 29])
-badtrials=[[i-1 for i in sublist] for sublist in badtrials]
-
 
 fbands=[] #delta, theta, alpha,beta,gamma
 fbands.append([0.5, 4])
@@ -28,4 +25,28 @@ fbands.append([8, 12])
 fbands.append([13, 30])
 fbands.append([60, 140])
 
-MNE_LOGGING_LEVEL='ERROR' # or mne.set_log_level(verbose='ERROR'), then mne.set_log_level(return_old_level=True)
+ERD=[8,30]
+ERS=[60,300]
+# some cross module variables, you can import this variable as:
+# import grasp.config as myVar, then myVar.preds=...
+# OR, just make them global
+#preds=[]
+#targets=[]
+
+# Lambda is used by skorch get_loss function
+#Lambda = 1e-6
+preds=[]
+targets=[]
+
+
+def printVariables(variable_names):
+    for k in variable_names:
+        max_name_len = max([len(k) for k in variable_names])
+        print(f'  {k:<{max_name_len}}:  {globals()[k]}')
+
+if __name__ == "__main__":
+    ks = [k for k in dir() if (k[:2] != "__" and k !='np' and not callable(globals()[k]))]
+    #for k in ks:
+    #    print(type(k))
+    printVariables(ks)
+

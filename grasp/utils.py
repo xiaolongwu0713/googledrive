@@ -1,5 +1,5 @@
 import random
-
+import torch
 import mne
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset, DataLoader
@@ -12,15 +12,38 @@ import matplotlib.pyplot as plt
 from scipy.ndimage.interpolation import shift
 
 import sys, importlib
+
+from grasp.process.channel_settings import *
+
 importlib.reload(sys.modules['grasp.config'])
-from grasp.config import activeChannels,badtrials,data_dir
-from grasp.config import data_raw
+from grasp.config import data_dir
+
+def regulization(net, Lambda):
+    w = torch.cat([x.view(-1) for x in net.parameters()])
+    err = Lambda * torch.sum(torch.abs(w))
+    return err
+
+def cuda_or_cup():
+    cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
+    print('GPU computing:  ', cuda)
+    device = 'cuda' if cuda else 'cpu'
+    if cuda:
+        torch.backends.cudnn.benchmark = True
+    return device
+
+def set_random_seeds(seed):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    cuda = torch.cuda.is_available()
+    if cuda:
+        torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
 
 def parameterNum(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-class SEEGDataset1(Dataset):
+class SEEGDataset(Dataset):
     # x_tensor: (sample, channel, datapoint(feature)) type = torch.tensor
     # y_tensor: (sample,) type = torch.tensor
     def __init__(self, x_tensor, y_tensor, T, step):
@@ -44,23 +67,48 @@ class SEEGDataset1(Dataset):
             yd[bs,0] = abs(trainy[bs*self.step + self.T +1] - trainy[bs*self.step + self.T -50])*10+0.05 # force derative
         yd[:,0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd[:,0]]
         #return np.squeeze(x, axis=0), np.squeeze(y, axis=0) # 0 dimm is batch for dataloader, but not the real batch.
-        #return x.astype(np.float64),y.astype(np.float64) # x shape: ([1, 28, 1, 110, 1000]), y shape: ([1, 28, 1])
-        return x, y
+        return x.astype(np.float32),y.astype(np.float32) # x shape: ([28, 1, 110, 1000]), y shape: ([28, 1])
+        #return x.astype(np.float32), np.expand_dims(y, axis=1).astype(np.float32)
 
     def __len__(self):
         return self.y.shape[0]
 
-class SEEGDataset(Dataset):
-    # x_tensor: (sample, channel, datapoint(feature)) type = torch.tensor
-    # y_tensor: (sample,) type = torch.tensor
-    def __init__(self, x_tensor, y_tensor):
-        self.x = x_tensor
-        self.y = y_tensor
-        assert self.x.shape[0] == self.y.shape[0]
-    def __getitem__(self, index):
-        return self.x[index], self.y[index]
-    def __len__(self):
-        return self.y.shape[0]
+
+def windTo3D(x,y,wind,step):
+    totalLen = x.shape[2]  # ms
+    batch_size = int((totalLen - wind) / step)  # 280
+    chnNum = x.shape[1]
+
+    x_tmp = np.zeros((batch_size, 1, chnNum, wind))  # 4D:(280,1,19,1000ms):(batch_size, planes, height, weight)
+    y_tmp = np.zeros((batch_size, 1))  # (280, 1)
+    yd_tmp = np.zeros((batch_size, 1))  # (280, 1)
+    for bs in range(batch_size):
+        x_tmp[bs, 0, :, :] = x[:, bs * step:(bs * step + wind)]
+        y_tmp[bs, 0] = y[bs * step + wind + 1]  # force
+        yd_tmp[bs, 0] = abs(
+            y[bs * step + wind + 1] - y[bs * step + wind - 50]) * 10 + 0.05  # force derative
+    yd_tmp[:, 0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd_tmp[:, 0]]
+    return x_tmp,y_tmp
+
+def windTo3D_x(x,wind,step):
+    #x = x.astype(np.float32)
+    totalLen = x.astype(np.float32).shape[1]  # ms
+    batch_size = int((totalLen - wind) / step)  # 280
+    chnNum = x.shape[0]
+
+    x_tmp = np.zeros((batch_size, 1, chnNum, wind))  # 4D:(280,1,19,1000ms):(batch_size, planes, height, weight)
+    for bs in range(batch_size):
+        x_tmp[bs, 0, :, :] = x[:, bs * step:(bs * step + wind)]
+    return x_tmp
+
+def windTo3D_y(y,wind,step):
+    #y=y.astype(np.float32)
+    totalLen = y.shape[0]  # ms
+    batch_size = int((totalLen - wind) / step)  # 280
+    y_tmp = np.zeros((batch_size, 1))  # (280, 1)
+    for bs in range(batch_size):
+        y_tmp[bs, 0] = y[bs * step + wind + 1]  # force
+    return y_tmp
 
 def read_rawdata():
     datafile1 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move1TrainRawData.mat'
@@ -259,46 +307,20 @@ def rawData(split=True,move2=True): # del
         return traindata, valdata, testdata
     return data #  #
 
-
-# convert 2D signle trial data in channelx*times to channels*windSize*steps
-# input traildata contains seeg data and 1 channel of force data
-def windTo3D(trialdata,wind,step=1):
-    trainy=trialdata[-1,:] # force
-    trainy=trainy[wind:]
-
-    channs=trialdata.shape[0] -1
-    T = trialdata.shape[1] # T: 15000
-    slides = T - wind  # 14500
-    trainx = np.zeros((channs, slides, wind))  # (19, 14500, 500)
-
-    for i in range(wind):
-        # print(i)
-        if i == (wind - 1):
-            trainx[:, :, i] = trialdata[:, i:-1]
-        else:
-            trainx[:, :, i] = trialdata[:, i:-(wind - i)]
-
-    yield trainx, trainy
-def rawData2(rawOrBand,activeChannels,split=True,move2=True):
-    #call: rawData2('raw'/'band',[list]/'all',split=True,move2=True)
-    #basedir='/Users/long/BCI/python_scripts/grasp/process/'
-    #from grasp.config import raw_data, activeChannels
-    #activeChannels=[8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107, 108, 109, 110]
+def raw_input(sid,split=True,move2=True):
     movements=4
+    activeChannels = activeChannels[sid]
+    file_prefix='moveEpoch'
 
-    if rawOrBand=='raw':
-        file_prefix='moveEpoch'
-    elif rawOrBand=='band':
-        file_prefix = 'moveBandEpoch'
     moves=[]
     for i in range(movements):
         moves.append([])
-        # ignore the stim channel
-        moves[i]=mne.read_epochs(data_dir+file_prefix+str(i)+'.fif').get_data(picks=['seeg', 'emg']).transpose(1,2,0)
+        # ignore the trigger channel
+        moves[i]=mne.read_epochs(data_dir+ 'PF'+str(sid)+'/data/'+file_prefix+str(i)+'.fif').get_data(picks=['seeg', 'emg']).transpose(1,2,0)
 
     # take target force only
     if isinstance(activeChannels,list):
-        activeChannels = activeChannels + [-2, ]  # realforce+target +stim(ignored above)
+        activeChannels = activeChannels + [-2, -1]  # keep the real and target force.
     else:
         activeChannels=range(moves[0].shape[0])
 
@@ -309,8 +331,47 @@ def rawData2(rawOrBand,activeChannels,split=True,move2=True):
     for i in allmove:
         #movecode=str(int(float(i)) + 1)
         alltrialidx = range(moves[i].shape[2])  # 0--39
-        trialidx = np.setdiff1d(alltrialidx, badtrials[i])
+        trialidx = np.setdiff1d(alltrialidx, badtrials[sid][i])
         moves[i] = moves[i][activeChannels, :, :]
+        moves[i] = moves[i][:, :, trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
+    if split==True:
+        traindatatmp=[]
+        valdatatmp=[]
+        testdatatmp = []
+        testNum = 2 # 2*4=8 test trials
+        valNum = 2 # 2*4=8 valuate trials
+        for i in allmove:
+            valdatatmp.append([])
+            valdatatmp[i] = moves[i][:,:,-(valNum):] # including -1(last) and -2. (20, 15000, 2)
+        for i in allmove:
+            testdatatmp.append([])
+            testdatatmp[i] = moves[i][:, :, -(testNum+valNum):-(valNum)]  # including -4:-2,  (20, 15000, 2)
+        for i in allmove:
+            traindatatmp.append([])
+            traindatatmp[i] = moves[i][:, :, :-(testNum+valNum)]
+        valdata=np.concatenate((valdatatmp),axis=2) #(20, 15000, 8)
+        testdata = np.concatenate((testdatatmp),axis=2) #(20, 15000, 8)
+        traindata = np.concatenate((traindatatmp),axis=2) #(20, 15000, 118)
+        return traindata, valdata, testdata
+    return moves
+
+def freq_input(sid,split=True,move2=True):
+    movements=4
+    file_prefix = 'moveBandEpoch'
+    moves=[]
+    for i in range(movements):
+        moves.append([])
+        # ignore the stim channel
+        moves[i]=mne.read_epochs(data_dir+ 'PF'+str(sid)+'/data/'+file_prefix+str(i)+'.fif').get_data(picks=['seeg', 'emg']).transpose(1,2,0)
+
+    if move2==True:
+        allmove=[0,1,2,3]
+    else:
+        allmove=[0,2,3]
+    for i in allmove:
+        #movecode=str(int(float(i)) + 1)
+        alltrialidx = range(moves[i].shape[2])  # 0--39
+        trialidx = np.setdiff1d(alltrialidx, badtrials[sid][i])
         moves[i] = moves[i][:, :, trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
     if split==True:
         traindatatmp=[]

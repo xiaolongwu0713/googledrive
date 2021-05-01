@@ -1,6 +1,6 @@
 import mne
 import numpy as np
-from grasp.config import activeChannels, stim,badtrials,data_raw,data_dir,root
+from grasp.config import activeChannels, stim,badtrials,data_raw,data_dir
 import matplotlib.pyplot as plt
 
 plot_dir = 'grasp/process/mergeAllSessionEpochs/'
@@ -8,7 +8,7 @@ sessions=4
 movements=4
 
 print("Load all movement epoch")
-moveMix=[] # don't understand this...
+moveMix=[]
 for movement in range(movements):
     moveMix.append([])
     for session in range(sessions):
@@ -30,7 +30,9 @@ for i in range(movements):
     targetIndex=ch_names.index('target') # 20
     stimIndex=ch_names.index('stimulation') # 21
     indexAll=list(range(len(ch_names)))
-    indexAll.pop(forceIndex),indexAll.pop(forceIndex),indexAll.pop(forceIndex) # pop the same index. out: (19, 20, 21)
+    indexAll.pop(forceIndex)
+    indexAll.pop(forceIndex)
+    indexAll.pop(forceIndex) # pop the same index. out: (19, 20, 21)
     indexAll.append(forceIndex),indexAll.append(targetIndex),indexAll.append(stimIndex) # append to the end
     moves[i].reorder_channels([ch_names[j] for j in indexAll])
 

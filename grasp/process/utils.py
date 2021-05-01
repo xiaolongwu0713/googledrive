@@ -3,8 +3,8 @@ import numpy as np
 import os
 import scipy.io
 from scipy import signal
-
-from grasp.config import raw_data, processed_data, mode
+import matplotlib.pyplot as plt
+from grasp.config import processed_data, mode
 from grasp.process.config import result_dir
 
 ## usage: aa=loadData(31,1,'good'/'bad'/'power'/'epoch61'), then load the data part by checking aa.keys()
@@ -45,20 +45,105 @@ def loadData(pn, session, *args):
 
 
 
-def get_trigger(triggerChannel):
-    from sklearn.preprocessing import MinMaxScaler
-    triggerTmp = np.zeros((triggerChannel.shape[0]))
+def exam_trigger(triggerChannel):
+    trigger = np.zeros((triggerChannel.shape[0]))
     triggerChannel[abs(triggerChannel) > 10000] = 0
     triggerChannel[abs(triggerChannel) < 2000] = 0
     triggerChannel[triggerChannel < 0] = 0
-    triggerTmp[triggerChannel > 2000] = 100
-    prev_trigger = 254765
-    next_trigger = 284887
-    estimate = int((prev_trigger + next_trigger) / 2)
-    triggerTmp[prev_trigger + 1:next_trigger - 1] = 0
-    triggerTmp[estimate] = 100
-    tindex = np.nonzero(triggerTmp)[0]  # nonzero returns tuple
+    trigger[triggerChannel > 2000] = 100
+    plt.plot(trigger)
+    # tindex has continue non-zero points
+    tindex = np.nonzero(trigger)[0]  # nonzero returns tuple
 
+    # index has isolated non-zero points
+    index = []
+    for i in range(tindex.shape[0]):
+        if i == 0:
+            index.append(tindex[0])
+        if (tindex[i] - tindex[i - 1]) > 2000:
+            index.append(tindex[i])
+
+    plt.plot(index, [50] * len(index), 'ro')
+    ax = plt.gcf().get_axes()[0]
+    for i in range(len(index)):
+        ax.text(index[i], 50, str(i), fontsize=10)
+
+    trigger = np.zeros((triggerChannel.shape[0]))
+    trigger[index] = 100
+
+    middle_point = [int((index[i] + index[i + 1]) / 2) for i in range(len(index) - 1)]
+    span = [int((index[i + 1] - index[i])) for i in range(len(index) - 1)]
+    for i in range(len(middle_point)):
+        ax.text(middle_point[i], 50.5, str(span[i]), fontsize=5)
+
+    # number 15 and 19 are correct trigger
+    prev_trigger = index[15]  # 254765
+    next_trigger = index[18]  # 284887
+    plt.plot(prev_trigger, 49.5, 'bo')
+    plt.plot(next_trigger, 49.5, 'bo')
+    estimate = int((prev_trigger + next_trigger) / 2)
+    plt.plot(estimate, 49.5, 'bo')
+
+    trigger[prev_trigger + 1:next_trigger] = 0
+    trigger[estimate] = 100
+    plt.pause(1)
+    ax.clear()
+    plt.plot(trigger)
+    points = np.nonzero(trigger)[0]
+    for i in range(len(points)):
+        ax.text(points[i], -2, str(i), fontsize=5)
+    # delete last trigger
+    trigger[points[-1]] = 0
+    return trigger
+
+def get_trigger(triggerChannel):
+    trigger = np.zeros((triggerChannel.shape[0]))
+    triggerChannel[abs(triggerChannel) > 10000] = 0
+    triggerChannel[abs(triggerChannel) < 2000] = 0
+    triggerChannel[triggerChannel < 0] = 0
+    trigger[triggerChannel > 2000] = 100
+    # tindex has continue non-zero points
+    tindex = np.nonzero(trigger)[0]  # nonzero returns tuple
+
+    # index has isolated non-zero points
+    index = []
+    for i in range(tindex.shape[0]):
+        if i == 0:
+            index.append(tindex[0])
+        if (tindex[i] - tindex[i - 1]) > 2000:
+            index.append(tindex[i])
+
+    trigger = np.zeros((triggerChannel.shape[0]))
+    trigger[index] = 100
+
+    # number 15 and 19 are correct trigger
+    prev_trigger = index[15]  # 254765
+    next_trigger = index[18]  # 284887
+    estimate = int((prev_trigger + next_trigger) / 2)
+    trigger[prev_trigger + 1:next_trigger] = 0
+    trigger[estimate] = 100
+
+    points = np.nonzero(trigger)[0]
+    # delete last trigger
+    trigger[points[-1]] = 0
+    return trigger
+
+def get_trigger_normal(sid,triggerChannel):
+    if sid==6:
+        cut_above=10000
+        cut_blow=2000
+        threshold=2000
+    elif sid==1 or sid==2:
+        cut_above=1e7
+        cut_blow=3e6
+        threshold=2e6
+    triggerTmp = np.zeros((triggerChannel.shape[0]))
+    triggerChannel[abs(triggerChannel) > cut_above] = 0
+    triggerChannel[abs(triggerChannel) < cut_blow] = 0
+    triggerChannel[triggerChannel < 0] = 0
+    triggerTmp[triggerChannel > threshold] = 100
+
+    tindex = np.nonzero(triggerTmp)[0]  # nonzero returns tuple
     trigger=np.zeros((triggerChannel.shape[0]))
     index = []
     for i in range(tindex.shape[0]):
@@ -67,11 +152,11 @@ def get_trigger(triggerChannel):
         if (tindex[i] - tindex[i - 1]) > 2000:
             index.append(tindex[i])
     trigger[index]=100
-    lastone=np.nonzero(trigger)[0][-1]
-    trigger[lastone]=0
-    return trigger
-
-def get_trigger_normal(triggerChannel):
+    lastone = np.nonzero(trigger)[0][-1]
+    trigger[lastone] = 0
+    return np.squeeze(trigger)
+# subject 6
+def get_trigger_bak(triggerChannel):
     triggerTmp = np.zeros((triggerChannel.shape[0]))
     triggerChannel[abs(triggerChannel) > 10000] = 0
     triggerChannel[abs(triggerChannel) < 2000] = 0
@@ -91,64 +176,81 @@ def get_trigger_normal(triggerChannel):
     trigger[lastone] = 0
     return trigger
 
-def genSubTargetForce(type):
+def genSubTargetForce(type,fs):
     aNum = 0.05
     if type==1:
         flevel = 0.4
-        prep = 2000
-        ascendDuration = 3000
-        holding = 2500
+        prep = int(2*fs)
+        ascendDuration = int(3*fs)
+        holding = int(2.5*fs)
         y1 = np.ones((1, prep)) * aNum
         y2 = (flevel - aNum) / ascendDuration * np.arange(1,ascendDuration+1) + aNum
         y3 = flevel * np.ones((1, holding))
-        y4 = np.ones((1, (15000 - prep - ascendDuration - holding))) * aNum
+        y4 = np.ones((1, (int(15*fs) - prep - ascendDuration - holding))) * aNum
         subtarget = np.concatenate((y1, y2[np.newaxis,:], y3, y4), axis=1) # (1, 15000)
     elif type==2:
         flevel = 1.0
-        prep = 2000
-        ascendDuration = 9000
-        holding = 2500
+        prep = int(2*fs)
+        ascendDuration = int(9*fs)
+        holding = int(2.5*fs)
         y1 = np.ones((1, prep)) * aNum
         y2 = (flevel - aNum) / ascendDuration * np.arange(1, ascendDuration + 1) + aNum
         y3 = flevel * np.ones((1, holding))
-        y4 = np.ones((1, (15000 - prep - ascendDuration - holding))) * aNum
+        y4 = np.ones((1, (int(15*fs) - prep - ascendDuration - holding))) * aNum
         subtarget = np.concatenate((y1, y2[np.newaxis, :], y3, y4), axis=1)  # (1, 15000)
     elif type==3:
         flevel = 0.4
-        prep = 2000
-        ascendDuration = 1000
-        holding = 2500
+        prep = int(2*fs)
+        ascendDuration = int(1*fs)
+        holding = int(2.5*fs)
         y1 = np.ones((1, prep)) * aNum
         y2 = (flevel - aNum) / ascendDuration * np.arange(1, ascendDuration + 1) + aNum
         y3 = flevel * np.ones((1, holding))
-        y4 = np.ones((1, (15000 - prep - ascendDuration - holding))) * aNum
+        y4 = np.ones((1, (int(15*fs) - prep - ascendDuration - holding))) * aNum
         subtarget = np.concatenate((y1, y2[np.newaxis, :], y3, y4), axis=1)  # (1, 15000)
     elif type==4:
         flevel = 1.0
-        prep = 2000
-        ascendDuration = 3000
-        holding = 2500
+        prep = int(2*fs)
+        ascendDuration = int(3*fs)
+        holding = int(2.5*fs)
         y1 = np.ones((1, prep)) * aNum
         y2 = (flevel - aNum) / ascendDuration * np.arange(1, ascendDuration + 1) + aNum
         y3 = flevel * np.ones((1, holding))
-        y4 = np.ones((1, (15000 - prep - ascendDuration - holding))) * aNum
+        y4 = np.ones((1, (int(15*fs) - prep - ascendDuration - holding))) * aNum
         subtarget = np.concatenate((y1, y2[np.newaxis, :], y3, y4), axis=1)  # (1, 15000)
     return  subtarget
 
 def readMat(filename):
     import hdf5storage
     return hdf5storage.loadmat(filename)
-def getRawData(seegfile,useChannels):
+
+def getRawData(seegfile,useChannel,triggerChannel,down_to_fs):
+    print('Loading '+ seegfile)
+    mat = hdf5storage.loadmat(seegfile)
+    myraw = mat['Data'][useChannel, :]  # (110, 1296162)
+    FS = int(mat['Fs'][0][0])  # 1000
+    fss=int(FS/down_to_fs)
+    print('Down sampling to '+ str(down_to_fs)+'.')
+    myraw = signal.decimate(myraw, fss, axis=1,ftype='iir',zero_phase=True)  # (110, 648081)
+    triggerRaw = signal.decimate(mat['Data'][triggerChannel, :], fss)
+    chnRaw = mat['ChnName']
+    channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
+    channels = channels[useChannel]  # (110,)
+    ch_names = [channelsName.strip() for channelsName in channels]
+    return myraw, triggerRaw, down_to_fs,ch_names
+
+# no down sampling
+def getRawData2(seegfile,useChannels,triggerChannel):
     mat = hdf5storage.loadmat(seegfile)
     myraw = mat['Data'][useChannels, :]  # (110, 1296162)
-    myraw = signal.decimate(myraw, 2, axis=1,ftype='iir',zero_phase=True)  # (110, 648081)
-    triggerRaw = signal.decimate(mat['Data'][29, :], 2)
-    fs = int(mat['Fs'][0][0] / 2)  # 1000
+    #myraw = signal.decimate(myraw, 2, axis=1,ftype='iir',zero_phase=True)  # (110, 648081)
+    triggerRaw = mat['Data'][triggerChannel, :]
+    fs = int(mat['Fs'][0][0])  # 1000
     chnRaw = mat['ChnName']
     channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
     channels = channels[useChannels]  # (110,)
     ch_names = [channelsName.strip() for channelsName in channels]
-    return myraw, triggerRaw, ch_names
+    return myraw, triggerRaw, fs,ch_names
 
 def getMovement(triggerfile):
     mat = hdf5storage.loadmat(triggerfile)
@@ -158,26 +260,28 @@ def getMovement(triggerfile):
     xaxis = mat['Info']['Xaxis'][0][0]  # (1, 40) each element has 4 values
     yaxis = mat['Info']['Yaxis'][0][0]  # (1, 40) each element has 4 values
     movement = mat['Info']['Exp_Seq'][0][0]  # trial type, e.g 1,2,3,4. (1, 40) movement type
-    return movement
+    return list(movement[0])
 
-def getForceData(forcefile,trigger):
+def getForceData(sid,forcefile,trigger,fs):
     import matplotlib.pyplot as plt
     mat = hdf5storage.loadmat(forcefile)
     key=list(mat.keys())[-1] # keys are different for different file
     forceTmp = mat[key]  # (6039000, 1)
     force = forceTmp[1::2]
     timepoints = forceTmp[0::2]
-    ffs = int(timepoints.shape[0] / timepoints[-1])  # 5000
-    resample=int(ffs/1000)
-    force = signal.decimate(force, resample, axis=0)  # (603900, 1), padding force to aligh with trigger data.
+    FS = int(timepoints.shape[0] / timepoints[-1])  # 5000
+    factor=int(FS/fs)
+    force = signal.decimate(force, factor, axis=0)  # (603900, 1), padding force to aligh with trigger data.
+    #secs = len(force) / ffs  # Number of seconds in signal X
+    #samps = int(secs * 2000)  # Number of samples to downsample
+    #force = scipy.signal.resample(force, samps)
     force = force - min(force)
-    paddingBefore = np.nonzero(trigger)[0][0]  # % 28206
+    paddingBefore = np.nonzero(trigger)[0][0]  # % 56411
     paddingEnd = trigger.shape[0] - force.shape[0] - paddingBefore
-    firstpoint=force[0,0]
-    lastpoint=force[-1,0]
-    force = np.concatenate( (np.ones((1, paddingBefore))*firstpoint, force.T, np.ones((1, paddingEnd))*lastpoint), axis=1).T  # (648081, 1)
-
-    return force.T
+    firstvalue=force[0,0]
+    lastvalue=force[-1,0]
+    force = np.concatenate( (np.ones((1, paddingBefore))*firstvalue, force.T, np.ones((1, paddingEnd))*lastvalue), axis=1).T  # (648081, 1)
+    return np.squeeze(force)
 
 
 def add_arrows(axes):

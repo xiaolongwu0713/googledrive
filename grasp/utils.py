@@ -9,14 +9,29 @@ import numpy as np
 import scipy.io
 import re
 import matplotlib.pyplot as plt
-from scipy.ndimage.interpolation import shift
-
 import sys, importlib
-
 from grasp.process.channel_settings import *
+
 
 importlib.reload(sys.modules['grasp.config'])
 from grasp.config import data_dir
+
+def savemode(result_dir,epoch,model,optimizer):
+    state = {
+        'state_dict': model.state_dict(),
+        'optimizer': optimizer.state_dict(),}
+    filename=result_dir+'checkpoint_'+str(epoch)+'.pth'
+    torch.save(state,filename)
+    print('Save model of epoch '+str(epoch))
+
+def loadmode(result_dir,epoch,model,optimizer):
+    filename=result_dir+'checkpoint_'+str(epoch)+'.pth'
+    checkpoint = torch.load(filename)
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    return model, optimizer
+
+
 
 def regulization(net, Lambda):
     w = torch.cat([x.view(-1) for x in net.parameters()])
@@ -42,8 +57,19 @@ def set_random_seeds(seed):
 def parameterNum(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-
 class SEEGDataset(Dataset):
+    # x_tensor: (sample, channel, datapoint(feature)) type = torch.tensor
+    # y_tensor: (sample,) type = torch.tensor
+    def __init__(self, x_tensor, y_tensor):
+        self.x = x_tensor
+        self.y = y_tensor
+        assert self.x.shape[0] == self.y.shape[0]
+    def __getitem__(self, index):
+        return self.x[index], self.y[index]
+    def __len__(self):
+        return self.y.shape[0]
+
+class SEEGDataset3D(Dataset):
     # x_tensor: (sample, channel, datapoint(feature)) type = torch.tensor
     # y_tensor: (sample,) type = torch.tensor
     def __init__(self, x_tensor, y_tensor, T, step):
@@ -368,6 +394,7 @@ def freq_input(sid,split=True,move2=True):
         allmove=[0,1,2,3]
     else:
         allmove=[0,2,3]
+    # discard the bad trials
     for i in allmove:
         #movecode=str(int(float(i)) + 1)
         alltrialidx = range(moves[i].shape[2])  # 0--39

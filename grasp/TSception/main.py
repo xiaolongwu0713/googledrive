@@ -5,17 +5,25 @@ import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader
 from grasp.TSception.utils import regulization
-from grasp.utils import SEEGDataset
+from grasp.utils import SEEGDataset, freq_input, SEEGDataset3D, cuda_or_cup, set_random_seeds
 from grasp.TSception.Models import TSception2
 from examples.IMV_LSTM.networks import IMVTensorLSTM
 # load the data: regression to target force derivative
-from grasp.utils import rawData2
-from grasp.config import activeChannels, root_dir
+from grasp.config import root_dir
+
+device=cuda_or_cup()
+seed = 123456789  # random seed to make results reproducible
+# Set random seed to be able to reproduce results
+set_random_seeds(seed=seed)
 
 result_dir=root_dir+'grasp/TSception/resultBandInput/'
+import os
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir)
+
 sampling_rate=1000
 #traindata, valdata, testdata = rawData2('raw',activeChannels,move2=False)  # (chns, 15000/15001, 118) (channels, time, trials)
-traindata, valdata, testdata = rawData2('raw','all',move2=True)
+traindata, valdata, testdata = freq_input(6,split=True,move2=True)
 traindata = traindata.transpose(2, 0, 1)  # (118, 20, 15000) (trials,channels,  time)
 valdata = valdata.transpose(2, 0, 1) # (8, 20, 15000)
 testdata = testdata.transpose(2, 0, 1)  # (8, 20, 15000)

@@ -333,7 +333,7 @@ def rawData(split=True,move2=True): # del
         return traindata, valdata, testdata
     return data #  #
 
-def raw_input(sid,split=True,move2=True):
+def raw_input(sid,split=True,move2=True,activeChannels=activeChannels,badtrials=badtrials):
     movements=4
     activeChannels = activeChannels[sid]
     file_prefix='moveEpoch'

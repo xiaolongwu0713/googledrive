@@ -5,12 +5,17 @@ import matplotlib.pyplot as plt
 
 from grasp.config import *
 from grasp.process.channel_settings import *
+import re
 from grasp.process.utils import getRawData, get_trigger
 
 '''
 Function: pick up the non-signal channel and trigger channel by plotting and visual check.
+Usage:
+1,use - to scale down the plot
 '''
-sid=2
+
+
+sid=16
 sessions=4 # 4 sessions
 movements=4 # 4 movements
 session=0 # evaluate the channle on one session
@@ -21,10 +26,14 @@ mat = hdf5storage.loadmat(seegfile)
 raw = mat['Data']
 #triggerRaw = mat['Data'][29, :]
 fs = int(mat['Fs'][0][0])
-chnRaw = mat['ChnName']
-channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
+chnRaw = mat['ChnName'] # total channels: len(chnRaw)-->update the channel_settings.py
+channels=list(chnRaw)
+while not isinstance(channels[0],np.str_):
+    channels=[channels[i][0] for i in range(len(chnRaw))]
+
+#channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
 #ch_names = [channelsName.strip() for channelsName in channels]
-ch_index_str=[str(chi)+'_'+channels[chi] for chi in [*range(len(channels))]]
+ch_index_str=[str(chi)+'_'+channels[chi].strip() for chi in [*range(len(channels))]]
 ch_index=[*range(len(channels))] #147
 ch_types=['seeg'] * len(ch_index_str)
 info = mne.create_info(ch_names=list(ch_index_str), ch_types=list(ch_types), sfreq=fs)
@@ -34,7 +43,7 @@ raw = mne.io.RawArray(raw, info)
 rawd=raw.copy().resample(100)
 del mat, raw
 rawd.plot(scalings='auto',n_channels=3,duration=30.0,start=50.0)
-#useChannels[6]=np.concatenate((np.arange(0,15),np.arange(16,29),np.arange(37,119)))
+#useChannels[6]-----=np.concatenate((np.arange(0,15),np.arange(16,29),np.arange(37,119)))
 # find out the trigger channel: 29-36. Pick 29
 badChannels=[14,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,145,146] # 19
 channelTemp1=[item for item in ch_index if item not in badChannels] #147-1=128
@@ -47,7 +56,11 @@ rawd.copy().pick(picks=badChannels2).plot(scalings='auto',n_channels=3,duration=
 badChannels2=[item for item in badChannels if item !=38] #147-1=128
 
 
-
+# sometime raw seeg is in edf format
+import mne
+file = '/Volumes/Samsung_T5/seegData/PF16/SEEG_Data/PF16_F_1.edf'
+data = mne.io.read_raw_edf(file)
+raw_data = data.get_data()
 
 
 

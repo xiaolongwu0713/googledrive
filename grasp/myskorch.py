@@ -20,14 +20,14 @@ class on_batch_end_callback(Callback):
     def __init__(self):
         pass
     def on_batch_end(self, net, X=None, y=None, training=None, **kwargs):
-        print('on batch end callback')
         if training==False:
+            #print('Evaluation trial')
             target=y.squeeze().numpy()
             step=kwargs
             loss=step['loss']
             y_pred=step['y_pred']
             y_pred=y_pred.squeeze().cpu().detach().numpy()
-            print(y_pred.shape)
+            #print(y_pred.shape)
             preds.append(y_pred)
             targets.append(target)
 

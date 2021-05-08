@@ -14,19 +14,19 @@ if re.compile('/Users/long/').match(location):
     data_dir='/Volumes/Samsung_T5/seegData/' # preprocessed data
 elif re.compile('/content/drive').match(location):
     data_dir='/content/drive/MyDrive/data/' # googleDrive
-
-mode=1
 processed_data=data_dir
+
+paradigm=1
 
 fbands=[] #delta, theta, alpha,beta,gamma
 fbands.append([0.5, 4])
 fbands.append([4, 8])
-fbands.append([8, 12])
-fbands.append([13, 30])
-fbands.append([60, 140])
+fbands.append([8, 12]) # mu(motor cortex)/alpha(visual cortex)
+fbands.append([13, 30]) # beta
+fbands.append([60, 140]) # gamma: 55-85
 
-ERD=[8,30]
-ERS=[60,300]
+ERD=[13,30]
+ERS=[55,100]
 # some cross module variables, you can import this variable as:
 # import grasp.config as myVar, then myVar.preds=...
 # OR, just make them global

@@ -11,7 +11,8 @@ sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 from mne.time_frequency import tfr_morlet
 from sklearn import preprocessing
 
-from grasp.process.utils import get_trigger, genSubTargetForce, getRawData, getMovement, getForceData, get_trigger_normal
+from grasp.process.utils import get_trigger, genSubTargetForce, getRawData, getMovement, getForceData, \
+    get_trigger_normal, getRawDataInEdf, getMovement_sid10And16
 import numpy as np
 import mne
 import matplotlib.pyplot as plt
@@ -19,7 +20,7 @@ from grasp.config import *
 from grasp.process.channel_settings import *
 
 # first subject: sid=6
-sid=6
+sid=16
 sessions=4
 movements=4
 
@@ -38,7 +39,10 @@ seegfiles=[]
 triggerfiles=[]
 forcefiles=[]
 for i in range(sessions):
-    seegfiles.append(data_dir+'PF'+str(sid)+'/SEEG_Data/PF'+str(sid)+'_F_'+str(i+1)+'.mat')
+    if sid==16:
+        seegfiles.append(data_dir + 'PF' + str(sid) + '/SEEG_Data/PF' + str(sid) + '_F_' + str(i + 1) + '.edf')
+    else:
+        seegfiles.append(data_dir + 'PF' + str(sid) + '/SEEG_Data/PF' + str(sid) + '_F_' + str(i + 1) + '.mat')
 for i in range(sessions):
     triggerfiles.append(data_dir+'PF'+str(sid)+'/Trigger_Data/Trigger_Information_'+str(i+1)+'.mat')
 for i in range(sessions):
@@ -51,18 +55,33 @@ triggerRaw=[]
 myraw=[]
 chn_names=[]
 print("Reading raw data.")
-for i in range(sessions):
-    rawTmp, triggerRawTmp,fs,chn_namesTmp=getRawData(seegfiles[i],useChannels[sid],triggerChannels[sid],fs)
-    myraw.append(rawTmp)
-    triggerRaw.append(triggerRawTmp)
-    chn_names.append(chn_namesTmp)
-chn_names=chn_names[0] # channles will remain the same in all sessions.
-chnNumber=len(chn_names)
-del rawTmp
+# sid 16 raw data in edf format
+if sid==16:
+    for i in range(sessions):
+        rawTmp, triggerRawTmp,chn_namesTmp=getRawDataInEdf(seegfiles[i],useChannels[sid],triggerChannels[sid],fs)
+        myraw.append(rawTmp)
+        triggerRaw.append(triggerRawTmp)
+        chn_names.append(chn_namesTmp)
+    chn_names=chn_names[0] # channles will remain the same in all sessions.
+    chnNumber=len(chn_names)
+else:
+    for i in range(sessions):
+        rawTmp, triggerRawTmp,chn_namesTmp=getRawData(seegfiles[i],useChannels[sid],triggerChannels[sid],fs)
+        myraw.append(rawTmp)
+        triggerRaw.append(triggerRawTmp)
+        chn_names.append(chn_namesTmp)
+    chn_names=chn_names[0] # channles will remain the same in all sessions.
+    chnNumber=len(chn_names)
+    del rawTmp
+
+
 ### 2, experiment setting
 movements=[]
 for i in range(sessions):
-    movements.append(getMovement(triggerfiles[i]))
+    if sid==10 or sid==16:
+        movements.append(getMovement_sid10And16(triggerfiles[i]))
+    else:
+        movements.append(getMovement(triggerfiles[i]))
 allMovements=np.concatenate(movements)
 
 ### 4 format the trigger channel
@@ -82,7 +101,7 @@ for i in range(sessions):
     trialNum=len(np.nonzero(tmp)[0])
     ax[i//2][i-(i//2)*2].plot(tmp) # // means round down to int.
     ax[i//2][i-(i//2)*2].text(0.8, 0.8, str(trialNum)+' trials.', fontsize=10, transform=ax[i//2][i-(i//2)*2].transAxes)
-figname = plot_dir+'_trigger_of_all_sessions.png'
+figname = plot_dir+'trigger_of_all_sessions.png'
 fig.savefig(figname,dpi=400)
 plt.close(fig)
 
@@ -92,10 +111,19 @@ forces=[]
 fig,ax=plt.subplots(2,2)
 for i in range(sessions):
     tmp=getForceData(sid,forcefiles[i], triggers[i],fs)
+    # take care of some abnormal force
+    if sid==10 and i==0:
+        very_unlikely_number=2.012345678901234
+        # 2.012345678901234 is clear manually setup, eliminate this trial in later stage
+        tmp[110000:150000] = [tmp[i] if 1.26<tmp[i]<2.0 else very_unlikely_number for i in range(110000,150000)]
     forces.append(tmp) # will down sample to fs
     ax[i // 2][i - (i // 2) * 2].plot(tmp)  # // means round down to int.
-    ax[i // 2][i - (i // 2) * 2].text(0.8, 0.8, 'Session '+str(i) , fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
-figname = plot_dir+'_force_of_all_sessions.png'
+    ax[i // 2][i - (i // 2) * 2].text(0.3, 0.9, 'Session '+str(i) , fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
+    tindex=np.nonzero(triggers[i])[0]
+    ax[i // 2][i - (i // 2) * 2].xaxis.set_tick_params(labelsize=5)
+    ax[i // 2][i - (i // 2) * 2].set_xticks(tindex)
+    ax[i // 2][i - (i // 2) * 2].set_xticklabels([*range(len(tindex))])
+figname = plot_dir+'force_of_all_sessions.png'
 fig.savefig(figname,dpi=400)
 plt.close(fig)
 
@@ -110,8 +138,8 @@ for i in range(sessions):
         tmp[index:index+15000]=genSubTargetForce(movements[i][j],fs)
     targetForces.append(tmp)  # (648081,)
     ax[i // 2][i - (i // 2) * 2].plot(tmp)  # // means round down to int.
-    ax[i // 2][i - (i // 2) * 2].text(0.8, 0.8, 'Session ' + str(i), fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
-figname = plot_dir +'_targetForce_of_all_sessions.png'
+    ax[i // 2][i - (i // 2) * 2].text(0.3, 0.9, 'Session ' + str(i), fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
+figname = plot_dir +'targetForce_of_all_sessions.png'
 fig.savefig(figname, dpi=400)
 plt.close(fig)
 

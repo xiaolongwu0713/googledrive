@@ -129,11 +129,13 @@ def windTo3D_x(x,wind,step):
 
 def windTo3D_y(y,wind,step):
     #y=y.astype(np.float32)
-    totalLen = y.shape[0]  # ms
+    totalLen = y.shape[1]  # ms
+    chn=y.shape[0]
     batch_size = int((totalLen - wind) / step)  # 280
-    y_tmp = np.zeros((batch_size, 1))  # (280, 1)
+    y_tmp = np.zeros((chn,batch_size))  # (280, 1)
     for bs in range(batch_size):
-        y_tmp[bs, 0] = y[bs * step + wind + 1]  # force
+        y_tmp[:,bs] = y[:,bs * step + wind + 1]  # force
+    #return np.expand_dims(y_tmp, axis=-1)
     return y_tmp
 
 def read_rawdata():

@@ -1,3 +1,9 @@
+'''
+workflow:
+1,run checkChannels.py to determine total channel number, bad channels, trigger channels
+2,use tfAnalysis.py to choose the active channels.
+3,use preprocess.py to check the trial force quality to determine the badtrials.
+'''
 import numpy as np
 FS=[0]*999
 chnNum=[0]*999 # total channels number
@@ -69,3 +75,48 @@ badtrials[6][2]=[i-1 for i in [3, 4, 8, 11, 16, 21, 22, 23, 24, 25, 29]]
 badtrials[6].append([])
 badtrials[6][3]=[i-1 for i in [4, 21, 24, 25, 29]]
 stim=30 - 1
+
+# subject 10
+#matlab:
+#SubInfo.UseChn=[1:15,17:31,43:114];
+#SubInfo.EmgChn=[117:118];
+#SubInfo.TrigChn=[35:39];
+matlabUseChn=[*range(0,15)]+[*range(16,31)]+[*range(42,114)] # same as python
+matlabTriggerChn=[*range(34,39)]
+FS[10]=2000
+chnNum[10]=122
+
+badChannels[10]=[15,31,32,33,34,35,36,37,38,39,40,41,114,115,116,117,118,119,120,121] #20
+# not entirelly noise, but very unlikely
+anomalys[10]=[]
+useChannels[10]=[item for item in [*range(chnNum[10])] if item not in badChannels[10] if item not in anomalys[10]] # 128
+triggerChannels[10]=34 # 31-38 all trigger channels
+# determine the active channel with tf plot.
+#activeChannels[10]=[*range(55,59)] +[69]+ [*range(118,128)]#15 channels: 127-118,69,58-55
+# specify the badtrials for all 4 movements.
+badtrials[10].append([26])
+badtrials[10].append([])
+badtrials[10].append([1])
+badtrials[10].append([2])
+
+#subject 16
+#SubInfo.UseChn=[1:19,21:37,54:207];
+#SubInfo.EmgChn=[210:211];
+#SubInfo.TrigChn=[46:48];
+matlabUseChn=[*range(0,19)]+[*range(20,37)]+[*range(53,207)] # same as python
+matlabTriggerChn=[*range(45,48)]
+FS[16]=2000
+chnNum[16]=217
+
+badChannels[16]=[19,37,38,39,40,41,42,44,45,46,47,48,49,50,51,52,53,209,216] # 38,39,40,50,51,53 were added from matlabUseChn
+# not entirelly noise, but very unlikely
+anomalys[16]=[]
+useChannels[16]=[item for item in [*range(chnNum[16])] if item not in badChannels[16] if item not in anomalys[16]] # 128
+triggerChannels[16]=45 # 31-38 all trigger channels
+# determine the active channel with tf plot.
+#activeChannels[10]=[*range(55,59)] +[69]+ [*range(118,128)]#15 channels: 127-118,69,58-55
+# specify the badtrials for all 4 movements.
+badtrials[16].append([])
+badtrials[16].append([])
+badtrials[16].append([])
+badtrials[16].append([])

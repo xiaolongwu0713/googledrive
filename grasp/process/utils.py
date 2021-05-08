@@ -1,10 +1,12 @@
+import h5py
 import hdf5storage
+import mne
 import numpy as np
 import os
 import scipy.io
 from scipy import signal
 import matplotlib.pyplot as plt
-from grasp.config import processed_data, mode
+from grasp.config import processed_data
 from grasp.process.config import result_dir
 
 ## usage: aa=loadData(31,1,'good'/'bad'/'power'/'epoch61'), then load the data part by checking aa.keys()
@@ -129,14 +131,19 @@ def get_trigger(triggerChannel):
     return trigger
 
 def get_trigger_normal(sid,triggerChannel):
-    if sid==6:
+    #Todo: normalize below
+    if sid==6 or sid==10:
         cut_above=10000
         cut_blow=2000
         threshold=2000
-    elif sid==1 or sid==2:
+    elif sid==1 or sid==2: # 1,2 OK
         cut_above=1e7
         cut_blow=3e6
         threshold=2e6
+    elif sid==16:
+        cut_above = 10
+        cut_blow = 2
+        threshold = 3
     triggerTmp = np.zeros((triggerChannel.shape[0]))
     triggerChannel[abs(triggerChannel) > cut_above] = 0
     triggerChannel[abs(triggerChannel) < cut_blow] = 0
@@ -234,10 +241,13 @@ def getRawData(seegfile,useChannel,triggerChannel,down_to_fs):
     myraw = signal.decimate(myraw, fss, axis=1,ftype='iir',zero_phase=True)  # (110, 648081)
     triggerRaw = signal.decimate(mat['Data'][triggerChannel, :], fss)
     chnRaw = mat['ChnName']
-    channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
-    channels = channels[useChannel]  # (110,)
+    channels = list(chnRaw)
+    while not isinstance(channels[0], np.str_):
+        channels = [channels[i][0] for i in range(len(chnRaw))]
+    #channels = np.asarray([chnRaw[i][0][0][0] for i in range(len(chnRaw))])  # list with len=126
+    channels = [channels[i] for i in useChannel]  # (110,)
     ch_names = [channelsName.strip() for channelsName in channels]
-    return myraw, triggerRaw, down_to_fs,ch_names
+    return myraw, triggerRaw,ch_names
 
 # no down sampling
 def getRawData2(seegfile,useChannels,triggerChannel):
@@ -252,6 +262,19 @@ def getRawData2(seegfile,useChannels,triggerChannel):
     ch_names = [channelsName.strip() for channelsName in channels]
     return myraw, triggerRaw, fs,ch_names
 
+def getRawDataInEdf(seegfile,useChannel,triggerChannel,down_to_fs):
+    print('Loading edf format file: '+ seegfile)
+    data = mne.io.read_raw_edf(seegfile)
+    print('Down sampling to ' + str(down_to_fs) + '.')
+    data.resample(down_to_fs)
+    fs = round(data.info['sfreq'])
+    myraw = data.copy().pick(picks=useChannel).get_data() # (198, 636020)
+    triggerRaw = data.copy().pick(picks=triggerChannel).get_data() # (1, 636020)
+    ch_names = data.ch_names # list
+    ch_names = [ch_names[i] for i in useChannel]
+    return myraw, np.squeeze(triggerRaw),ch_names
+
+
 def getMovement(triggerfile):
     mat = hdf5storage.loadmat(triggerfile)
     # trigger_time=mat['Info']['task_time'][0][0] #task duration, e.g 5.5,7.5, 13.5 s. np array, shape: (1,40)
@@ -261,6 +284,12 @@ def getMovement(triggerfile):
     yaxis = mat['Info']['Yaxis'][0][0]  # (1, 40) each element has 4 values
     movement = mat['Info']['Exp_Seq'][0][0]  # trial type, e.g 1,2,3,4. (1, 40) movement type
     return list(movement[0])
+
+def getMovement_sid10And16(triggerfile):
+    f = h5py.File(triggerfile)
+    tmp=np.array(f['Info']['Exp_Seq'][:]) # tmp.ndim=2
+    tmp = np.concatenate(tmp, axis=0)
+    return [int(i) for i in list(tmp)]
 
 def getForceData(sid,forcefile,trigger,fs):
     import matplotlib.pyplot as plt

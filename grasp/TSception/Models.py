@@ -131,7 +131,7 @@ from torch.autograd import Variable
 ################################################## TSception ######################################################
 # concate along the plan channel, not the time. Try to test if result is better if reserve physical meaning.
 class TSception2(nn.Module):
-    def __init__(self, chnNum, sampling_rate, num_T, num_S, batch_size):  # sampling_rate=1000
+    def __init__(self, chnNum, sampling_rate, num_T, num_S,dropout):  # sampling_rate=1000
         # input_size: EEG channel x datapoint
         super(TSception2, self).__init__()
         # try to use shorter conv kernel to capture high frequency
@@ -172,24 +172,24 @@ class TSception2(nn.Module):
             nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
 
         self.Sception1 = nn.Sequential(
-            nn.Conv2d(num_T * 6, num_T * 6, kernel_size=(chnNum, 1), stride=1, padding=0),
+            nn.Conv2d(num_S * 6, num_S * 6, kernel_size=(chnNum, 1), stride=1, padding=0),
             nn.ReLU(),
             nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
         self.Sception2 = nn.Sequential(
-            nn.Conv2d(num_T * 6, num_T * 6, kernel_size=(int(chnNum * 0.5), 1), stride=(int(chnNum * 0.5), 1),
+            nn.Conv2d(num_S * 6, num_S * 6, kernel_size=(int(chnNum * 0.5), 1), stride=(int(chnNum * 0.5), 1),
                       padding=0),
             nn.ReLU(),
             nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
         self.Sception3 = nn.Sequential(
-            nn.Conv2d(num_T * 6, num_T * 6, kernel_size=(int(chnNum * 0.5 * 0.5), 1),
+            nn.Conv2d(num_S * 6, num_S * 6, kernel_size=(int(chnNum * 0.5 * 0.5), 1),
                       stride=(int(chnNum * 0.5 * 0.5), 1), padding=0),
             nn.ReLU(),
             nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
 
-        self.BN_t = nn.BatchNorm2d(num_T * 6)
-        self.BN_s = nn.BatchNorm2d(num_T * 6)
+        self.BN_t = nn.BatchNorm2d(num_S * 6)
+        self.BN_s = nn.BatchNorm2d(num_S * 6)
 
-        self.drop = nn.Dropout(0.5)
+        self.drop = nn.Dropout(dropout)
         self.avg = nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8))
         self.lstm1 = nn.LSTM(90, 45, batch_first=True)
 
@@ -198,7 +198,9 @@ class TSception2(nn.Module):
             nn.ReLU())
 
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
+        self.float()
         x = torch.squeeze(x, dim=0)
+        batch_size=x.shape[0]
         # y1 = self.Tception1(x)
         y2 = self.Tception2(x)
         y3 = self.Tception3(x)
@@ -227,10 +229,11 @@ class TSception2(nn.Module):
         out = out.permute(0, 3, 1, 2)  # (batchsize, seq, height, width), ([280, 38, 3, 7])
         seqlen = out.shape[1]
         input_size = int(out.shape[2] * out.shape[3])
-        out = out.reshape(280, seqlen, input_size)  # ([280, 38, 21])
+        out = out.reshape(batch_size, seqlen, input_size)  # ([280, 38, 21])
 
         out, _ = self.lstm1(out)
         pred = self.linear1(torch.squeeze(out[:, -1, :]))
+        pred = torch.squeeze(pred)
         pred = torch.unsqueeze(pred, dim=0)
         return pred
 

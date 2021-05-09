@@ -1,10 +1,15 @@
 import mne
 import numpy as np
 from mne.time_frequency import tfr_morlet, tfr_multitaper, tfr_stockwell
+
+from grasp.config import data_dir
 from grasp.utils import activeChannels, badtrials
 import matplotlib.pyplot as plt
 
-epochs = mne.read_epochs('/Users/long/BCI/python_scripts/grasp/process/move1epoch.fif', preload=True)
+sid=6
+chooseOneMovement=0
+#epochs = mne.read_epochs('/Users/long/BCI/python_scripts/grasp/process/move1epoch.fif', preload=True)
+epochs = mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + 'moveEpoch'+str(chooseOneMovement)+'.fif', preload=True)
 
 
 # NOTE: common operation: oneepoch=epochs[0]
@@ -13,13 +18,13 @@ epochs = mne.read_epochs('/Users/long/BCI/python_scripts/grasp/process/move1epoc
 #shorter_epochs = epochs.copy().crop(tmin=-1, tmax=4, include_tmax=True)
 
 ## visuallization
-epochs['move1'].plot_image(picks='seeg', combine='mean')
+#epochs['move1'].plot_image(picks='seeg', combine='mean')
 
 ## frequency analysis
 # define frequencies of interest (log-spaced)
 freqs = np.logspace(*np.log10([55, 150]), num=80)
 n_cycles = freqs / 2.  # different number of cycle per frequency
-power= tfr_morlet(epochs, freqs=freqs, n_cycles=n_cycles, use_fft=True,return_itc=False, decim=3, n_jobs=1)
+power= tfr_morlet(epochs, freqs=freqs, n_cycles=n_cycles, use_fft=True,return_itc=False, decim=4, n_jobs=1)
 chn=15
 power.plot([chn], baseline=(-0.5, 0), mode='logratio', title=power.ch_names[chn])
 

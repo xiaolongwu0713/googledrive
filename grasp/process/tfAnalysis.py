@@ -10,7 +10,7 @@ from grasp.config import *
 
 # Epoch the data before doing this.
 
-sid=16
+sid=1
 
 plot_dir=data_dir + 'PF' + str(sid) +'/tfPlot/'
 import os
@@ -19,7 +19,6 @@ if not os.path.exists(plot_dir):
 
 sessions=4
 movements=4
-vminmax=4
 # vertical lines indicate trigger onset
 movementsLines=[[0,2,5,7.5,15],[0,2,11,13.5,15],[0,2,3,5.5,15],[0,2,5,7.5,15]]
 
@@ -40,8 +39,8 @@ oneEpoch=chooseOneMovement
 movementLines=movementsLines[oneEpoch]
 
 # pick some channel doing some testing or pick all channel during process.
-pickSubChannels=[4,5,6,7,8,9]
-#pickSubChannels=list(range(len(ch_names)))
+#pickSubChannels=[4,5,6,7,8,9]
+pickSubChannels=list(range(len(ch_names)))
 print('Evaluate on '+str(int(len(pickSubChannels)))+' channels.')
 ch_names=[ch_names[i] for i in pickSubChannels]
 singleMovementEpoch=movementEpochs[oneEpoch].pick(picks=ch_names)
@@ -49,14 +48,16 @@ singleMovementEpoch=movementEpochs[oneEpoch].pick(picks=ch_names)
 ## frequency analysis
 # define frequencies of interest (log-spaced)
 fMin,fMax=2,150
-fNum=fMin-fMax
 fstep=1
-freqs=np.arange(fMin,fMax,fstep)
+freqs=np.arange(fMin,fMax,fstep) #148
+fNum=freqs.shape[0]
 #freqs = np.linspace(fMin,fMax, num=fNum)
-fstep=1
-cycleMin,cycleMax=1,150
+cycleMin,cycleMax=8,50
 cycleNum=fNum
-n_cycles = np.linspace(cycleMin,cycleMax, num=cycleNum)  # different number of cycle per frequency
+#n_cycles = np.linspace(cycleMin,cycleMax, num=cycleNum)  # different number of cycle per frequency
+n_cycles=freqs
+#lowCycles=30
+#n_cycles=[8]*lowCycles + [50]*(fNum-lowCycles)
 
 averagePower=[]
 decim=4
@@ -68,6 +69,17 @@ for chIndex,chName in enumerate(ch_names):
     # decim will decrease the sfreq, so 15s will becomes 5s afterward.
     averagePower[chIndex]=np.squeeze(tfr_morlet(singleMovementEpoch, picks=[chIndex],
                freqs=freqs, n_cycles=n_cycles,use_fft=True,return_itc=False, average=True, decim=decim, n_jobs=1).data)
+# plot to test the cycle parameter
+#channel=0
+#averagePower[channel].plot(baseline=(13,14.5), vmin=-4,vmax=4,mode='zscore', title=ch_names[channel]+'_'+str(channel),axes=ax)
+
+# crop the original power data because there is artifact at the beginning and end of the trial.
+power=[]
+crop1=0
+crop2=15
+for channel in range(len(ch_names)):
+    power.append([])
+    power[channel]=averagePower[channel][:,int(crop1*new_fs):int(crop2*new_fs)]
 
 '''
 # use my own zscore function to plot because there is no different between mine and MNE.
@@ -92,15 +104,6 @@ def getIndex(fMin,fMax,fstep,freq):
     index=distance.index(min(distance))
     return index
 
-# convert MNE to numpy and
-# crop the original power data because there is artifact at the beginning and end of the trial.
-power=[]
-crop1=0
-crop2=15
-for channel in range(len(ch_names)):
-    power.append([])
-    power[channel]=averagePower[channel][:,int(crop1*new_fs):int(crop2*new_fs)]
-
 duration=power[0].shape[1] # duration 3500=14s*250
 tickAndVertical=[0,duration-1] # first and last points don't need to change
 # include vertical line points
@@ -124,6 +127,8 @@ ax0=ax[0]
 ax1=ax[1]
 print('Ploting out to '+plot_dir+'.')
 for channel in range(len(ch_names)):
+    if channel%20 == 0:
+        print('Ploting '+str(channel)+'th channel.')
     base=power[channel][:,baseline[0]:baseline[1]]
     basemean=np.mean(base,1)
     basestd=np.std(base,1)

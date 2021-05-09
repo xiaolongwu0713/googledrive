@@ -31,7 +31,7 @@ useChannels[1]=[item for item in [*range(chnNum[1])] if item not in badChannels[
 #matlab: useChannels=[1:14,16:30,47:145]
 #aa=[*range(0,14)]+[*range(15,30)]+[*range(46,145)]. Same as mine.
 triggerChannels[1]=38 # 37-42 all trigger channels
-
+activeChannels[1]=[73,74,92,95,111,116]# 6. Very bad result.
 
 # subject 2
 #SubInfo.UseChn=[1:15,17:30,40:146]; % H9 is missing, create one virtual channel H9 for P25
@@ -92,7 +92,7 @@ anomalys[10]=[]
 useChannels[10]=[item for item in [*range(chnNum[10])] if item not in badChannels[10] if item not in anomalys[10]] # 128
 triggerChannels[10]=34 # 31-38 all trigger channels
 # determine the active channel with tf plot.
-#activeChannels[10]=[*range(55,59)] +[69]+ [*range(118,128)]#15 channels: 127-118,69,58-55
+activeChannels[10]=[]
 # specify the badtrials for all 4 movements.
 badtrials[10].append([26])
 badtrials[10].append([])
@@ -114,7 +114,7 @@ anomalys[16]=[]
 useChannels[16]=[item for item in [*range(chnNum[16])] if item not in badChannels[16] if item not in anomalys[16]] # 128
 triggerChannels[16]=45 # 31-38 all trigger channels
 # determine the active channel with tf plot.
-#activeChannels[10]=[*range(55,59)] +[69]+ [*range(118,128)]#15 channels: 127-118,69,58-55
+activeChannels[16]=[]#15 channels: 127-118,69,58-55
 # specify the badtrials for all 4 movements.
 badtrials[16].append([])
 badtrials[16].append([])

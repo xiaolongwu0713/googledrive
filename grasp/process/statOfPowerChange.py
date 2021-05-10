@@ -14,11 +14,11 @@ import matplotlib.pyplot as plt
 from grasp.config import *
 from grasp.process.channel_settings import *
 
-sid=1
+sid=6
 sessions=4
 movements=4
 
-plot_dir=data_dir + 'PF' + str(sid) +'/ERSD_change/'
+plot_dir=data_dir + 'PF' + str(sid) +'/ERSD_stat_change/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -82,11 +82,11 @@ for movement in range(movements):
             ers = np.mean(one_channel_tf[trial][ers0:ers1, :], 0)
             change_span=erds_span[movement] # [1.5,8.0]
             erd_change_span=erd[int(change_span[0]*new_fs):int(change_span[1]*new_fs)]
-            #erd_change[movement][trial] = max(erd_change_span) - min(erd_change_span)
-            erd_change[movement][chIndex].append(max(erd_change_span) - min(erd_change_span))
+            #erd_change[movement][chIndex].append((max(erd_change_span) - min(erd_change_span))/max(erd_change_span))
+            erd_change[movement][chIndex].append((min(erd_change_span)-erd_change_span[0]) / erd_change_span[0])
             ers_change_span = ers[int(change_span[0] * new_fs):int(change_span[1] * new_fs)]
-            #ers_change[movement][trial] = max(ers_change_span) - min(ers_change_span)
-            ers_change[movement][chIndex].append(max(ers_change_span) - min(ers_change_span))
+            #ers_change[movement][chIndex].append((max(ers_change_span) - min(ers_change_span))/min(ers_change_span))
+            ers_change[movement][chIndex].append((max(ers_change_span) - ers_change_span[0]) / ers_change_span[0])
 
 #ers/d_change[movement][channel][trials....]
 fig, ax = plt.subplots()
@@ -99,14 +99,19 @@ for channel in range(len(ch_names)):
     datasets=[dataset0,dataset1,dataset2,dataset3]
 
     x = np.array([1, 2, 3, 4]) #
+    xlabel=['20% MVC slow','26% MVC slow','20% MVC fast','60% MVC fast',]
     y = [np.mean(dataset) for dataset in datasets]
     e = [np.std(dataset) for dataset in datasets]
     ax.errorbar(x, y, e, linestyle='None', fmt='-o')
-    plt.show()
+    ax.set_xticks(x)
+    fontdict={'fontsize':8}
+    ax.set_xticklabels(xlabel,fontdict=fontdict)
+    ax.set_ylabel('Change %')
+    #plt.show()
     # save
-    figname = plot_dir + 'ERSD_change' + str(channel) + '.png'
+    figname = plot_dir + 'ERSD_stat_change' + str(channel) + '.png'
     fig.savefig(figname, dpi=400)
-    plt.pause(2)
+    plt.pause(0.2)
 
 
 
@@ -120,3 +125,8 @@ ax.clear()
 im=ax.imshow(one_channel_tf[trial],origin='lower',cmap='RdBu_r',vmin=vmin, vmax=vmax)
 ax.set_aspect('auto')
 '''
+#x=np.arange(1,10)
+#y=x
+#plt.plot(x,y)
+#ax=plt.gca()
+#ax.set_ylabel('Change %')

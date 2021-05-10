@@ -12,7 +12,9 @@ anomalys=[0]*999
 useChannels=[0]*999
 triggerChannels=[0]*999 # triggerChannels is stim channel.
 activeChannels=[0]*999
-badtrials=[[]]*999
+# Do not use : [[]]*999. Otherwise if you modify one sublist, you modify all sublist.
+# https://stackoverflow.com/questions/8713620/appending-items-to-a-list-of-lists-in-python
+badtrials=[[] for _ in range(99)]
 
 
 # subject ID start with 1.
@@ -32,6 +34,11 @@ useChannels[1]=[item for item in [*range(chnNum[1])] if item not in badChannels[
 #aa=[*range(0,14)]+[*range(15,30)]+[*range(46,145)]. Same as mine.
 triggerChannels[1]=38 # 37-42 all trigger channels
 activeChannels[1]=[73,74,92,95,111,116]# 6. Very bad result.
+badtrials[1].append([])
+badtrials[1].append([])
+badtrials[1].append([])
+badtrials[1].append([])
+
 
 # subject 2
 #SubInfo.UseChn=[1:15,17:30,40:146]; % H9 is missing, create one virtual channel H9 for P25
@@ -56,6 +63,7 @@ badtrials[2].append([])
 badtrials[2].append([])
 badtrials[2].append([])
 badtrials[2].append([])
+
 
 
 # subject 6

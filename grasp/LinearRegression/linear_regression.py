@@ -1,24 +1,46 @@
+'''
+Linear regression.
+1, linear regression
+2, polynomial regression
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io
 import numpy as np
+from sklearn.pipeline import Pipeline
+
 from grasp.config import data_dir
 from grasp.process.signalProcessUtils import butter_lowpass_filter
-from grasp.utils import freq_input
+from grasp.utils import freq_input, raw_input
 import math
 from scipy import signal
 from sklearn.cross_decomposition import PLSRegression
-
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import PolynomialFeatures
 
 sid=6
 print('Subject ID: '+ str(sid)+ '.')
-plot_dir=data_dir + 'PF' + str(sid) +'/pls/'
+plot_dir=data_dir + 'PF' + str(sid) +'/linear_regression/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
 
+polynomial=False # polynomial fitting
+input_freq_for_linear_reg=False # True: frequency input. False: Raw input.
+standardization=True
+print('Polynomial: '+ str(polynomial)+'.')
+
 print('Read data....')
-data=freq_input(sid,split=False,move2=True)
+# freq_input has too many feature. Memory won't fit after features are raised to power.
+if polynomial==True:
+    data = raw_input(sid,split=False,move2=True)
+if polynomial==False and input_freq_for_linear_reg==True:
+    data = freq_input(sid, split=False, move2=True)
+elif polynomial==False and input_freq_for_linear_reg==False:
+    data = raw_input(sid, split=False, move2=True)
+
+
 train_test_split=0.7 # train_trials/test_trials = 0.5
 
 # extract some trials as test from all 4 moves
@@ -46,10 +68,6 @@ train_data=train_data.transpose(1,0,2) # (channels,trail,times)
 test_data=test_data.transpose(1,0,2)
 train_data=np.reshape(train_data,(train_data.shape[0],-1))
 test_data=np.reshape(test_data,(test_data.shape[0],-1))
-#train_x=train_data[:-2,:] # (114, 1380092)
-#train_y=train_data[-2,:]
-#test_x=test_data[:-2,:]
-#test_y=test_data[-2,:]
 
 # down sample to 1000/5=200HZ
 down_sample_factor=5
@@ -57,20 +75,31 @@ new_frequency=1000/down_sample_factor
 print('Down sample data to ' + str(new_frequency)+'HZ.')
 train_data = signal.decimate(train_data, down_sample_factor, axis=1,ftype='iir',zero_phase=True)  # (116, 276019)
 test_data = signal.decimate(test_data, down_sample_factor, axis=1,ftype='iir',zero_phase=True)
-train_x=train_data[:-2,:] # (114, 1380092)
-train_y=train_data[-2,:]
-test_x=test_data[:-2,:]
-test_y=test_data[-2,:]
 
-# PLS fitting
-pls_components=10
-print('PLS fitting with '+str(pls_components)+' components.')
-pls = PLSRegression(n_components=pls_components)
-pls.fit(train_x.T, train_y) # input: (n_samples, n_features)
+train_x=np.transpose(train_data[:-2,:]) # (114, 1380092)-->(1380092, 114)
+train_y=np.squeeze(train_data[-2,:])
+test_x=np.transpose(test_data[:-2,:])
+test_y=np.squeeze(test_data[-2,:])
 
+if standardization==True:
+    print('Standardization test and traing set. ')
+    scaler = StandardScaler(copy=False) # do inplace scaling
+    scaler.fit(train_x)
+    scaler.transform(train_x)
+    scaler.fit(test_x)
+    scaler.transform(test_x)
+
+linear_reg=LinearRegression()
+if polynomial==True:
+    poly_features=PolynomialFeatures(degree=2)
+    lr_model = Pipeline(steps=[('poly_feature', poly_features), ('regressor', linear_reg)])
+else:
+    lr_model=linear_reg
+
+print('Fitting.')
+lr_model.fit(train_x, train_y)
 print('Predict on test dataset.')
-pred_tmp=pls.predict(test_x.T)
-
+pred_tmp=lr_model.predict(test_x)
 
 # very noisy
 #plt.plot(a[:,0],color='green',linewidth=1)
@@ -85,6 +114,12 @@ fig,ax=plt.subplots()
 ax.plot(pred,color='green',linewidth=0.3)
 ax.plot(test_y,color='red',linewidth=0.3)
 
-figname = plot_dir+'pls_regression.pdf'
+if polynomial==True:
+    figname = plot_dir+'polynomial_linear_regression.pdf'
+if polynomial==False and input_freq_for_linear_reg == True:
+    figname = plot_dir+'linear_regression_on_freq.pdf'
+elif polynomial==False and input_freq_for_linear_reg == False:
+    figname = plot_dir + 'linear_regression_on_raw.pdf'
+
 fig.savefig(figname)
 plt.close(fig)

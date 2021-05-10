@@ -10,13 +10,6 @@ def init_weights(m):
     if (type(m) == nn.Linear or type(m) == nn.Conv2d):
         torch.nn.init.xavier_uniform_(m.weight)
 
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-
-
 ################################################## TSception ######################################################
 class TSception(nn.Module):
     def __init__(self, chnNum, sampling_rate, num_T, num_S, batch_size):  # sampling_rate=1000
@@ -121,17 +114,9 @@ class TSception(nn.Module):
         pred = self.linear1(torch.squeeze(out[:, -1, :]))
         return pred
 
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-
-
-################################################## TSception ######################################################
 # concate along the plan channel, not the time. Try to test if result is better if reserve physical meaning.
 class TSception2(nn.Module):
-    def __init__(self, chnNum, sampling_rate, num_T, num_S,dropout):  # sampling_rate=1000
+    def __init__(self, sampling_rate, chnNum, num_T, num_S,dropout):  # sampling_rate=1000
         # input_size: EEG channel x datapoint
         super(TSception2, self).__init__()
         # try to use shorter conv kernel to capture high frequency

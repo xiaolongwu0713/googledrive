@@ -36,7 +36,7 @@ if total_trials1!=total_trials2:
 
 trainx, trainy = traindata[:, :-2, :], traindata[:, -2, :] #-2 is real force, -1 is target
 valx, valy = valdata[:, :-2, :], valdata[:, -2, :]
-testx, testy = testdata[:, -2, :], testdata[:, -2, :]
+testx, testy = testdata[:, :-2, :], testdata[:, -2, :]
 
 dataset_train = SEEGDataset(trainx, trainy)
 dataset_val = SEEGDataset(valx, valy)

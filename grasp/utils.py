@@ -75,10 +75,10 @@ class SEEGDataset3D(Dataset):
     def __init__(self, x_tensor, y_tensor, T, step):
         self.x = x_tensor
         self.y = y_tensor
-        self.chnNum=x_tensor.shape[0]
+        self.chnNum=x_tensor.shape[1]
         self.T=T
         self.step=step
-        self.totalLen = x_tensor.shape[1]  # ms
+        self.totalLen = x_tensor.shape[2]  # ms
         self.batch_size = int((self.totalLen - T) / step)  # 280
         assert self.x.shape[0] == self.y.shape[0]
     def __getitem__(self, index):

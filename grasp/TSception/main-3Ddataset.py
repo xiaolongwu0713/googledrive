@@ -38,7 +38,7 @@ if total_trials1!=total_trials2:
 
 trainx, trainy = traindata[:, :-2, :], traindata[:, -2, :] #-2 is real force, -1 is target
 valx, valy = valdata[:, :-2, :], valdata[:, -2, :]
-testx, testy = testdata[:, -2, :], testdata[:, -2, :]
+testx, testy = testdata[:, :-2, :], testdata[:, -2, :]
 
 step=500 #ms
 T=1000 #ms
@@ -65,7 +65,7 @@ Lambda = 1e-6
 # __init__(self,input_size, sampling_rate, num_T, num_S, hiden, dropout_rate)
 #net = IMVTensorLSTM(X_train.shape[2], 1, 128)
 #net = IMVTensorLSTM(114, 1, 500)
-net = TSception2(T, step, sampling_rate,chnNum, num_T, num_S,dropout).float()
+net = TSception2(sampling_rate,chnNum, num_T, num_S,dropout).float()
 if(enable_cuda):
     net.cuda()
 optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
@@ -93,6 +93,9 @@ for epoch in range(100):
         if (enable_cuda):
             x = trainx.float().cuda()
             target = trainy.float().cuda()
+        else:
+            x = trainx.float()
+            target = trainy.float()
         y_pred = net(x)
         # target = torch.from_numpy(target)
 
@@ -120,6 +123,9 @@ for epoch in range(100):
                 if (enable_cuda):
                     vx = vx.float().cuda()
                     vtarget = vtarget.float().cuda()
+                else:
+                    vx = vx.float()
+                    vtarget = vtarget.float()
                 y_pred = net(vx)
                 loss3 = criterion(y_pred.squeeze(), vtarget.squeeze())
                 with open(result_dir + "testlose.txt", "a") as f:

@@ -1,5 +1,7 @@
 # tf_firstAvegThenZscore.py
-import sys; print('Python %s on %s' % (sys.version, sys.platform))
+import sys
+
+print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 
 from mne.time_frequency import tfr_morlet, tfr_multitaper

@@ -1,7 +1,7 @@
 import random
 import torch
 import mne
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import Dataset, DataLoader
 from grasp.config import *
 import os
@@ -93,7 +93,7 @@ class SEEGDataset3D(Dataset):
             yd[bs,0] = abs(trainy[bs*self.step + self.T +1] - trainy[bs*self.step + self.T -50])*10+0.05 # force derative
         yd[:,0] = [abs(item) / 5 if abs(item) > 0.2 else abs(item) for item in yd[:,0]]
         #return np.squeeze(x, axis=0), np.squeeze(y, axis=0) # 0 dimm is batch for dataloader, but not the real batch.
-        return x.astype(np.float32),y.astype(np.float32) # x shape: ([28, 1, 110, 1000]), y shape: ([28, 1])
+        return x.astype(np.float32),np.squeeze(y).astype(np.float32) # return shape: ([28, 1, 110, 1000]), y shape: ([28,])
         #return x.astype(np.float32), np.expand_dims(y, axis=1).astype(np.float32)
 
     def __len__(self):
@@ -383,14 +383,24 @@ def raw_input(sid,split=True,move2=True,activeChannels=activeChannels,badtrials=
         return traindata, valdata, testdata
     return moves
 
-def freq_input(sid,split=True,move2=True):
+# normalized_frequency_input=True will read frequency input that normalized.
+# norm_input=True will normalize frequency and raw togather.
+def freq_input(sid,split=True,move2=True,normalized_frequency_input=True,norm_input=True):
     movements=4
-    file_prefix = 'moveBandEpoch'
     moves=[]
-    for i in range(movements):
-        moves.append([])
-        # ignore the stim channel
-        moves[i]=mne.read_epochs(data_dir+ 'PF'+str(sid)+'/data/'+file_prefix+str(i)+'.fif').get_data(picks=['seeg', 'emg']).transpose(1,2,0)
+    if normalized_frequency_input==True:
+        file_prefix = 'move_normalized_band_epoch'
+        for i in range(movements):
+            moves.append([])
+            moves[i] = mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + file_prefix + str(i) + '.fif').\
+                get_data(picks=['seeg', 'emg']).transpose(1, 2, 0)
+    elif normalized_frequency_input==False:
+        file_prefix = 'moveBandEpoch'
+        for i in range(movements):
+            moves.append([])
+            # ignore the stim channel
+            moves[i]=mne.read_epochs(data_dir+ 'PF'+str(sid)+'/data/'+file_prefix+str(i)+'.fif').\
+                get_data(picks=['seeg', 'emg']).transpose(1,2,0)
 
     if move2==True:
         allmove=[0,1,2,3]
@@ -402,6 +412,18 @@ def freq_input(sid,split=True,move2=True):
         alltrialidx = range(moves[i].shape[2])  # 0--39
         trialidx = np.setdiff1d(alltrialidx, badtrials[sid][i])
         moves[i] = moves[i][:, :, trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
+    # standardization
+    print('Standardization feature and target based on movement 0.')
+    scaler = StandardScaler()  # (97chn, 3750time, 40trial)
+    # choose movement 0 as base
+    base_movement = 0
+    fit_on_this = moves[base_movement].transpose(0, 2, 1)  # (chn, time,trial)-->(chn,trial,time)
+    fit_on_this = np.reshape(fit_on_this, (fit_on_this.shape[0], -1))
+    scaler.fit(fit_on_this.T)  # (n_samples, n_features)
+    for movement in range(movements):
+        for trial in range(moves[movement].shape[2]):
+            moves[movement][:, :, trial] = np.transpose(scaler.transform(moves[movement][:, :, trial].T))
+
     if split==True:
         traindatatmp=[]
         valdatatmp=[]

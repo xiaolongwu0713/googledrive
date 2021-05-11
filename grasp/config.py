@@ -6,14 +6,15 @@ except TypeError as err:
     print(err)
 
 tmp_dir='/tmp/'
-root_dir='/Users/long/BCI/python_scripts/googleDrive/' # this is project root
 
 import os, re
 location=os.getcwd()
 if re.compile('/Users/long/').match(location):
     data_dir='/Volumes/Samsung_T5/seegData/' # preprocessed data
+    root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
 elif re.compile('/content/drive').match(location):
     data_dir='/content/drive/MyDrive/data/' # googleDrive
+    root_dir='/content/drive/MyDrive/' # googleDrive
 processed_data=data_dir
 
 paradigm=1
@@ -23,7 +24,8 @@ fbands.append([0.5, 4])
 fbands.append([4, 8])
 fbands.append([8, 12]) # mu(motor cortex)/alpha(visual cortex)
 fbands.append([13, 30]) # beta
-fbands.append([60, 140]) # gamma: 55-85
+fbands.append([60, 125]) # genBandPower_znormalied.py
+#fbands.append([60, 140]) # gamma: 55-85
 
 ERD=[13,30]
 ERS=[55,100]

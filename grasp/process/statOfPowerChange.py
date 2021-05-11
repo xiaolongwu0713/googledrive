@@ -43,21 +43,28 @@ def getIndex(fMin,fMax,fstep,freq):
     index=distance.index(min(distance))
     return index
 
+crop1=0
+crop2=15
 decim=4
 new_fs=1000/decim
 base1=10 #s
 base2=13 #s
 erds_span=[[1.5,8.0],[1.5,14.0],[1.5,6.0],[1.5,8.0]]
-baseline = [int((base1)*new_fs), int((base2)*new_fs)]
+baseline=[[] for _ in range(movements)]
+baseline[0] = [int((10-crop1)*new_fs), int((13-crop1)*new_fs)]
+baseline[1] = [int((14-crop1)*new_fs), int((15-crop1)*new_fs)]
+baseline[2] = [int((10-crop1)*new_fs), int((13-crop1)*new_fs)]
+baseline[3] = [int((10-crop1)*new_fs), int((13-crop1)*new_fs)]
+
 erd_change=[] # ers_change[movement][channel][trials....]
 ers_change=[]
-for movement in range(movements):
+for chIndex,chName in enumerate(ch_names):
+    print('Processing channel ' + chName + '.')
     erd_change.append([])
     ers_change.append([])
-    for chIndex,chName in enumerate(ch_names):
-        erd_change[movement].append([])
-        ers_change[movement].append([])
-        print('Processing channel '+chName+'.')
+    for movement in range(movements):
+        erd_change[chIndex].append([])
+        ers_change[chIndex].append([])
         #one_channel=movementEpochs[movement].copy().pick(picks=[chIndex]) # pick the channle below
         one_channel_tf=np.squeeze(tfr_morlet(
             movementEpochs[movement], picks=[chIndex],freqs=freqs, n_cycles=n_cycles,use_fft=True,
@@ -67,7 +74,7 @@ for movement in range(movements):
         for trial in range(40):
             #erd_change[movement][chIndex].append([])
             #ers_change[movement][chIndex].append([])
-            base = one_channel_tf[trial,:, baseline[0]:baseline[1]]
+            base = one_channel_tf[trial,:, baseline[movement][0]:baseline[movement][1]]
             basemean = np.mean(base, 1)
             basestd = np.std(base, 1)
             one_channel_tf[trial] = one_channel_tf[trial] - basemean[:, None]
@@ -78,24 +85,26 @@ for movement in range(movements):
             ers0 = getIndex(fMin, fMax, fstep, ERS[0])
             ers1 = getIndex(fMin, fMax, fstep, ERS[1])
 
+            compare_with=np.mean(one_channel_tf[trial][:,baseline[movement][0]:baseline[movement][1]])
             erd = np.mean(one_channel_tf[trial][erd0:erd1, :], 0)
             ers = np.mean(one_channel_tf[trial][ers0:ers1, :], 0)
             change_span=erds_span[movement] # [1.5,8.0]
-            erd_change_span=erd[int(change_span[0]*new_fs):int(change_span[1]*new_fs)]
+            erd_change_span = erd[int(change_span[0] * new_fs):int(change_span[1] * new_fs)]
             #erd_change[movement][chIndex].append((max(erd_change_span) - min(erd_change_span))/max(erd_change_span))
-            erd_change[movement][chIndex].append((min(erd_change_span)-erd_change_span[0]) / erd_change_span[0])
+            erd_change[chIndex][movement].append((min(erd_change_span)-compare_with))# / compare_with): RuntimeWarning: divide by zero encountered...
             ers_change_span = ers[int(change_span[0] * new_fs):int(change_span[1] * new_fs)]
             #ers_change[movement][chIndex].append((max(ers_change_span) - min(ers_change_span))/min(ers_change_span))
-            ers_change[movement][chIndex].append((max(ers_change_span) - ers_change_span[0]) / ers_change_span[0])
+            ers_change[chIndex][movement].append((max(ers_change_span) - compare_with))# / compare_with)
 
 #ers/d_change[movement][channel][trials....]
 fig, ax = plt.subplots()
+print('Plotting...')
 for channel in range(len(ch_names)):
     ax.clear()
-    dataset0=erd_change[0][channel]
-    dataset1=erd_change[1][channel]
-    dataset2=erd_change[2][channel]
-    dataset3=erd_change[3][channel]
+    dataset0=erd_change[channel][0]
+    dataset1=erd_change[channel][1]
+    dataset2=erd_change[channel][2]
+    dataset3=erd_change[channel][3]
     datasets=[dataset0,dataset1,dataset2,dataset3]
 
     x = np.array([1, 2, 3, 4]) #
@@ -109,7 +118,7 @@ for channel in range(len(ch_names)):
     ax.set_ylabel('Change %')
     #plt.show()
     # save
-    figname = plot_dir + 'ERSD_stat_change' + str(channel) + '.png'
+    figname = plot_dir + 'ERD_stat_change' + str(channel) + '.png'
     fig.savefig(figname, dpi=400)
     plt.pause(0.2)
 

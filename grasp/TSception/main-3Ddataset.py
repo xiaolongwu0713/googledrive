@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from grasp.TSception.utils import regulization
 from grasp.utils import SEEGDataset, freq_input, SEEGDataset3D, cuda_or_cup, set_random_seeds
 from grasp.TSception.Models import TSception2
+from grasp.braindecode.Models import shallowConv,deepConv
 from grasp.process.channel_settings import badtrials
 from grasp.config import root_dir
 
@@ -29,9 +30,8 @@ sid=6
 #################
 #%%capture
 # suppress the output
-sampling_rate=1000
-#traindata, valdata, testdata = rawData2('raw',activeChannels,move2=False)  # (chns, 15000/15001, 118) (channels, time, trials)
-traindata, valdata, testdata = freq_input(sid,split=True,move2=True,normalized_frequency_input=True)
+normalized_frequency_input=False
+traindata, valdata, testdata = freq_input(sid,split=True,move2=True,normalized_frequency_input=normalized_frequency_input)
 traindata = traindata.transpose(2, 0, 1)  #-->(trials94,channels,  time)
 valdata = valdata.transpose(2, 0, 1) # 32
 testdata = testdata.transpose(2, 0, 1)  # 8
@@ -46,8 +46,14 @@ valx, valy = valdata[:, :-2, :], valdata[:, -2, :]
 testx, testy = testdata[:, :-2, :], testdata[:, -2, :]
 
 #######################
-step=500 #ms
-T=1000 #ms
+if normalized_frequency_input==True:
+    fs=250
+    step=125
+    T=250
+else:
+    fs=1000
+    step=500 #ms
+    T=1000 #ms
 dataset_train = SEEGDataset3D(trainx, trainy,T,step)
 dataset_val = SEEGDataset3D(valx, valy,T,step)
 dataset_test = SEEGDataset3D(testx, testy,T,step)
@@ -57,7 +63,8 @@ dataset_test = SEEGDataset3D(testx, testy,T,step)
 train_loader = DataLoader(dataset=dataset_train, batch_size=1, shuffle=True, pin_memory=False)
 val_loader = DataLoader(dataset=dataset_val, batch_size=1, pin_memory=False)
 test_loader = DataLoader(dataset=dataset_test, batch_size=1, pin_memory=False)
-##########################3
+##########################
+# TSception parameter
 chnNum=trainx.shape[1]
 learning_rate=0.001
 epochs=100
@@ -68,11 +75,21 @@ num_S = 3
 hidden_size=222
 dropout=0.5
 Lambda = 1e-6
+#################################
+# braindecode parameter
+checkshape=torch.squeeze(next(iter(test_loader))[0])
+length=checkshape.shape[2] # torch.Size([28, 90, 1000])
+convfeature=40
+tkernelSize=200
+avgpoolKernel=100
+maxpoolKernel=3
+maxpoolStride=3
+blockKernelSize=10
 #######################################
-# __init__(self,input_size, sampling_rate, num_T, num_S, hiden, dropout_rate)
-#net = IMVTensorLSTM(X_train.shape[2], 1, 128)
-#net = IMVTensorLSTM(114, 1, 500)
-net = TSception2(sampling_rate,chnNum, num_T, num_S,dropout).float()
+sampling_rate=1000
+
+#net = TSception2(sampling_rate,chnNum, num_T, num_S,dropout).float()
+net=shallowConv(length, chnNum, convfeature, tkernelSize,avgpoolKernel,dropout)
 if(enable_cuda):
     net.cuda()
 optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)

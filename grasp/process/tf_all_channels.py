@@ -12,7 +12,7 @@ from grasp.config import *
 
 # Epoch the data before doing this.
 
-sid=1
+sid=6
 
 plot_dir=data_dir + 'PF' + str(sid) +'/tfPlot/'
 import os
@@ -45,7 +45,7 @@ movementLines=movementsLines[oneEpoch]
 pickSubChannels=list(range(len(ch_names)))
 print('Evaluate on '+str(int(len(pickSubChannels)))+' channels.')
 ch_names=[ch_names[i] for i in pickSubChannels]
-singleMovementEpoch=movementEpochs[oneEpoch].pick(picks=ch_names)
+singleMovementEpoch=movementEpochs[0].pick(picks=ch_names)
 
 ## frequency analysis
 # define frequencies of interest (log-spaced)
@@ -118,8 +118,14 @@ tickAndVertical=tmp
 #power=np.load('/tmp/power.npy')
 vmin=-4
 vmax=4
-base1=10 #s
-base2=13 #s
+if chooseOneMovement in [0,2,3]:
+    base1=10 #s
+    base2=13 #s
+elif chooseOneMovement==1:
+    base1 = 14  # s
+    base2 = 14.5  # s
+else:
+    raise SystemExit("Choose one epoch: 0,1,2,3.")
 baseline = [int((base1-crop1)*new_fs), int((base2-crop1)*new_fs)]
 
 #(300, 5001)
@@ -140,7 +146,8 @@ for channel in range(len(ch_names)):
     ax0.set_aspect('auto')
 
     ax0.set_xticks(tickAndVertical)
-    x = [crop1,2.0, 5.0, 7.5,crop2]
+    #x = [crop1,2.0, 5.0, 7.5,crop2]
+    x = [crop1, movementLines[1], movementLines[2], movementLines[3], crop2]
     ax0.set_xticklabels(x)
 
     #plot vertical lines

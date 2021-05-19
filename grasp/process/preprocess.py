@@ -199,6 +199,7 @@ del rawOf4
 
 
 ### create info and raw data
+# Todo: add index to ch_names.
 ch_names=np.append(chn_names,['force','target','stim']) # events, emg. total 112 channels = 110+2
 #ch_types=np.repeat(np.array('seeg'),126)
 ch_types=np.concatenate((np.repeat(np.array('seeg'),chnNumber),np.repeat(np.array('emg'),2),np.repeat(np.array('stim'),1)))

@@ -1,5 +1,5 @@
 '''
-Compare TF plot among different movement.
+Compare TF plot of different movement.
 '''
 import sys
 
@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from grasp.config import *
 
 
-sid=6
+sid=2
 
 plot_dir=data_dir + 'PF' + str(sid) +'/tf_compare_movement/'
 import os
@@ -42,9 +42,10 @@ fNum=freqs.shape[0]
 cycleMin,cycleMax=8,50
 cycleNum=fNum
 #n_cycles = np.linspace(cycleMin,cycleMax, num=cycleNum)  # different number of cycle per frequency
-n_cycles=freqs
+first_half=freqs[:int(fNum/2)]
+second_half=[int(i) for i in freqs[-(len(freqs)-len(first_half)):]/4]
+n_cycles=list(first_half)+list(second_half)
 #lowCycles=30
-#n_cycles=[8]*lowCycles + [50]*(fNum-lowCycles)
 
 averagePower=[]
 decim=4
@@ -145,7 +146,7 @@ for channel in range(len(ch_names)):
         fig.colorbar(im, orientation="horizontal",fraction=0.046, pad=0.0,ax=ax[movement])
 
     # save
-    figname = plot_dir + 'tf_compare_movement_'+str(channel) + '.png'
+    figname = plot_dir + 'tf_compare_movement_'+str(channel)+'_'+ch_names[channel] + '.png'
     fig.savefig(figname, dpi=400)
 
     # clean up plotting area

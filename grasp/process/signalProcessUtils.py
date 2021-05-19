@@ -19,3 +19,9 @@ def butter_lowpass_filter(data, cutoff, fs, order=5):
 #plt.title("Lowpass Filter Frequency Response")
 #plt.xlabel('Frequency [Hz]')
 #plt.grid()
+
+def getIndex(fMin, fMax, fstep, freq):
+    freqs = [*range(fMin, fMax, fstep)]
+    distance = [abs(fi - freq) for fi in freqs]
+    index = distance.index(min(distance))
+    return index

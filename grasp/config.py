@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import mne
 try:
     mne.set_config('MNE_LOGGING_LEVEL', 'ERROR')
@@ -39,7 +40,6 @@ ERS=[55,100]
 #Lambda = 1e-6
 preds=[]
 targets=[]
-
 
 def printVariables(variable_names):
     for k in variable_names:

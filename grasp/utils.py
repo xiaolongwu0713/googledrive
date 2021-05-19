@@ -414,15 +414,16 @@ def freq_input(sid,split=True,move2=True,normalized_frequency_input=True,norm_in
         moves[i] = moves[i][:, :, trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
     # standardization
     print('Standardization feature and target based on movement 0.')
-    scaler = StandardScaler()  # (97chn, 3750time, 40trial)
+    #scaler = StandardScaler()  # (97chn, 3750time, 40trial)
+    scaler =  MinMaxScaler()
     # choose movement 0 as base
     base_movement = 0
-    fit_on_this = moves[base_movement].transpose(0, 2, 1)  # (chn, time,trial)-->(chn,trial,time)
+    fit_on_this = moves[base_movement][:-2,:,:].transpose(0, 2, 1)  # (chn, time,trial)-->(chn,trial,time)
     fit_on_this = np.reshape(fit_on_this, (fit_on_this.shape[0], -1))
     scaler.fit(fit_on_this.T)  # (n_samples, n_features)
     for movement in range(movements):
         for trial in range(moves[movement].shape[2]):
-            moves[movement][:, :, trial] = np.transpose(scaler.transform(moves[movement][:, :, trial].T))
+            moves[movement][:-2, :, trial] = np.transpose(scaler.transform(moves[movement][:-2, :, trial].T))
 
     if split==True:
         traindatatmp=[]

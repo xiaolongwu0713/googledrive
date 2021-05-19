@@ -65,16 +65,17 @@ Lambda = 1e-6
 checkshape=torch.squeeze(next(iter(test_loader))[0])
 length=checkshape.shape[2] # torch.Size([28, 90, 1000])
 
-#shallowConv:def __int__(self,length, chnNum, convfeature,kernelSize,avgpoolKernel,dropout):
+#shallowConv:def __init__(self,length,chnNum,convfeature,kernelSize,avgpoolKernel,dropout)
 #deepConv: def __init__(self,length,chnNum,convfeature,kernelSize,maxpoolKernel,maxpoolStride,dropout):
-net=deepConv(length, chnNum, convfeature, tkernelSize,blockKernelSize, maxpoolKernel,maxpoolStride,dropout)
+net=shallowConv(length, chnNum, convfeature, tkernelSize,avgpoolKernel,dropout)
+#net=deepConv(length, chnNum, convfeature, tkernelSize,blockKernelSize, maxpoolKernel,maxpoolStride,dropout)
 optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
 criterion = nn.MSELoss()
 
 #checkpoint = torch.load('/Users/long/BCI/python_scripts/grasp/TSceptionWithoutMovement2/checkpoint20.pth')
 #net.load_state_dict(checkpoint['model_state_dict'])
 #optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-debugg=False
+#debugg=False
 debugg=True
 for epoch in range(epochs):
     print("------ epoch " + str(epoch) + " -----")

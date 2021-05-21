@@ -122,7 +122,7 @@ for chIndex,chName in enumerate(ch_names):
             ers0 = getIndex(fMin, fMax, fstep, ERS[0])
             ers1 = getIndex(fMin, fMax, fstep, ERS[1])
 
-            erd = np.mean(one_channel_tf[trial][erd0:erd1, :], 0)
+            erd = np.mean(one_channel_tf[trial][erd0:erd1, :], 0) # It's a line.
             ers = np.mean(one_channel_tf[trial][ers0:ers1, :], 0)
             erd_compare_with = np.mean(erd[baseline[movement][0]:baseline[movement][1]])
             ers_compare_with = np.mean(ers[baseline[movement][0]:baseline[movement][1]])

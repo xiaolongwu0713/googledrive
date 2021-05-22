@@ -4,6 +4,7 @@ import mne
 try:
     mne.set_config('MNE_LOGGING_LEVEL', 'ERROR')
 except TypeError as err:
+    print('error happens.')
     print(err)
 
 tmp_dir='/tmp/'
@@ -19,6 +20,8 @@ elif re.compile('/content/drive').match(location):
 processed_data=data_dir
 
 paradigm=1
+
+default_frequency=1000
 
 fbands=[] #delta, theta, alpha,beta,gamma
 fbands.append([0.5, 4])

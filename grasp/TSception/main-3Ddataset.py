@@ -26,12 +26,11 @@ if not os.path.exists(result_dir):
     os.makedirs(result_dir)
 
 ###############
-sid=6
+sid=2
 #################
 #%%capture
 # suppress the output
-normalized_frequency_input=False
-traindata, valdata, testdata = freq_input(sid,split=True,move2=True,normalized_frequency_input=normalized_frequency_input)
+traindata, valdata, testdata = freq_input(sid,split=True,move2=True,input='frequency_and_raw')
 traindata = traindata.transpose(2, 0, 1)  #-->(trials94,channels,  time)
 valdata = valdata.transpose(2, 0, 1) # 32
 testdata = testdata.transpose(2, 0, 1)  # 8
@@ -46,7 +45,7 @@ valx, valy = valdata[:, :-2, :], valdata[:, -2, :]
 testx, testy = testdata[:, :-2, :], testdata[:, -2, :]
 
 #######################
-if normalized_frequency_input==True:
+if input=='normalized_frequency_and_raw':
     fs=250
     step=125
     T=250
@@ -151,9 +150,6 @@ for epoch in range(100):
                     vx = vx.float()
                     vtarget = vtarget.float()
                 y_pred = net(vx)
-                loss3 = criterion(y_pred.squeeze(), vtarget.squeeze())
-                with open(result_dir + "testlose.txt", "a") as f:
-                    f.write(str(loss3) + "\n")
 
                 y_pred = y_pred.squeeze().cpu().detach().numpy()
                 vtarget = vtarget.squeeze().cpu().numpy()
@@ -161,9 +157,14 @@ for epoch in range(100):
                 vtargetAll.append(vtarget)
 
         vpredAll = np.concatenate(vpredAll, axis=0)
-        save_pred=result_dir + 'prediction_epoch' + str(epoch) + '.npy'
-        np.save(save_pred, vpredAll)
         vtargetAll = np.concatenate(vtargetAll, axis=0)
+        loss_val = criterion(vpredAll.squeeze(), vtargetAll.squeeze())
+        with open(result_dir + "testlose.txt", "a") as f:
+            f.write(str(loss_val) + "\n")
+
+        pred_target=np.concatenate((vpredAll[:,None],vtargetAll[:,None]),axis=1)
+        save_pred=result_dir + 'prediction_epoch' + str(epoch) + '.npy'
+        np.save(save_pred, pred_target)
 
         fig, ax = plt.subplots(figsize=(6, 3))
         plt.ion()

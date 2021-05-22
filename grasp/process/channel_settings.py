@@ -57,7 +57,7 @@ useChannels[2]=[item for item in [*range(chnNum[2])] if item not in badChannels[
 #matlab: useChannels=[1:14,16:30,47:145]
 #aa=[*range(0,14)]+[*range(15,30)]+[*range(46,145)]. Same as mine.
 triggerChannels[2]=31 # 31-38 all trigger channels
-activeChannels[2]=[*range(61,69)] +[76,77,78]+ [*range(126,131)]#15 channels: 127-118,69,58-55
+activeChannels[2]=[*range(61,69)] +[76,77,78]+ [*range(126,131)]#16 channels: 127-118,69,58-55
 # specify the badtrials for all 4 movements.
 badtrials[2].append([])
 badtrials[2].append([])
@@ -71,7 +71,7 @@ FS[6]=2000
 useChannels[6]=np.concatenate((np.arange(0,15),np.arange(16,29),np.arange(37,119))) #110 channels
 triggerChannels[6]=29
 # activeChannels[6]: 19 channels
-activeChannels[6] = [i-1 for i in [8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107,108, 109, 110]]# 111 is force channel, index start from 1
+activeChannels[6] = [i-1 for i in [8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107,108, 109, 110]]#19 chns. 111 is force channel, index start from 1
 
 # badtrials[sid][trialNum]
 badtrials[6].append([])
@@ -100,7 +100,7 @@ anomalys[10]=[]
 useChannels[10]=[item for item in [*range(chnNum[10])] if item not in badChannels[10] if item not in anomalys[10]] # 128
 triggerChannels[10]=34 # 31-38 all trigger channels
 # determine the active channel with tf plot.
-activeChannels[10]=[37]+[*range(62,71)]+[81]
+activeChannels[10]=[37]+[*range(62,71)]+[81] # 11 chns
 # specify the badtrials for all 4 movements.
 badtrials[10].append([26])
 badtrials[10].append([])

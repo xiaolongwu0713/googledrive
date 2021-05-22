@@ -1,6 +1,7 @@
 import random
 import torch
 import mne
+from scipy import signal
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import Dataset, DataLoader
 from grasp.config import *
@@ -383,19 +384,27 @@ def raw_input(sid,split=True,move2=True,activeChannels=activeChannels,badtrials=
         return traindata, valdata, testdata
     return moves
 
-# normalized_frequency_input=True will read frequency input that normalized.
-# norm_input=True will normalize frequency and raw togather.
-def freq_input(sid,split=True,move2=True,normalized_frequency_input=True,norm_input=True):
+# normalized_frequency_and_raw;(will read power of different frequency range that normalized against baseline just like TF analysis.)
+# frequency_and_raw;(will read power of different frequency range without norm and the raw data)
+# raw;(only read the raw data.)
+def freq_input(sid,split=True,move2=True,input='normalized_frequency_and_raw',norm_input=True):
     movements=4
     moves=[]
-    if normalized_frequency_input==True:
+    if input=='normalized_frequency_and_raw':
         file_prefix = 'move_normalized_band_epoch'
         for i in range(movements):
             moves.append([])
             moves[i] = mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + file_prefix + str(i) + '.fif').\
                 get_data(picks=['seeg', 'emg']).transpose(1, 2, 0)
-    elif normalized_frequency_input==False:
+    elif input=='frequency_and_raw':
         file_prefix = 'moveBandEpoch'
+        for i in range(movements):
+            moves.append([])
+            # ignore the stim channel
+            moves[i]=mne.read_epochs(data_dir+ 'PF'+str(sid)+'/data/'+file_prefix+str(i)+'.fif').\
+                get_data(picks=['seeg', 'emg']).transpose(1,2,0)
+    elif input=='raw':
+        file_prefix = 'moveEpoch'
         for i in range(movements):
             moves.append([])
             # ignore the stim channel
@@ -649,33 +658,36 @@ def readRestForModelTest():
 
     return testx,testy
 
-def ukfInput(trainNum=10):
+def ukfInput(sid,testNum=2):
     # trainNum = 10
     # 30 active channels
-    datafile1 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move1TrainData3D.mat'
-    datafile2 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move2TrainData3D.mat'
-    datafile3 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move3TrainData3D.mat'
-    datafile4 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move4TrainData3D.mat'
-    data1 = scipy.io.loadmat(datafile1)
-    data2 = scipy.io.loadmat(datafile2)
-    data3 = scipy.io.loadmat(datafile3)
-    data4 = scipy.io.loadmat(datafile4)
+    movements=4
+    moves=[]
+    file_prefix = 'moveBandEpoch'
+    print('Reading input.')
+    for i in range(movements):
+        moves.append([])
+        # ignore the stim channel
+        moves[i] = mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + file_prefix + str(i) + '.fif'). \
+            get_data(picks=['seeg', 'emg']).transpose(1, 2, 0)
 
-    traintmp1 = data1['train']  # (182, 299, 36)
-    traintmp2 = data2['train']  # (182, 299, 37)
-    traintmp3 = data3['train']  # (182, 299, 30)
-    traintmp4 = data4['train']  # (182, 299, 38)
+    # discard the bad trials
+    for i in range(movements):
+        # movecode=str(int(float(i)) + 1)
+        alltrialidx = range(moves[i].shape[2])  # 0--39
+        trialidx = np.setdiff1d(alltrialidx, badtrials[sid][i])
+        moves[i] = moves[i][:, :,trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
 
     # total train number: 10+10+10+10=40
-    train = np.concatenate((traintmp1[:, :, :trainNum], traintmp2[:, :, :trainNum], traintmp3[:, :, :trainNum], traintmp4[:, :, :trainNum]),axis=2)  # (182, 299, 98)
+    test = np.concatenate(([movei[:, :, :testNum] for movei in moves]),axis=2)  # (182, 299, 8)
     # rest are testing trials
-    test = np.concatenate((traintmp1[:, :, trainNum:], traintmp2[:, :, trainNum:], traintmp3[:, :, trainNum:], traintmp4[:, :, trainNum:]),axis=2)  # (182, 299, 6)
+    train = np.concatenate(([movei[:, :, testNum:] for movei in moves]),axis=2)  # (182, 299, 152)
 
     trainx = train[:-2, :, :]  # (180, 299, 30)
     trainx = trainx.swapaxes(1, 2)
     trainx = trainx.swapaxes(0, 1)
-    trainx = trainx.swapaxes(1, 2) # (30, 299, 180)
-    trainy = train[-2, :, :]  # (299, 30)
+    trainx = trainx.swapaxes(1, 2) # (30, 299, 180)(trials, time,chan) (152, 15001, 114)
+    trainy = train[-2, :, :]  # (299, 30) #(15001, 152)
 
     testx = test[:-2, :, :]  # (180, 299, 74)
     testx = testx.swapaxes(1, 2)
@@ -683,19 +695,22 @@ def ukfInput(trainNum=10):
     testx = testx.swapaxes(1, 2)  # (74, 299, 180)
     testy = test[-2, :, :]  # (299, 74)
 
-    dt=0.05 #ms
+    # avg-windowing
+    #moves[i]=signal.decimate(moves[i], int(1000/50), axis=1, ftype='iir', zero_phase=True)
+
+    dt=0.001 #ms
     # Y should start from the second time point, discard 0 and 1.
     trainy_tmp=trainy.T # (30, 299)
-    diff1=trainy_tmp[:,1:]-trainy_tmp[:,:-1] # (30, 298)
+    diff1=trainy_tmp[:,1:]-trainy_tmp[:,:-1] # (30, 298)  (152, 14951)
     rateTrain=diff1[:,1:] # (30, 297)
-    diff2=diff1[:,1:]-diff1[:,:-1] # (30, 297)
+    diff2=diff1[:,1:]-diff1[:,:-1] # (30, 297) (152, 14901)
     yankTrain=diff2
 
     trainy=np.zeros((yankTrain.shape[0],yankTrain.shape[1],3)) # (30 trials, 297 time points, 3 elements), 3 element: force, rate, yank
     trainy[:,:,0] = trainy_tmp[:, 2:]  # (30, 297)
     trainy[:,:,1] = rateTrain/dt
     trainy[:,:,2] = yankTrain/dt
-    trainy=trainy
+    #trainy=trainy
 
     # Y should start from the second time point
     #TODO: plot show yank provide little info, much like force rate

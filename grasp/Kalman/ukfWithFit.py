@@ -5,23 +5,31 @@ import numpy as np
 from numpy.random import randn
 from filterpy.kalman import UnscentedKalmanFilter as UKF, MerweScaledSigmaPoints
 import matplotlib.pyplot as plt
-from grasp.utils import ukfInput
 from sklearn.linear_model import Ridge
 
+from grasp.utils import ukfInput
+from grasp.config import *
 
-basedir='/Users/long/BCI/python_scripts/grasp/Kalman/'
-resultdir=basedir+'result/'
+sid=6
+print('Subject ID: '+ str(sid)+ '.')
+plot_dir=data_dir + 'PF' + str(sid) +'/ukf/'
+import os
+if not os.path.exists(plot_dir):
+    os.makedirs(plot_dir)
+
 
 # In Kalman, x mean force info, y mean seeg feature
-# trainy/testy: (trials 30 or 74 , time points 299 ,feature 180)
-# trainx/testx: (trials 30 or 74,time points 297, type 3) (30, 297, 3)
-trainy, trainx, testy, testx = ukfInput()
+# trainy/testy: (trials 30 or 74 , time points 299 , seeg features)
+# trainx/testx: (trials 30 or 74,time points 297, 3 types movement info) (30, 297, 3)
+trainy, trainx, testy, testx = ukfInput(sid)
+
+moves[i]=signal.decimate(moves[i], int(1000/50), axis=1, ftype='iir', zero_phase=True)
 # testy: (74, 299, 180)
 # flatten to 2d
-testy=np.transpose(np.reshape(testy,(testy.shape[0]*testy.shape[1],testy.shape[2])))
+testy=np.transpose(np.reshape(testy,(testy.shape[0]*testy.shape[1],testy.shape[2]))) #(114, 120008)
 # testx: (74, 297, 3)
 # flatten to 2d
-testx=np.transpose(np.reshape(testx,(testx.shape[0]*testx.shape[1],testx.shape[2]))) # (3, 21978)
+testx=np.transpose(np.reshape(testx,(testx.shape[0]*testx.shape[1],testx.shape[2]))) # (3, 119992)
 target=testx[0,:]
 
 # flatten to 2d
@@ -109,7 +117,7 @@ for t in predictLen:
     fvar.append(ukf.P[0,0])
     predict.append(ukf.x[0]) #(f,f',f'')
 
-figname = resultdir+"ukfResult"
+figname = plot_dir+"ukfResult"
 fig, ax = plt.subplots(2,1,figsize=(12, 6))
 predict=np.asarray(predict)
 mse=sum(abs(predict-target[predictLen+LAG])**2)

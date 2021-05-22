@@ -1,5 +1,6 @@
 '''
-collect statistic about power change for each active change across different movement
+Not freq band info which only extract that power amplitude of that band.
+Like the computing of TF-plot using morlet wavelet, here tf will be z-normalized. Then concatenate with raw data.
 '''
 import sys
 import time

@@ -12,12 +12,12 @@ from grasp.process.utils import get_trigger, getMovement, get_trigger_normal, ge
 import matplotlib.pyplot as plt
 from grasp.process.channel_settings import *
 
-sid=6
+sid=16
 plot_dir=data_dir + 'PF' + str(sid) +'/process/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
-
+plot_psds=False
 # Note: input: session in [0,1,2,3]; channels=activeChannels or useChannels
 channels=activeChannels[sid]
 for i in [-3,-2,-1]: channels.append(i) # real, target and stim
@@ -32,12 +32,15 @@ for movement in range(movements):
     movementEpochs.append(tmp)
 
 # psd before band pass
-print("Plot psd after bandpass.")
-fig,ax=plt.subplots()
-movementEpochs[0].plot_psd(fmax=300,picks=['seeg'],ax=ax,xscale='linear',average=True,spatial_colors=False)
-figname=plot_dir+'psd_before_bandpass'
-fig.savefig(figname)
-plt.close(fig)
+if plot_psds==True:
+    print("Plot psd before bandpass.")
+    fig,ax=plt.subplots()
+    plt.ion()
+    plt.show()
+    movementEpochs[0].plot_psd(fmax=300,picks=['seeg'],ax=ax,xscale='linear',average=True,spatial_colors=False)
+    plt.pause(.1)
+    figname=plot_dir+'psd_before_bandpass'
+    fig.savefig(figname)
 
 bandEpochs=[] # bandEpochs[0]=[deltaEpoch,thetaEpoch,....]
 for movement in range(movements):
@@ -50,16 +53,17 @@ for movement in range(movements):
     gammaEpoch = movementEpochs[movement].copy().pick(picks=['seeg']).filter(l_freq=fbands[4][0], h_freq=fbands[4][1])  # ..
     bandEpochs[movement] = [deltaEpoch, thetaEpoch, alphaEpoch, betaEpoch, gammaEpoch]
 # psd after band pass
-print("Plot psd after bandpass.")
-movement=0 # Take first movement as an example and plot its 5 bands PSD
-fig,ax=plt.subplots()
-colors=['black','red','yellow','pink','blue']
-for band in range(len(fbands)):
-    bandEpochs[movement][band].copy().plot_psd(fmax=300,picks=['seeg'],ax=ax,xscale='linear',area_mode=None,average=True,
-                                               spatial_colors=False,color=colors[band])
-figname=plot_dir+'psd_after_andpass.png'
-fig.savefig(figname)
-plt.close(fig)
+if plot_psds==True:
+    print("Plot psd after bandpass.")
+    movement=0 # Take first movement as an example and plot its 5 bands PSD
+    colors=['black','red','yellow','pink','blue']
+    for band in range(len(fbands)):
+        bandEpochs[movement][band].copy().plot_psd(fmax=300,picks=['seeg'],ax=ax,xscale='linear',area_mode=None,average=True,
+                                                   spatial_colors=False,color=colors[band])
+    plt.pause(.1)
+    figname=plot_dir+'psd_after_andpass.png'
+    fig.savefig(figname)
+    plt.close(fig)
 
 # Apply hilbert
 # Question: how to use apply_function??
@@ -108,7 +112,7 @@ for movement in range(movements):
 
 # sanity check
 trials=moveAndBandEpochs[0].get_data(picks=[-4,]) #(40, 1, 15001)
-plt.plot(trials[0,0,:])
+#plt.plot(trials[0,0,:])
 
 #Save epochs
 print('Saving all 4 epochs.')

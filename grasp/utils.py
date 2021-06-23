@@ -139,74 +139,6 @@ def windTo3D_y(y,wind,step):
     #return np.expand_dims(y_tmp, axis=-1)
     return y_tmp
 
-def read_rawdata():
-    datafile1 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move1TrainRawData.mat'
-    datafile11 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move1TestRawData.mat'
-    datafile2 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move2TrainRawData.mat'
-    datafile21 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move2TestRawData.mat'
-    datafile3 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move3TrainRawData.mat'
-    datafile31 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move3TestRawData.mat'
-    datafile4 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move4TrainRawData.mat'
-    datafile41 = '/Users/long/Documents/BCI/matlab_scripts/force/pls/move4TestRawData.mat'
-    data1 = scipy.io.loadmat(datafile1)
-    data11 = scipy.io.loadmat(datafile11)
-    data2 = scipy.io.loadmat(datafile2)
-    data21 = scipy.io.loadmat(datafile21)
-    data3 = scipy.io.loadmat(datafile3)
-    data31 = scipy.io.loadmat(datafile31)
-    data4 = scipy.io.loadmat(datafile4)
-    data41 = scipy.io.loadmat(datafile41)
-
-    traintmp1 = data1['train']
-    traintmp11= data11['test']
-    traintmp2 = data2['train']
-    traintmp21 = data21['test']
-    traintmp3 = data3['train']
-    traintmp31 = data31['test']
-    traintmp4 = data4['train']
-    traintmp41 = data41['test']
-
-    dataset=np.concatenate((traintmp1,traintmp11,traintmp2,traintmp21,traintmp3,traintmp31,traintmp4,traintmp41),axis=0) # (2010000, 20)
-
-    # fs=1000, get 5 test period.
-    testx=np.transpose(dataset[-75000:,:-1]) #(114, 1500)
-    testy=np.transpose(dataset[-75000:,-1]) # (1500,)
-    trainx=np.transpose(dataset[0:-75000,:-1]) #  (114, 38692)
-    trainy=np.transpose(dataset[:-75000,-1]) # (38692,)
-
-    del data1,data11,data2,data21,data3,data31,data4,data41
-    del traintmp1, traintmp11,traintmp2,traintmp21,traintmp3,traintmp31,traintmp4,traintmp41
-
-    return trainx,trainy,testx, testy
-
-
-def read_fbanddata():
-    # input is window smoothed: f=1/50ms
-    datafile1 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move1TrainData3D.mat'
-    datafile2 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move2TrainData3D.mat'
-    datafile3 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move3TrainData3D.mat'
-    datafile4 = '/Users/long/BCI/matlab_scripts/force/data/SEEG_Data/move4TrainData3D.mat'
-    data1 = scipy.io.loadmat(datafile1)
-    data2 = scipy.io.loadmat(datafile2)
-    data3 = scipy.io.loadmat(datafile3)
-    data4 = scipy.io.loadmat(datafile4)
-
-    traintmp1 = data1['train'] #(182, 299, 36)
-    traintmp2 = data2['train'] #(182, 299, 37)
-    traintmp3 = data3['train'] #(182, 299, 30)
-    traintmp4 = data4['train'] #(182, 299, 38)
-
-    testNum=2
-    train=np.concatenate((traintmp1[:,:,:-testNum],traintmp2[:,:,:-testNum],traintmp3[:,:,:-testNum],traintmp4[:,:,:-testNum]),axis=2) # (182, 299, 98)
-    test = np.concatenate((traintmp1[:, :, -testNum:],traintmp2[:, :, -testNum:],traintmp3[:, :, -testNum:], traintmp4[:, :, -testNum:]), axis=2) #(182, 299, 6)
-
-    trainx=train[:-2,:,:] #(180, 299, 133)
-    trainy=train[180,:,:] #(299, 133)
-    testx=test[:-2,:,:] #(180, 299, 8)
-    testy=test[180,:,:] #(299, 8)
-
-    return trainx,trainy,testx, testy
-
 def plotloss(ax,trainlose,testlost):
     with open(trainlose) as f:
         trainlose = f.read().splitlines()
@@ -267,127 +199,10 @@ def read_rawdataAs3D(depth=500,prediction=1):
     pass
     #return trainx,trainy,testx, testy
 
-def rawData(split=True,move2=True): # del
-    activeChannels = [8, 9, 10, 18, 19, 20, 21, 22, 23, 24, 62, 63, 69, 70, 105, 107, 108, 109, 110,111] # 111 is force channel
-    badtrials={}
-
-    badtrials['1'] = np.array(badtrial1) - 1
-    badtrials['2'] = np.array(badtrial2) - 1
-    badtrials['3'] = np.array(badtrial3) - 1
-    badtrials['4'] = np.array(badtrial4) - 1
-
-    activeChannels=np.array(activeChannels)-1
-    datafile1 = '/Users/long/Documents/BCI/matlab_scripts/force/data/SEEG_Data/move1.mat'
-    datafile2 = '/Users/long/Documents/BCI/matlab_scripts/force/data/SEEG_Data/move2.mat'
-    datafile3 = '/Users/long/Documents/BCI/matlab_scripts/force/data/SEEG_Data/move3.mat'
-    datafile4 = '/Users/long/Documents/BCI/matlab_scripts/force/data/SEEG_Data/move4.mat'
-    data1 = scipy.io.loadmat(datafile1)
-    data2 = scipy.io.loadmat(datafile2)
-    data3 = scipy.io.loadmat(datafile3)
-    data4 = scipy.io.loadmat(datafile4)
-    data1 = data1['data'] # (channel, time, trials)
-    data2 = data2['data']
-    data3 = data3['data']
-    data4 = data4['data']
-    data = {}
-    data['1'] = np.float32(data1)
-    data['2'] = np.float32(data2)
-    data['3'] = np.float32(data3)
-    data['4'] = np.float32(data4)
-
-
-    for i in range(4):
-        move=str(int(float(i)) + 1)
-        alltrialidx = range(data[move].shape[2])  # 0--39
-        trialidx = np.setdiff1d(alltrialidx, badtrials[str(int(float(i)) + 1)])
-        data[move] = data[move][activeChannels, :, :]
-        data[move] = data[move][:, :, trialidx]  # (channels, time,trials), (20, 15000, 33) # last channel is force
-
-    if split==True:
-        traindatatmp={}
-        valdatatmp={}
-        testdatatmp = {}
-        testNum = 2 # 2*4=8 test trials
-        valNum = 2 # 2*4=8 valuate trials
-        for i in range(4):
-            move = str(int(float(i)) + 1)
-            valdatatmp[move] = data[move][:,:,-(valNum):] # including -1(last) and -2. (20, 15000, 2)
-        for i in range(4):
-            move = str(int(float(i)) + 1)
-            testdatatmp[move] = data[move][:, :, -(testNum+valNum):-(valNum)]  # including -4:-2,  (20, 15000, 2)
-        for i in range(4):
-            move = str(int(float(i)) + 1)
-            traindatatmp[move] = data[move][:, :, :-(testNum+valNum)]
-
-        if move2 == True:
-            valdata=np.concatenate((valdatatmp['1'],valdatatmp['2'],valdatatmp['3'],valdatatmp['4'])
-                                   ,axis=2) #(20, 15000, 8)
-            testdata = np.concatenate((testdatatmp['1'], testdatatmp['2'], testdatatmp['3'], testdatatmp['4'])
-                                      ,axis=2) #(20, 15000, 8)
-            traindata = np.concatenate((traindatatmp['1'], traindatatmp['2'], traindatatmp['3'], traindatatmp['4'])
-                                       ,axis=2) #(20, 15000, 118)
-        else:
-            valdata = np.concatenate((valdatatmp['1'], valdatatmp['3'], valdatatmp['4']),
-                                     axis=2)  # (20, 15000, 8)
-            testdata = np.concatenate((testdatatmp['1'], testdatatmp['3'], testdatatmp['4']),
-                                      axis=2)  # (20, 15000, 8)
-            traindata = np.concatenate((traindatatmp['1'], traindatatmp['3'], traindatatmp['4']),
-                                       axis=2)  #
-        return traindata, valdata, testdata
-    return data #  #
-
-def raw_input(sid,split=True,move2=True,activeChannels=activeChannels,badtrials=badtrials):
-    movements=4
-    activeChannels = activeChannels[sid]
-    file_prefix='moveEpoch'
-
-    moves=[]
-    for i in range(movements):
-        moves.append([])
-        # ignore the trigger channel
-        moves[i]=mne.read_epochs(data_dir+ 'PF'+str(sid)+'/data/'+file_prefix+str(i)+'.fif').get_data(picks=['seeg', 'emg']).transpose(1,2,0)
-
-    # take target force only
-    if isinstance(activeChannels,list):
-        activeChannels = activeChannels + [-2, -1]  # keep the real and target force.
-    else:
-        activeChannels=range(moves[0].shape[0])
-
-    if move2==True:
-        allmove=[0,1,2,3]
-    else:
-        allmove=[0,2,3]
-    for i in allmove:
-        #movecode=str(int(float(i)) + 1)
-        alltrialidx = range(moves[i].shape[2])  # 0--39
-        trialidx = np.setdiff1d(alltrialidx, badtrials[sid][i])
-        moves[i] = moves[i][activeChannels, :, :]
-        moves[i] = moves[i][:, :, trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
-    if split==True:
-        traindatatmp=[]
-        valdatatmp=[]
-        testdatatmp = []
-        testNum = 2 # 2*4=8 test trials
-        valNum = 2 # 2*4=8 valuate trials
-        for i in allmove:
-            valdatatmp.append([])
-            valdatatmp[i] = moves[i][:,:,-(valNum):] # including -1(last) and -2. (20, 15000, 2)
-        for i in allmove:
-            testdatatmp.append([])
-            testdatatmp[i] = moves[i][:, :, -(testNum+valNum):-(valNum)]  # including -4:-2,  (20, 15000, 2)
-        for i in allmove:
-            traindatatmp.append([])
-            traindatatmp[i] = moves[i][:, :, :-(testNum+valNum)]
-        valdata=np.concatenate((valdatatmp),axis=2) #(20, 15000, 8)
-        testdata = np.concatenate((testdatatmp),axis=2) #(20, 15000, 8)
-        traindata = np.concatenate((traindatatmp),axis=2) #(20, 15000, 118)
-        return traindata, valdata, testdata
-    return moves
-
 # normalized_frequency_and_raw;(will read power of different frequency range that normalized against baseline just like TF analysis.)
 # frequency_and_raw;(will read power of different frequency range without norm and the raw data)
 # raw;(only read the raw data.)
-def freq_input(sid,split=True,move2=True,input='normalized_frequency_and_raw',norm_input=True):
+def load_data(sid,split=True,move2=True,input='normalized_frequency_and_raw',norm_input=True):
     movements=4
     moves=[]
     if input=='normalized_frequency_and_raw':
@@ -423,8 +238,8 @@ def freq_input(sid,split=True,move2=True,input='normalized_frequency_and_raw',no
         moves[i] = moves[i][:, :, trialidx]  # (channels, time,trials), (20=19+1/116=114+2, 15000, 33) # last channel is force
     # standardization
     print('Standardization feature and target based on movement 0.')
-    #scaler = StandardScaler()  # (97chn, 3750time, 40trial)
-    scaler =  MinMaxScaler()
+    scaler = StandardScaler()  # (97chn, 3750time, 40trial)
+    #scaler =  MinMaxScaler()
     # choose movement 0 as base
     base_movement = 0
     fit_on_this = moves[base_movement][:-2,:,:].transpose(0, 2, 1)  # (chn, time,trial)-->(chn,trial,time)

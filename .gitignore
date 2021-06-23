@@ -6,6 +6,5 @@
 *.pdf
 .idea/
 data/
-Colab*/
 result_*/
 __pycache__/

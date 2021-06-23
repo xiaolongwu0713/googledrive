@@ -97,7 +97,7 @@ chnNum[10]=122
 badChannels[10]=[15,31,32,33,34,35,36,37,38,39,40,41,114,115,116,117,118,119,120,121] #20
 # not entirelly noise, but very unlikely
 anomalys[10]=[]
-useChannels[10]=[item for item in [*range(chnNum[10])] if item not in badChannels[10] if item not in anomalys[10]] # 128
+useChannels[10]=[item for item in [*range(chnNum[10])] if item not in badChannels[10] if item not in anomalys[10]] # 102
 triggerChannels[10]=34 # 31-38 all trigger channels
 # determine the active channel with tf plot.
 activeChannels[10]=[37]+[*range(62,71)]+[81] # 11 chns

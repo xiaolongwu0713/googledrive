@@ -4,6 +4,9 @@ Process workflow:
 2, update useChannels, trigger channels in the grasp.channel_settings.py file
 3, run preprocess.py to generate epoch data. One epoch means one movement type.
 4, choose activeChannels
+
+This preprocess will use useChannels for raw data.
+band+raw epoch data uses activeChannels.
 '''
 import sys; print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])

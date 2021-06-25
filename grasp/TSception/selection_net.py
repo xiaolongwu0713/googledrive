@@ -1,3 +1,6 @@
+# not matter is small or big TSception network, selection_net(including selection_layer and TSception) doesn't converge to miminum. 
+# Maybe regression is not the right job.
+
 #%cd /content/drive/MyDrive/
 # raw_data is imported from global config
 
@@ -13,14 +16,14 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from grasp.TSception.utils import regulization
 from grasp.utils import SEEGDataset, load_data, SEEGDataset3D, cuda_or_cup, set_random_seeds
-from grasp.TSception.Models import TSception2,wholenet
+from grasp.TSception.Models import TSception2,selection_net
 from grasp.braindecode.Models import shallowConv,deepConv
 from grasp.process.channel_settings import badtrials
 from grasp.config import root_dir
 
 import sys, importlib
 importlib.reload(sys.modules['grasp.TSception.Models'])
-from grasp.TSception.Models import TSception2,wholenet,SelectionLayer
+from grasp.TSception.Models import TSception2,selection_net,SelectionLayer
 
 import inspect as i
 import sys
@@ -139,18 +142,19 @@ def loss_function(output,target,model,lamba,weight_decay):
 weight_decay=1e-6 #1e-6 # model parameter weight decay
 lamba=0.1 # 0.1 regularization of penalization of duplication selection
 
-enable_select=False
+enable_select=True
 # def __init__(self, input_dim, M ,sampling_rate, chnNum, num_T, num_S,dropout):
 #Question: forward called during initialization throw error: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
+#Git log: 36b198f7a49df375b8562f5d2d8c2bbef5dbbc61
 #Solution1: find a PC with GPU to debug.
 #Solution2: no need to call selection layer forward. Dimmension is determinant for selection layer.
 shape=checkshape.shape # torch.Size([28,1,102,1000])
 if enable_select==True:
-    net = wholenet(shape,enable_select,input_dim, M, sampling_rate,M, num_T, num_S,dropout)
+    net = selection_net(shape,enable_select,input_dim, M, sampling_rate,M, num_T, num_S,dropout)
     net.enable_select = True
     net.set_freeze(False)
 else:
-    net = wholenet(shape,enable_select,input_dim, M, sampling_rate, input_dim, num_T, num_S, dropout)
+    net = selection_net(shape,enable_select,input_dim, M, sampling_rate, input_dim, num_T, num_S, dropout)
     net.enable_select = False
 
 

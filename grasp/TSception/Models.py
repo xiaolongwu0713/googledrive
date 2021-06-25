@@ -311,9 +311,9 @@ class TSception_small(nn.Module):
         pred = torch.unsqueeze(pred, dim=0)
         return pred
 
-class wholenet(nn.Module):
+class selection_net(nn.Module):
     def __init__(self, test_shape, enable_select,input_dim, M ,sampling_rate, chnNum, num_T, num_S,dropout):
-        super(wholenet, self).__init__()
+        super(selection_net, self).__init__()
         self.floatTensor = torch.FloatTensor if not torch.cuda.is_available() else torch.cuda.FloatTensor
         self.M = M
         self.N = input_dim

@@ -141,8 +141,10 @@ lamba=0.1 # 0.1 regularization of penalization of duplication selection
 
 enable_select=False
 # def __init__(self, input_dim, M ,sampling_rate, chnNum, num_T, num_S,dropout):
-
-shape=checkshape.shape
+#Question: forward called during initialization throw error: RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu!
+#Solution1: find a PC with GPU to debug.
+#Solution2: no need to call selection layer forward. Dimmension is determinant for selection layer.
+shape=checkshape.shape # torch.Size([28,1,102,1000])
 if enable_select==True:
     net = wholenet(shape,enable_select,input_dim, M, sampling_rate,M, num_T, num_S,dropout)
     net.enable_select = True
@@ -166,7 +168,7 @@ torch.cuda.is_available()
 
 fig2, ax2=plt.subplots()
 
-debugg = False
+debugg = True
 #debugg=True
 for epoch in range(epochs):
     print("------ epoch " + str(epoch) + " -----")

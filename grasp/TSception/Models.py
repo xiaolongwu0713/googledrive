@@ -13,7 +13,7 @@ def init_weights(m):
         torch.nn.init.xavier_uniform_(m.weight)
 
 class SelectionLayer(nn.Module):
-    def __init__(self, test_shape,N, M, temperature=1.0):
+    def __init__(self,N, M, temperature=1.0):
 
         super(SelectionLayer, self).__init__()
         self.floatTensor = torch.FloatTensor if not torch.cuda.is_available() else torch.cuda.FloatTensor
@@ -24,21 +24,12 @@ class SelectionLayer(nn.Module):
         self.temperature = self.floatTensor([temperature])
         self.freeze = False
         self.thresh = 8.0
-        test_input=torch.ones(test_shape)
-        if torch.cuda.is_available():
-            test_input.cuda()
-            self.cuda()
-        self.out=self.forward(test_input)
+        #test_input=torch.ones(test_shape)
+        #self.out=self.forward(test_input)
 
     def quantile_concrete(self, x):  # eq: 2
 
-        if torch.cuda.is_available():
-            x.cuda()
-            self.cuda()
-            self.temperature.cuda()
-            self.qz_loga.cuda()
         g = -torch.log(-torch.log(x))  # gumbel distribution
-
         y = (self.qz_loga + g) / self.temperature  # beta
         y = torch.softmax(y, dim=1)  # concrete distribution. torch.Size([16, 44, 3])
 
@@ -80,8 +71,6 @@ class SelectionLayer(nn.Module):
         if torch.cuda.is_available():
             x.cuda()
             z_t.cuda()
-        if not x.is_cuda:
-            return
         out = torch.matmul(z_t, x)  # x:torch.Size([16, 1, 44, 1125])
         return out  # out: torch.Size([16, 1, 3, 1125])
 
@@ -331,10 +320,11 @@ class wholenet(nn.Module):
 
         self.enable_select = True
         if enable_select:
-            self.selection_layer = SelectionLayer(test_shape,self.N, self.M)
-            self.select_output=self.selection_layer.out
-            test_shape=self.select_output.shape
+            self.selection_layer = SelectionLayer(self.N, self.M)
+        test_shape=list(test_shape)
+        test_shape[2]=M
 
+        #self.network = TSception2(sampling_rate, chnNum, num_T, num_S, dropout)
         self.network = TSception_small(test_shape,sampling_rate, chnNum, num_T, num_S, dropout)
         self.layers = self.create_layers_field()
         self.apply(init_weights)
@@ -399,3 +389,10 @@ class wholenet(nn.Module):
         reg = weight_decay * reg + lamba * reg_selection
         return reg
 
+if __name__ == "__main__":
+    model = TSception2(2, (4, 1024), 256, 9, 6, 128, 0.2)
+    # model = Sception(2,(4,1024),256,6,128,0.2)
+    # model = Tception(2,(4,1024),256,9,128,0.2)
+    print(model)
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(pytorch_total_params)

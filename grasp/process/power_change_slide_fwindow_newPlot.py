@@ -180,25 +180,39 @@ for movement in range(movements):
 
 print('Plot out to '+ plot_dir+ '.')
 clrs = sns.color_palette("husl", 5)
-fig = plt.figure(figsize=(10, 8))
-
+#fig = plt.figure(figsize=(10, 8))
+fig, axes = plt.subplots(4,2,figsize=(10, 8))
 #choose_bands_to_plot=range(len(fbands))
 name_your_band=['beta','gamma']
 #fig, ax=plt.subplots(2,2,sharex=True,sharey=True, squeeze=True)
 for channel in range(len(ch_names)):
     if channel == int(len(ch_names)/2):
         print('Half way through.')
-    outer = gridspec.GridSpec(2, 2, wspace=0.02, hspace=0.02)
+    gs = fig.add_gridspec(4,2,wspace=0.02, hspace=0.02)
+    #outer = gridspec.GridSpec(2, 2, wspace=0.02, hspace=0.02)
     for movement in range(movements):
-        inner = gridspec.GridSpecFromSubplotSpec(2, 1,subplot_spec=outer[movement], wspace=0.1, hspace=0.1)
+        axes[1, 0].sharex(axes[0, 0])
+        axes[0, 0].axes.xaxis.set_visible(False)
+        bottom_side = axes[0, 0].spines["bottom"]
+        bottom_side.set_visible(False)
+        top_side = axes[1, 0].spines["top"]
+        top_side.set_visible(False)
+        axes[0, 0].set_title('Movement 1')
+
+        inner = gridspec.GridSpecFromSubplotSpec(1, 1,subplot_spec=outer[movement], wspace=0.1, hspace=0.1)
         # plot 2D TF
+        ax1 = fig.add_subplot(gs[0,0])
+        ax2 = fig.add_subplot(gs[1,0], sharey=ax1)
+        ax1 = plt.Subplot(fig, gs[0,0])
+        (ax1, ax2) = fig.add_subplot(1, 2,sharex=True)
+        (ax1, ax2) = plt.subplots(1, 2, inner[0],sharex=True)
         ax1 = plt.Subplot(fig, inner[0])
-        im = ax1.imshow(ch_power_avg[channel][movement], origin='lower', cmap='RdBu_r', vmin=vmin, vmax=vmax)
-        ax1.set_aspect('auto')
+        im = axes[0, 0].imshow(ch_power_avg[channel][movement], origin='lower', cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        axes[0, 0].set_aspect('auto')
         fig.add_subplot(ax1)
         fig.colorbar(im, orientation="horizontal", fraction=0.046, pad=0.02, ax=ax1)
 
-        ax1.set_ylabel('Frequency')
+        axes[0, 0].set_ylabel('Frequency')
         ax1.set_xticks(tickAndVertical[movement])
         xlabels = [str(i / new_fs)+'s' for i in tickAndVertical[movement]]
         ax1.set_xticklabels(xlabels,rotation=0, ha='right',fontsize=5)
@@ -231,3 +245,20 @@ for channel in range(len(ch_names)):
     filename = plot_dir + str(channel) + '.png'
     fig.savefig(filename, dpi=400)
     fig.clear()
+
+
+
+fig, axes = plt.subplots(4,2)
+axes[1,0].sharex(axes[0,0])
+axes[0,0].axes.xaxis.set_visible(False)
+bottom_side = axes[0,0].spines["bottom"]
+top_side = axes[0,0].spines["top"]
+top_side = axes[1,0].spines["top"]
+top_side.set_visible(True)
+axes[0,0].set_title('haha')
+
+plt.subplots_adjust(left=0.125, bottom=0.112, right=0.95, top=0.96, wspace=0.168, hspace=0.091)
+
+
+
+

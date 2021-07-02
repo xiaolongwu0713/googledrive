@@ -48,9 +48,11 @@ for i in range(movements):
     force_stat[i].append(tmp_std)
     ax[i // 2][i - (i // 2) * 2].plot(force_stat[i][0])  # plot mean
     ax[i // 2][i - (i // 2) * 2].fill_between(range(mean_length), force_stat[i][0] - force_stat[i][1],
-                                              force_stat[i][0] + force_stat[i][1], alpha=0.5)
-    ax[i // 2][i - (i // 2) * 2].text(0.8, 0.8, 'Movement '+ str(i+1) +'.', fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
+                                              force_stat[i][0] + force_stat[i][1], alpha=0.2)
+    ax[i // 2][i - (i // 2) * 2].text(0.8, 0.8, 'M'+ str(i+1), fontsize=10,transform=ax[i // 2][i - (i // 2) * 2].transAxes)
 
-figname = plot_dir + 'force_stats.png'
+figname = plot_dir + 'force_stats.pdf'
 fig.savefig(figname, dpi=400)
+#plt.savefig(figname, format='eps')
+#fig.savefig(figname, format='eps')
 plt.close(fig)

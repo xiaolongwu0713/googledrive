@@ -231,11 +231,3 @@ for channel in range(len(ch_names)):
     filename = plot_dir + str(channel) + '.png'
     fig.savefig(filename, dpi=400)
     fig.clear()
-
-
-
-
-
-
-
-

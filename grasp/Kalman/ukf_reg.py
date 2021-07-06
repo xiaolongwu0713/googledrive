@@ -21,18 +21,20 @@ if not os.path.exists(plot_dir):
 
 # In Kalman, x mean force info, y mean seeg feature
 # trainy/testy: (trials 30 or 74 , time points 299 ,feature 180)
-# trainx/testx: (trials 30 or 74,time points 297, type 3) (30, 297, 3)
-trainy, trainx, testy, testx = ukfInput(sid)
-# testy: (101, 299, 180)-->(180, 30199)
-# flatten to 2d
-testy=testy.transpose(2,0,1)
-testy=np.reshape(testy,(testy.shape[0],-1))
+# trainx/testx: (trials 30 or 74,time points 297, raw/gradient/yank 3) (30, 297, 3)
+testNum=8
+trainy, trainx, testy, testx = ukfInput(sid,testNum=testNum)
 
-# testx: (101, 297, 3)-->(3, 29997)
+testx_stat=testx.copy()
+testy_stat=testy.copy()
+
 # flatten to 2d
-testx=testx.transpose(2,0,1)
+testx=testx.transpose(2,0,1) # (101, 297, 3)-->(3, 29997)
 testx=np.reshape(testx,(testx.shape[0],-1))
 target=testx[0,:]
+
+testy=testy.transpose(2,0,1) # (101, 299, 180)-->(180, 30199)
+testy=np.reshape(testy,(testy.shape[0],-1))
 
 # augmented X trainx:(40, 297, 3)
 added=np.sqrt(np.sum(trainx**2,axis=2)) # (40, 297)
@@ -111,7 +113,7 @@ ukf.P = P
 ukf.Q = Q
 ukf.R = R
 
-T=int(target.shape[0]/8) # length of one trial
+T=int(target.shape[0]/(testNum*4)) # length of one trial
 # 74 testing trial in total
 startTest=0 # trial to start from
 endTest=8 # end with endTest
@@ -123,6 +125,7 @@ for t in predictLen:
 
     fvar.append(ukf.P[0,0])
     predict.append(ukf.x[0]) #(f,f',f'')
+
 
 criterion = nn.MSELoss()
 mse_loss=criterion(torch.from_numpy(np.asarray(predict)),torch.from_numpy(np.asarray(target)))

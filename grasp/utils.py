@@ -473,7 +473,7 @@ def readRestForModelTest():
 
     return testx,testy
 
-def ukfInput(sid,testNum=2):
+def ukfInput(sid,testNum=8): # testNum: test trial for individual movement.
     # trainNum = 10
     # 30 active channels
     movements=4

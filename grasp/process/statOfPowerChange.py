@@ -17,16 +17,13 @@ import matplotlib.pyplot as plt
 from grasp.config import *
 from grasp.process.channel_settings import *
 
-
-
-
-sid = 10
+sid = 16
 movements=4
 # fast testing
 #activeChannels[sid]=activeChannels[sid][13:15]
 
 
-plot_dir=data_dir + 'PF' + str(sid) +'/ERSD_stat_change/'
+plot_dir=data_dir + 'PF' + str(sid) + '/ERSD_stat_change/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -135,6 +132,7 @@ for chIndex,chName in enumerate(ch_names):
 
 # ers/d_change[movement][channel][trials....]
 fig, ax = plt.subplots()
+#fig.set_rasterized(True)
 print('Plotting...')
 for channel in range(len(ch_names)):
     ax.clear()
@@ -161,6 +159,18 @@ for channel in range(len(ch_names)):
     #ax.clear()
     ax.errorbar(x=x, y=y_erd, yerr=e_erd, fmt='-o',ecolor='orange',elinewidth=1,ms=5,mfc='wheat',mec='salmon',capsize=3)
     ax.errorbar(x=x, y=y_ers, yerr=e_ers, fmt='-o',ecolor='blue',elinewidth=1,ms=5,mfc='wheat',mec='salmon',capsize=3)
+
+
+    # place the legend on y=0 horizon line. noted that this line may vary in different plot, so calculate the position first.
+    yticks = ax.get_yticks()
+    ypos = 0
+    for i in range(len(yticks)):
+        if yticks[i] == 0:
+            ypos = i
+    y_min, y_max = ax.get_ylim()
+    yticks = [(tick - y_min) / (y_max - y_min) for tick in yticks]
+
+    ax.legend(['ERD', 'ERS'], loc="lower left", bbox_to_anchor=(0.8, yticks[ypos]),fontsize='small')
     ax.axhline(y=0, color='r', linestyle='--')
 
     ax.set_xticks(x)
@@ -169,7 +179,9 @@ for channel in range(len(ch_names)):
     ax.set_ylabel('Change %')
     # plt.show()
     # save
-    figname = plot_dir + 'ERSD_stat_change' + str(channel) + '.png'
+    #ax.set_rasterized(True)
+    figname = plot_dir + 'ERSD_stat_change' + str(channel) + '.pdf'
+    #fig.savefig(figname, format='eps',dpi=300)
     fig.savefig(figname, dpi=400)
     plt.pause(0.2)
 

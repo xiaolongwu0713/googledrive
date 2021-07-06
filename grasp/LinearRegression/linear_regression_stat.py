@@ -1,9 +1,7 @@
 '''
-Linear regression.
+Linear regression statistic analysis
 1, linear regression
-2, polynomial regression
 Note: nn.MSE_loss() will do average itself.
-3, It will produce mse of individual trial for all 4 movements, so statistic analysis can be done.
 '''
 import numpy as np
 import matplotlib.pyplot as plt
@@ -74,42 +72,40 @@ np.random.shuffle(train_data)
 
 # flat trials in 3D into 2D
 print('Flatten 3D to 2D.')
-test_data_stat=test_data.copy()
-train_data=train_data.transpose(1,0,2) # (channels,trail,times)
-test_data=test_data.transpose(1,0,2)
+train_data=train_data.transpose(1,0,2) # to (channels,trail,times)
+#test_data=test_data.transpose(1,0,2)
 train_data=np.reshape(train_data,(train_data.shape[0],-1))
-test_data=np.reshape(test_data,(test_data.shape[0],-1))
+#test_data=np.reshape(test_data,(test_data.shape[0],-1))
 
 # down sample to 1000/5=200HZ
 down_sample_factor=5
 new_frequency=1000/down_sample_factor
 print('Down sample data to ' + str(new_frequency)+'HZ.')
 train_data = signal.decimate(train_data, down_sample_factor, axis=1,ftype='iir',zero_phase=True)  # (116, 276019)
-test_data = signal.decimate(test_data, down_sample_factor, axis=1,ftype='iir',zero_phase=True)
 test_data_tmp=[]
-for i in range(test_data_stat.shape[0]):
+for i in range(test_data.shape[0]):
     test_data_tmp.append([])
-    test_data_tmp[i]=signal.decimate(test_data_stat[i,:,:], down_sample_factor, axis=1,ftype='iir',zero_phase=True)
-del test_data_stat
-test_data_stat=np.asarray(test_data_tmp)
-
+    test_data_tmp[i]=signal.decimate(test_data[i,:,:], down_sample_factor, axis=1,ftype='iir',zero_phase=True)
+#test_data = signal.decimate(test_data, down_sample_factor, axis=1,ftype='iir',zero_phase=True)
+del test_data
+test_data=np.asarray(test_data_tmp) # to (42, 116, 3001) (trail, chn, time)
 
 train_x=np.transpose(train_data[:-2,:]) # (114, 1380092)-->(1380092, 114)
 train_y=np.squeeze(train_data[-2,:])
-test_x=np.transpose(test_data[:-2,:])
-test_y=np.squeeze(test_data[-2,:])
-test_stat_x=test_data_stat[:,:-2,:]
-test_stat_y=np.squeeze(test_data_stat[:,-2,:])
+test_x=test_data[:,:-2,:] # (42, 114, 3001)
+test_y=np.squeeze(test_data[:,-2,:]) # (42, 3001)
+
+test_x_2d=test_x.transpose(1,0,2)
+test_x_2d=np.transpose(np.reshape(test_x_2d,(test_x_2d.shape[0],-1)))
 
 if standardization==True:
     print('Standardization testing and training set. ')
-    scaler = StandardScaler(copy=False) # do inplace scaling
-    scaler.fit(train_x)
+    scaler = StandardScaler(copy=False) # 0 mean and scaling to unit variance. inplace scaling
+    scaler.fit(train_x) # (276019, 114)
     scaler.transform(train_x)
-    scaler.fit(test_x)
-    scaler.transform(test_x)
-    for i in range(test_stat_x.shape[0]):
-        test_stat_x[i] = np.transpose(scaler.transform(np.transpose(test_stat_x[i]),copy=True))
+    scaler.fit(test_x_2d)
+    for i in range(test_x.shape[0]):
+        test_x[i] = np.transpose(scaler.transform(np.transpose(test_x[i]),copy=True))
 
 linear_reg=LinearRegression()
 criterion = nn.MSELoss()
@@ -122,8 +118,11 @@ else:
 print('Fitting.')
 lr_model.fit(train_x, train_y)
 print('Predict on test dataset.')
-pred_tmp=lr_model.predict(test_x) # (126009, 114)
-mse_loss=criterion(torch.from_numpy(pred_tmp),torch.from_numpy(test_y.copy()))
+mse=[]
+for i in range(test_x.shape[0]):
+    mse.append([])
+    pred_tmp=lr_model.predict(np.transpose(test_x[i])) # (126009, 114)
+    mse[i]=criterion(torch.from_numpy(pred_tmp),torch.from_numpy(test_y[i].copy()))
 #avg_loss=a_loss/sum(test_trials_num)
 #norm_loss=avg_loss*(default_frequency/new_frequency)
 print('MSE loss for SID'+str(sid)+' is: '+str(np.round(mse_loss.numpy(),4)))
@@ -150,13 +149,3 @@ elif polynomial==False and input_freq_for_linear_reg == False:
 
 fig.savefig(figname)
 plt.close(fig)
-
-mse=[]
-for i in range(test_stat_x.shape[0]):
-    mse.append([])
-    pred_tmp=lr_model.predict(np.transpose(test_stat_x[i])) # (126009, 114)
-    mse[i]=criterion(torch.from_numpy(pred_tmp),torch.from_numpy(test_stat_y[i].copy())).cpu().detach().item()
-
-filename= plot_dir + 'mse_loss'
-np.save(filename,mse)
-#trainx=np.load('dir/dir/trainx.npy')

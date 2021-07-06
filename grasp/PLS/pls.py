@@ -4,7 +4,7 @@ import scipy.io
 import numpy as np
 from grasp.config import data_dir
 from grasp.process.signalProcessUtils import butter_lowpass_filter
-from grasp.utils import freq_input
+from grasp.utils import load_data
 import math
 from scipy import signal
 from sklearn.cross_decomposition import PLSRegression
@@ -18,7 +18,7 @@ if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
 
 print('Read data....')
-data=freq_input(sid,split=False,move2=True)
+data=load_data(sid,split=False,move2=True)
 train_test_split=0.7 # train_trials/test_trials = 0.5
 
 # extract some trials as test from all 4 moves

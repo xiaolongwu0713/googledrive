@@ -188,28 +188,36 @@ name_your_band=['beta','gamma']
 for channel in range(len(ch_names)):
     if channel == int(len(ch_names)/2):
         print('Half way through.')
-    outer = gridspec.GridSpec(2, 2, wspace=0.02, hspace=0.02)
+    outer = gridspec.GridSpec(2, 2, wspace=0.1, hspace=0.2)
     for movement in range(movements):
-        inner = gridspec.GridSpecFromSubplotSpec(2, 1,subplot_spec=outer[movement], wspace=0.1, hspace=0.1)
+        inner = gridspec.GridSpecFromSubplotSpec(2, 1,subplot_spec=outer[movement], wspace=0.01, hspace=0.01)
         # plot 2D TF
         ax1 = plt.Subplot(fig, inner[0])
         im = ax1.imshow(ch_power_avg[channel][movement], origin='lower', cmap='RdBu_r', vmin=vmin, vmax=vmax)
         ax1.set_aspect('auto')
         fig.add_subplot(ax1)
-        fig.colorbar(im, orientation="horizontal", fraction=0.046, pad=0.02, ax=ax1)
+        bottom_side = ax1.spines["bottom"]
+        bottom_side.set_visible(False)
+        ax1.axes.xaxis.set_visible(False)
+        ax1.set_title('Movement '+str(movement+1))
+        #fig.colorbar(im, orientation="vertical", fraction=0.046, pad=0.02, ax=ax1)
+        #fig.colorbar(im, location="right", fraction=0.046, pad=0.02, ax=ax1)
 
         ax1.set_ylabel('Frequency')
-        ax1.set_xticks(tickAndVertical[movement])
-        xlabels = [str(i / new_fs)+'s' for i in tickAndVertical[movement]]
-        ax1.set_xticklabels(xlabels,rotation=0, ha='right',fontsize=5)
-        ax1.tick_params(axis='x', which='major', pad=0.2)
+        #ax1.set_xticks(tickAndVertical[movement])
+        #xlabels = [str(i / new_fs)+'s' for i in tickAndVertical[movement]]
+        #ax1.set_xticklabels(xlabels,rotation=0, ha='right',fontsize=5)
+        #ax1.tick_params(axis='x', which='major', pad=0.2)
 
         for x_value in tickAndVertical[movement]:
-            ax1.axvline(x=(x_value - int(crop1 * new_fs)))
+            ax1.axvline(x=(x_value - int(crop1 * new_fs)),linestyle='--')
 
         # plot ERDS
         ax2 = plt.Subplot(fig, inner[1])
         fig.add_subplot(ax2)
+        ax2.sharex(ax1)
+        top_side = ax2.spines["top"]
+        top_side.set_visible(False)
         #with sns.axes_style("darkgrid"):
         for band in np.arange(sub_bands_number):
             mean = np.mean(erds_change[channel][movement][band],axis=0)
@@ -217,17 +225,23 @@ for channel in range(len(ch_names)):
             sdt = np.std(erds_change[channel][movement][band], axis=0)
             ax2.plot(times,mean)
             ax2.fill_between(times,mean-sdt, mean+sdt ,alpha=0.3, facecolor=clrs[band])
-        ax2.legend(name_your_band)
+        #ax2.legend(name_your_band)
         ax2.set_ylabel('Change %')
         ax2.set_xticks(tickAndVertical[movement])
         xlabels = [str(i / new_fs) + 's' for i in tickAndVertical[movement]]
         ax2.set_xticklabels(xlabels, rotation=0, ha='right', fontsize=5)
         ax2.tick_params(axis='x', which='major', pad=0.2)
+        for x_value in tickAndVertical[movement]:
+            ax2.axvline(x=(x_value - int(crop1 * new_fs)),linestyle='--')
 
         if movement%2!=0:
             ax1.axes.yaxis.set_visible(False)
             ax2.axes.yaxis.set_visible(False)
-
+        if movement == 1:
+            ax2.legend(name_your_band,loc="lower left", bbox_to_anchor=(1, 1),fontsize='small')
+            cbaxes = fig.add_axes([0.95, 0.2, 0.01, 0.4])
+            #cb = plt.colorbar(ax1, cax=cbaxes)
+            fig.colorbar(im, orientation="vertical", fraction=0.046, pad=0.02, cax=cbaxes)
     filename = plot_dir + str(channel) + '.png'
     fig.savefig(filename, dpi=400)
     fig.clear()

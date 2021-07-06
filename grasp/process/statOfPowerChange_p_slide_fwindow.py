@@ -19,7 +19,7 @@ from grasp.process.channel_settings import *
 from grasp.process.signalProcessUtils import getIndex
 
 
-sid = 2
+sid = 16
 movements=4
 # fast testing
 #activeChannels[sid]=activeChannels[sid][:1]
@@ -31,7 +31,7 @@ if not os.path.exists(plot_dir):
 
 movementEpochs = []  # movementEpochs[0] is the epoch of move 1
 ch_names = []
-print('Reading all 4 movement epochs.')
+print('SID: '+str(sid) + '. Reading all 4 movement epochs.')
 for movement in range(movements):
     movementEpochs.append(
         mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + 'moveEpoch' + str(movement) + '.fif').pick(
@@ -285,29 +285,36 @@ for channel in range(len(ch_names)):
     erd_std = [np.std(dataset) for dataset in erd_datasets]
     ers_std = [np.std(dataset) for dataset in ers_datasets]
 
-    ax.errorbar(x=x, y=erd_mean, yerr=erd_std, fmt='-o', ecolor='orange', elinewidth=1, ms=5, mfc='wheat', mec='salmon',capsize=3)
-    ax.errorbar(x=x, y=ers_mean, yerr=ers_std, fmt='-o', ecolor='blue', elinewidth=1, ms=5, mfc='wheat', mec='salmon', capsize=3)
+    #ax.errorbar(x=x, y=erd_mean, yerr=erd_std, fmt='-o', ecolor='orange', elinewidth=1, ms=5, mfc='wheat', mec='salmon',capsize=3)
+    ax.bar(x, erd_mean, yerr=erd_std, color=['brown'],
+           error_kw=dict(ecolor='gray', lw=1, capsize=3, capthick=2))
+    ax.bar(x+5, ers_mean, yerr=ers_std,color=['orange'],
+           error_kw=dict(ecolor='gray', lw=1, capsize=3, capthick=2))
+    ax.legend(['ERD', 'ERS'],loc="lower left", bbox_to_anchor=(0, 0.8))
     ax.axhline(y=0, color='r', linestyle='--')
-    ax.legend(['ERD', 'ERS'])
-    ax.set_xticks(x)
-    fontdict = {'fontsize': 8}
-    ax.set_xticklabels(xlabel, fontdict=fontdict)
+    for i in range(movements): # simulate this horizon line as x-axis.
+        ax.text(i + 0.9, 1, 'M' + str(i + 1), fontsize=8) # xticklabels above
+        ax.text(i + 0.9+5, -1.6, 'M' + str(i + 1), fontsize=8) # xticklabels below
+    ax.set_xticks([])
+    #fontdict = {'fontsize': 8}
+    ax.set_xticklabels([])
     ax.set_ylabel('Change %')
     # plt.show()
     # save
-    figname = plot_dir + 'ERSD_stat_change' + str(channel) + '.png'
-    fig.savefig(figname, dpi=400)
-    ax.clear()
+    #figname = plot_dir + 'ERSD_stat_change' + str(channel) + '.png'
+    #fig.savefig(figname, dpi=400)
+    #ax.clear()
     # power change error bar plot with p-value(single-tailed paired t-test)
     # Pull the formatting out here
-    bar_kwargs = {'width': 0.5, 'linewidth': 2, 'zorder': 5}
-    err_kwargs = {'zorder': 0, 'fmt': 'none', 'linewidth': 2,'ecolor': 'k'}  # for matplotlib >= v1.4 use 'fmt':'none' instead
+    #bar_kwargs = {'width': 0.5, 'linewidth': 2, 'zorder': 5}
+    #err_kwargs = {'zorder': 0, 'fmt': 'none', 'linewidth': 2,'ecolor': 'k'}  # for matplotlib >= v1.4 use 'fmt':'none' instead
     # plot bar
-    ax.p1 = plt.bar(x, erd_mean, color=['red', 'green', 'blue', 'cyan'],**bar_kwargs)
-    ax.errs1 = plt.errorbar(x, erd_mean, yerr=erd_std, **err_kwargs)
-    ax.p2 = plt.bar(x + 5, ers_mean, **bar_kwargs)
-    ax.errs2 = plt.errorbar(x + 5, ers_mean, yerr=ers_std, **err_kwargs)
-    ax.axhline(y=0, color='r', linestyle='--')
+    #ax.p1 = plt.bar(x, erd_mean, color=['red', 'green', 'blue', 'cyan'],**bar_kwargs)
+    #ax.errs1 = plt.errorbar(x, erd_mean, yerr=erd_std, **err_kwargs)
+    #ax.bar(x, erd_mean, yerr=erd_std, color=['red', 'green', 'blue', 'cyan'],error_kw=dict(ecolor='gray', lw=1, capsize=3, capthick=2))
+    #ax.p2 = plt.bar(x + 5, ers_mean, **bar_kwargs)
+    #ax.errs2 = plt.errorbar(x + 5, ers_mean, yerr=ers_std, **err_kwargs)
+    #ax.axhline(y=0, color='r', linestyle='--')
 
     ylim1, ylim2 = ax.get_ylim()
     ax.set_ylim(ylim1 - 10, ylim2 + 10)
@@ -337,7 +344,7 @@ for channel in range(len(ch_names)):
     ylim1, ylim2 = ax.get_ylim()
     ax.set_ylim(ylim1 - 3, ylim2 + 3)
 
-    figname = plot_dir + 'p_values' + str(channel) + '.png'
+    figname = plot_dir + 'p_values' + str(channel) + '.pdf'
     fig.savefig(figname, dpi=400)
     print('Plot to '+plot_dir)
     #plt.pause(0.2)

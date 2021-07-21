@@ -146,7 +146,7 @@ for channel in range(len(ch_names)):
         fig.colorbar(im, orientation="horizontal",fraction=0.046, pad=0.0,ax=ax[movement])
 
     # save
-    figname = plot_dir + 'tf_compare_movement_'+str(channel)+'_'+ch_names[channel] + '.png'
+    figname = plot_dir + 'tf_compare_movement_'+str(channel)+'_'+ch_names[channel] + '.pdf'
     fig.savefig(figname, dpi=400)
 
     # clean up plotting area

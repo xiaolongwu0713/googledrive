@@ -483,8 +483,9 @@ def ukfInput(sid,testNum=8): # testNum: test trial for individual movement.
     for i in range(movements):
         moves.append([])
         # ignore the stim channel
+        # mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + file_prefix + str(i) + '.fif').pick(picks=['seeg', 'emg']).pick(activeChannels[sid])
         moves[i] = mne.read_epochs(data_dir + 'PF' + str(sid) + '/data/' + file_prefix + str(i) + '.fif'). \
-            get_data(picks=['seeg', 'emg']).transpose(1, 2, 0)
+            pick(picks=['seeg', 'emg']).pick(activeChannels[sid]).get_data().transpose(1, 2, 0)
 
     # discard the bad trials
     for i in range(movements):

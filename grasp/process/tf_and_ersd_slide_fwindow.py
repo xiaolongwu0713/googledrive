@@ -20,11 +20,13 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
 from grasp.config import *
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype']=42
 
 
 sid=10
 # fast testing
-activeChannels[sid]=activeChannels[sid][4]
+#activeChannels[sid]=activeChannels[sid][4]
 
 plot_dir=data_dir + 'PF' + str(sid) +'/power_change_2bands/'
 import os
@@ -199,7 +201,7 @@ for channel in range(len(ch_names)):
         bottom_side = ax1.spines["bottom"]
         bottom_side.set_visible(False)
         ax1.axes.xaxis.set_visible(False)
-        ax1.set_title('Movement '+str(movement+1))
+        ax1.set_title('Task '+str(movement+1))
         #fig.colorbar(im, orientation="vertical", fraction=0.046, pad=0.02, ax=ax1)
         #fig.colorbar(im, location="right", fraction=0.046, pad=0.02, ax=ax1)
 
@@ -239,10 +241,10 @@ for channel in range(len(ch_names)):
             ax2.axes.yaxis.set_visible(False)
         if movement == 1:
             ax2.legend(name_your_band,loc="lower left", bbox_to_anchor=(1, 1),fontsize='small')
-            cbaxes = fig.add_axes([0.95, 0.2, 0.01, 0.4])
+            cbaxes = fig.add_axes([0.92, 0.2, 0.01, 0.4])
             #cb = plt.colorbar(ax1, cax=cbaxes)
             fig.colorbar(im, orientation="vertical", fraction=0.046, pad=0.02, cax=cbaxes)
-    filename = plot_dir + str(channel) + '.png'
+    filename = plot_dir + 'ERSD_'+str(channel) + '.pdf'
     fig.savefig(filename, dpi=400)
     fig.clear()
 

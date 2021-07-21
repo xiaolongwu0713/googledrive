@@ -124,6 +124,7 @@ triggerChannels[16]=45 # 31-38 all trigger channels
 # determine the active channel with tf plot.
 activeChannels[16]=[*range(15,21)]+[23]+[*range(29,36)]+[37]+[*range(39,45)]+\
                    [52,53]+[*range(61,70)]+[77,78,79]+[96,97]+[104,105]+[*range(161,189)]#15 channels: 127-118,69,58-55
+#activeChannels[16]=activeChannels[16][:10] # memory wont fit all the channels.
 # specify the badtrials for all 4 movements.
 badtrials[16].append([])
 badtrials[16].append([])

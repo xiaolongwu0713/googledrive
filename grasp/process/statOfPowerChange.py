@@ -16,8 +16,10 @@ import mne
 import matplotlib.pyplot as plt
 from grasp.config import *
 from grasp.process.channel_settings import *
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype'] = 42
 
-sid = 16
+sid = 10
 movements=4
 # fast testing
 #activeChannels[sid]=activeChannels[sid][13:15]
@@ -150,7 +152,7 @@ for channel in range(len(ch_names)):
     ers_datasets = [ers_move0, ers_move1, ers_move2, ers_move3]
 
     x = np.array([1, 2, 3, 4])  #
-    xlabel = ['20% MVC slow', '60% MVC slow', '20% MVC fast', '60% MVC fast', ]
+    xlabel = ['20% MVC slow', '60% MVC slow', '20% MVC fast', '60% MVC fast']
     y_erd = [np.mean(dataset) for dataset in erd_datasets]
     y_ers = [np.mean(dataset) for dataset in ers_datasets]
     e_erd = [np.std(dataset) for dataset in erd_datasets]
@@ -182,8 +184,8 @@ for channel in range(len(ch_names)):
     #ax.set_rasterized(True)
     figname = plot_dir + 'ERSD_stat_change' + str(channel) + '.pdf'
     #fig.savefig(figname, format='eps',dpi=300)
-    fig.savefig(figname, dpi=400)
-    plt.pause(0.2)
+    fig.savefig(figname) #, dpi=400)
+    #plt.pause(0.2)
 
 
 # confidence analysis

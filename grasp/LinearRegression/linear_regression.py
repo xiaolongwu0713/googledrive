@@ -14,6 +14,7 @@ import torch.nn as nn
 from sklearn.pipeline import Pipeline
 
 from grasp.config import *
+from grasp.process.channel_settings import activeChannels
 from grasp.process.signalProcessUtils import butter_lowpass_filter
 from grasp.utils import load_data
 import math
@@ -23,9 +24,10 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import PolynomialFeatures
 
-sid=6
+sid=16
+
 print('Subject ID: '+ str(sid)+ '.')
-plot_dir=data_dir + 'PF' + str(sid) +'/linear_regression/'
+plot_dir=data_dir + 'PF' + str(sid) +'/prediction/linear/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -53,9 +55,11 @@ train_data=[]
 test_data=[]
 train_trials_num=[]
 test_trials_num=[]
+testNum=8
 for move in range(len(data)):
     trials = data[move].shape[2]
-    train_trials=math.floor(trials*train_test_split)
+    #train_trials=math.floor(trials*train_test_split) # or use a fixed test trial
+    train_trials=trials-testNum
     train_trials_num.append(train_trials)
     test_trials_num.append(trials-train_trials)
     train_data.append(data[move][:,:,:train_trials])
@@ -157,6 +161,6 @@ for i in range(test_stat_x.shape[0]):
     pred_tmp=lr_model.predict(np.transpose(test_stat_x[i])) # (126009, 114)
     mse[i]=criterion(torch.from_numpy(pred_tmp),torch.from_numpy(test_stat_y[i].copy())).cpu().detach().item()
 
-filename= plot_dir + 'mse_loss'
+filename= plot_dir + 'mse_loss_'+str(testNum*4)+'trials'
 np.save(filename,mse)
 #trainx=np.load('dir/dir/trainx.npy')

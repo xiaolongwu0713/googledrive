@@ -1,16 +1,11 @@
 import sys
-print('Python %s on %s' % (sys.version, sys.platform))
 sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 
-import hdf5storage
-import mne
-import numpy as np
-from mne.time_frequency import tfr_morlet, tfr_multitaper, tfr_stockwell
 from grasp.config import *
-from grasp.process.utils import get_trigger, getMovement, get_trigger_normal, getForceData, \
-    genSubTargetForce, getRawData
 import matplotlib.pyplot as plt
 from grasp.process.channel_settings import *
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype']=42
 
 sid=6
 forceChannel=-3

@@ -1,21 +1,28 @@
+'''
+This program analysis the deep learning model learning result.
+'''
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn as nn
 from grasp.config import *
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype']=42
 
 sid=16
 movements=4
+#optins: normalized_frequency_and_raw;frequency_and_raw;raw
+input='frequency_and_raw'
+M='deepConv' #shallowConv/deepConv/TSception
 
-plot_dir = data_dir + 'PF' + str(sid) + '/predictions/'
-import os
-if not os.path.exists(plot_dir):
-    os.makedirs(plot_dir)
-
-result_folder=root_dir+'grasp/TSception/result_normalized_freq_input'+str(sid)+'/'
+result_folder=root_dir+'grasp/TSception/result_'+M+'_'+input+str(sid)+'/result/'
 file_prefix='prediction_epoch'
 file_surfix='npy'
 
+plot_dir = data_dir + 'PF' + str(sid) + '/prediction/'+M+'_'+input+'/'
+import os
+if not os.path.exists(plot_dir):
+    os.makedirs(plot_dir)
 
 results=[]
 much_more_file_index=np.arange(0,10000,2)
@@ -38,7 +45,7 @@ print('Save best predictions together.')
 filename=plot_dir+'all_movements_best_predictions'
 np.save(filename,best_result)
 
-trials_per_movement=8
+testNum=8
 prediction=best_result[:,0]
 target=best_result[:,1]
 min_loss=losses[best_index]
@@ -56,8 +63,8 @@ xlabel=['movement'+str(i) for i in np.arange(movements)]
 ax.set_xticklabels(xlabel, fontsize=8)
 
 ax.text(0.45,0.9,'MSE: '+str(np.round(min_loss, 4)),fontsize=15,transform=fig.transFigure)
-plt.pause(.02)
-figname = plot_dir + 'all_movements_best_predictions.png'
+#plt.pause(.02)
+figname = plot_dir + 'all_movements_best_predictions.pdf'
 fig.savefig(figname, dpi=400)
 ax.clear()
 # individual movement analysis
@@ -72,16 +79,16 @@ for movement in range(movements):
     moves_results = []
     for result in results: #(896, 2)
         if movement==0:
-            for i in range(trials_per_movement):
+            for i in range(testNum):
                 moves_results.append(result[i*length:(i+1)*length,:])
         elif movement==1:
-            for i in range(trials_per_movement):
+            for i in range(testNum):
                 moves_results.append(result[(i+8)*length:(i+8+1)*length, :])
         elif movement==2:
-            for i in range(trials_per_movement):
+            for i in range(testNum):
                 moves_results.append(result[(i+2*8)*length:(i+2*8+1)*length, :])
         elif movement==3:
-            for i in range(trials_per_movement):
+            for i in range(testNum):
                 moves_results.append(result[(i+3*8)*length:(i+3*8+1)*length, :])
     losses = []
     for result in moves_results:
@@ -103,30 +110,20 @@ min_loss=criterion(torch.from_numpy(best_individual[:,0]),torch.from_numpy(best_
 #avg_loss=min_loss/movements # loss for a single trial prediction
 #norm_loss=avg_loss*(default_frequency/new_frequency)
 ax.text(0.45,0.9,'MSE: '+str(np.round(min_loss, 4)),fontsize=15,transform=fig.transFigure)
-plt.pause(.02)
+#plt.pause(.02) #uncomment to repeat the plot during running
 print('Save best predictions individually.')
-figname=plot_dir+'movement_individual_predictions'
+figname=plot_dir+'movement_individual_predictions.pdf'
 fig.savefig(figname, dpi=400)
 
+mse=[]
+T=int(prediction.shape[0]/(testNum*4)) # length of one trial
+for i in np.arange(testNum*4):
+    mse.append([])
+    mse[i]=criterion(torch.from_numpy(np.asarray(prediction[i*T:(i+1)*T]).copy()),torch.from_numpy(np.asarray(target[i*T:(i+1)*T]).copy()))\
+        .cpu().detach().item()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+filename= plot_dir + 'mse_loss_'+str(testNum*4)+'trials'
+np.save(filename,mse)
 
 
 

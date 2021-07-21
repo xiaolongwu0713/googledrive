@@ -8,11 +8,13 @@ from grasp.utils import load_data
 import math
 from scipy import signal
 from sklearn.cross_decomposition import PLSRegression
+from torch import nn
+import torch
 
 
-sid=6
+sid=16
 print('Subject ID: '+ str(sid)+ '.')
-plot_dir=data_dir + 'PF' + str(sid) +'/pls/'
+plot_dir=data_dir + 'PF' + str(sid) +'/prediction/pls/'
 import os
 if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
@@ -23,11 +25,13 @@ train_test_split=0.7 # train_trials/test_trials = 0.5
 
 # extract some trials as test from all 4 moves
 print('Train test data split: '+str(train_test_split)+'.')
+testNum=8 # total number of test trial: testNum*4 movement
 train_data=[]
 test_data=[]
 for move in range(len(data)):
     trials = data[move].shape[2]
-    train_trials=math.floor(trials*train_test_split)
+    #train_trials=math.floor(trials*train_test_split)
+    train_trials=trials-testNum
     train_data.append(data[move][:,:,:train_trials])
     test_data.append(data[move][:, :, train_trials:])
 train_data=np.concatenate(train_data,axis=2) # (116, 15001, 92)
@@ -38,7 +42,7 @@ print('Shuffle testing dataset.')
 train_data=train_data.transpose(2,0,1) # (trail,channels,times)
 test_data=test_data.transpose(2,0,1)
 np.random.shuffle(train_data)
-np.random.shuffle(test_data)
+#np.random.shuffle(test_data) # Do not shuffle test data.
 
 # flat trials in 3D into 2D
 print('Flatten 3D to 2D.')
@@ -88,3 +92,14 @@ ax.plot(test_y,color='red',linewidth=0.3)
 figname = plot_dir+'pls_regression.pdf'
 fig.savefig(figname)
 plt.close(fig)
+
+criterion = nn.MSELoss()
+mse=[]
+T=int(test_y.shape[0]/(testNum*4)) # length of one trial
+for i in np.arange(testNum*4):
+    mse.append([])
+    mse[i]=criterion(torch.from_numpy(np.asarray(test_y[i*T:(i+1)*T]).copy()),torch.from_numpy(np.asarray(pred_tmp[i*T:(i+1)*T]).copy()))\
+        .cpu().detach().item()
+
+filename= plot_dir + 'mse_loss_'+str(testNum*4)+'trials'
+np.save(filename,mse)

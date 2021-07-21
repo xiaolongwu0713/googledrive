@@ -9,10 +9,11 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import matplotlib.pyplot as plt
 import torch.nn as nn
 from grasp.config import *
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype']=42
 
 
-#Note: sid=2 will return nan from lstm1 during to some unstable calculation.
-#Todo: sid=1
+#Note: sid=2 will return nan from lstm1 during to some unstable calculation. solution: normalization before deep learning.
 sids=[1,2,6,10,16]
 inputs=['frequency_and_raw','raw'] # frequency_and_raw;raw
 models=['TSception','deepConv','shallowConv'] #'TSception'/'deepConv'/'shallowConv'/
@@ -33,7 +34,7 @@ result_dirs=[]
 for sid in range(len(sids)):
     result_dirs.append([])
     for input in range(len(inputs)):
-        result_dirs[sid].append(root_dir+'grasp/TSception/result_'+model+'_'+inputs[input]+str(sids[sid])+'/')
+        result_dirs[sid].append(root_dir+'grasp/TSception/result_'+model+'_'+inputs[input]+str(sids[sid])+'/result/')
 file_prefix='prediction_epoch'
 file_surfix='npy'
 
@@ -214,11 +215,11 @@ for sid in range(len(sids)):
     xlabel = ['grasp' + str(i) for i in np.arange(movements)]
     ax.set_xticklabels(xlabel, fontsize=8)
     ax.set_ylabel('MSE')
-    figname = summary_dir + 'input_compare_bar'+str(sid)+'.png'
+    figname = summary_dir + 'input_compare_bar'+str(sid)+'.pdf'
     fig.savefig(figname, dpi=400)
 ax_all[-1].legend(bbox_to_anchor=(1.05, 1), loc='upper left',prop={'size':8})
 print('Save to '+summary_dir)
-figname = summary_dir + 'input_compare_bar_all.png'
+figname = summary_dir + 'input_compare_bar_all.pdf'
 fig2.savefig(figname, dpi=400)
 
 

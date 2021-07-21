@@ -12,7 +12,7 @@ from sklearn.linear_model import Ridge
 from grasp.config import *
 
 #Note: Do not run sid=16. Too many feature will hang PC.
-sid=6
+sid=16
 print('Subject ID: '+ str(sid)+ '.')
 plot_dir=data_dir + 'PF' + str(sid) +'/prediction/ukf/'
 import os
@@ -113,13 +113,9 @@ ukf.P = P
 ukf.Q = Q
 ukf.R = R
 
-T=int(target.shape[0]/(testNum*4)) # length of one trial
-# 74 testing trial in total
-startTest=0 # trial to start from
-endTest=8 # end with endTest
-predictLen=np.arange(startTest*T,endTest*T)
+
 predict, fvar = [], []
-for t in predictLen:
+for t in np.arange(target.shape[0]):
     ukf.predict()
     ukf.update(testy[:,t])
 
@@ -141,3 +137,12 @@ ax[1].plot(fvar,label='x var')
 ax[1].legend()
 fig.savefig(figname)
 plt.close(fig)
+
+mse=[]
+T=int(target.shape[0]/(testNum*4)) # length of one trial
+for i in np.arange(testNum*4):
+    mse.append([])
+    mse[i]=criterion(torch.from_numpy(np.asarray(predict[i*T:(i+1)*T])),torch.from_numpy(np.asarray(target[i*T:(i+1)*T]))).cpu().detach().item()
+
+filename= plot_dir + 'mse_loss_'+str(testNum*4)+'trials'
+np.save(filename,mse)

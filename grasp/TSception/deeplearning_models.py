@@ -17,6 +17,8 @@ from grasp.TSception.Models import TSception2
 from grasp.braindecode.Models import shallowConv,deepConv
 from grasp.process.channel_settings import badtrials
 from grasp.config import root_dir
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype']=42
 
 
 enable_cuda = torch.cuda.is_available()

@@ -9,8 +9,8 @@ import numpy as np
 import mne
 import matplotlib.pyplot as plt
 import matplotlib
-
-print('Python %s on %s' % (sys.version, sys.platform))
+import matplotlib as mpl
+mpl.rcParams['pdf.fonttype']=42
 sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 
 

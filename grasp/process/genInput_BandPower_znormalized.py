@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from grasp.config import *
 from grasp.process.channel_settings import *
 
-sid=6
+sid=10
 sessions=4
 movements=4
 

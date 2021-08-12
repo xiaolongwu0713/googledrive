@@ -46,6 +46,12 @@ for movement in range(movements):
     for model in np.arange(len(models)):
         mse_mean[movement].append(np.mean(mse[movement][model]))
 
+perctil=[]
+for movement in range(movements):
+    perctil.append([])
+    for model in np.arange(len(models)):
+        perctil[movement].append([np.percentile(mse[movement][model], 40),np.percentile(mse[movement][model], 60)])
+
 mse_err=[]
 for movement in range(movements):
     mse_err.append([])
@@ -57,16 +63,25 @@ x=[1,15,30,45]
 color=['gold', 'orange', 'greenyellow', 'violet', 'aqua', 'hotpink']
 bar_width=1
 bar_mean=[]
+bar_perctil=[]
 bar_err=[]
+# can't use std because it is not necessary a Gaussian distribution
+# use percentile instead
 for model in range(len(models)):
     bar_mean.append([])
     bar_err.append([])
+    bar_perctil.append([])
     for movement in range(movements):
         bar_mean[model].append(mse_mean[movement][model])
     for movement in range(movements):
         bar_err[model].append(mse_err[movement][model])
+    for movement in range(movements):
+        bar_perctil[model].append(perctil[movement][model])
+
+
 for model in range(len(models)):
-    ax.bar(x, bar_mean[model], yerr=bar_err[model], width=bar_width, color=color[model],
+    tmp=np.asarray(bar_perctil[model])
+    ax.bar(x, bar_mean[model], yerr=[tmp[:,0],tmp[:,1]], width=bar_width, color=color[model],
            error_kw=dict(ecolor='gray', lw=1, capsize=3, capthick=2))
     x = [i + bar_width+0.5 for i in x]
 ax.legend(['linear','pls','ukf','CNN+RNN','deepConv','shallowConv'],
@@ -75,7 +90,7 @@ ax.legend(['linear','pls','ukf','CNN+RNN','deepConv','shallowConv'],
 ax.set_xticks(x)
 ax.set_xticklabels(['movement1','movement2','movement3','movement4'],rotation = 0, ha="right", position=(0,-0.04))
 
-figname=plot_dir+'mse_compare'+str(sid)+'.pdf'
+figname=plot_dir+'mse_compare_model'+str(sid)+'.pdf'
 print("Plot to "+figname)
 fig.savefig(figname, dpi=400)
 

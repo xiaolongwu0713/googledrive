@@ -185,8 +185,10 @@ def get_trigger_bak(triggerChannel):
 
 def genSubTargetForce(type,fs):
     aNum = 0.05
+    soft=0.8  # change this for a better plot
+    hard=2.2
     if type==1:
-        flevel = 0.4
+        flevel = soft
         prep = int(2*fs)
         ascendDuration = int(3*fs)
         holding = int(2.5*fs)
@@ -196,7 +198,7 @@ def genSubTargetForce(type,fs):
         y4 = np.ones((1, (int(15*fs) - prep - ascendDuration - holding))) * aNum
         subtarget = np.concatenate((y1, y2[np.newaxis,:], y3, y4), axis=1) # (1, 15000)
     elif type==2:
-        flevel = 1.0
+        flevel = hard
         prep = int(2*fs)
         ascendDuration = int(9*fs)
         holding = int(2.5*fs)
@@ -206,7 +208,7 @@ def genSubTargetForce(type,fs):
         y4 = np.ones((1, (int(15*fs) - prep - ascendDuration - holding))) * aNum
         subtarget = np.concatenate((y1, y2[np.newaxis, :], y3, y4), axis=1)  # (1, 15000)
     elif type==3:
-        flevel = 0.4
+        flevel = soft
         prep = int(2*fs)
         ascendDuration = int(1*fs)
         holding = int(2.5*fs)
@@ -216,7 +218,7 @@ def genSubTargetForce(type,fs):
         y4 = np.ones((1, (int(15*fs) - prep - ascendDuration - holding))) * aNum
         subtarget = np.concatenate((y1, y2[np.newaxis, :], y3, y4), axis=1)  # (1, 15000)
     elif type==4:
-        flevel = 1.0
+        flevel = hard
         prep = int(2*fs)
         ascendDuration = int(3*fs)
         holding = int(2.5*fs)

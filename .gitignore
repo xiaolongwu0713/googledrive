@@ -8,3 +8,5 @@
 data/
 result_*/
 __pycache__/
+gesture_classification.py
+TS_RNN.py

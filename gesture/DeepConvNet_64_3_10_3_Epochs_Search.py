@@ -27,7 +27,8 @@ for subj in range( subjNum ):
     sampleRate = 1000
     pn  = Inf[subj, 0]
 
-    loadPath = 'H:/lsj/preprocessing_data/P' + str(pn) + '/preprocessing3_Algorithm/preprocessingALL_3_Algorithm_v3.mat'
+    loadPath = '/Volumes/Samsung_T5/data/gesture/LSJ/P2/preprocessing3/preprocessingALL_3.mat'
+    #loadPath = 'H:/lsj/preprocessing_data/P' + str(pn) + '/preprocessing3_Algorithm/preprocessingALL_3_Algorithm_v3.mat'
     matDict = h5py.File(loadPath, 'r')
     data = matDict['preData']
     data = np.transpose(data, (4, 3, 2, 1, 0))

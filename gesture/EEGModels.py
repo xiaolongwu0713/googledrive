@@ -28,6 +28,9 @@ from tensorflow.keras.layers import Input, Flatten
 from tensorflow.keras.constraints import max_norm
 from tensorflow.keras import backend
 from tensorflow.keras.layers import add
+import tensorflow as tf
+
+tf.keras.backend.set_image_data_format('channels_first')
 
 def EEGNet(nb_classes, Chans = 64, Samples = 128, 
              dropoutRate = 0.5, kernLength = 64, F1 = 8, 
@@ -92,7 +95,7 @@ def EEGNet(nb_classes, Chans = 64, Samples = 128,
       dropoutType     : Either SpatialDropout2D or Dropout, passed as a string.
 
     """
-    
+    tf.keras.backend.set_image_data_format('channels_first')
     if dropoutType == 'SpatialDropout2D':
         dropoutType = SpatialDropout2D
     elif dropoutType == 'Dropout':
@@ -213,6 +216,7 @@ def DeepConvNet_210519_512_10(nb_classes, Chans=64, Samples=256,
                  dropoutRate=0.5):
 
     # start the model
+    tf.keras.backend.set_image_data_format('channels_first')
     input_main = Input((1, Chans, Samples))
     block1 = Conv2D(64, (1, 10),
                     input_shape=(1, Chans, Samples),

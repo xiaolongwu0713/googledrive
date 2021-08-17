@@ -15,7 +15,7 @@ if re.compile('/Users/long/').match(location):
     data_dir='/Volumes/Samsung_T5/data/grasp_force/seegData/' # preprocessed data
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
 elif re.compile('/content/drive').match(location):
-    data_dir='/content/drive/MyDrive/data/grasp/' # googleDrive
+    data_dir='/content/drive/MyDrive/data/gesture/' # googleDrive
     root_dir='/content/drive/MyDrive/' # googleDrive
 processed_data=data_dir
 

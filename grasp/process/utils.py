@@ -266,7 +266,7 @@ def getRawData2(seegfile,useChannels,triggerChannel):
 
 def getRawDataInEdf(seegfile,useChannel,triggerChannel,down_to_fs):
     print('Loading edf format file: '+ seegfile)
-    data = mne.io.read_raw_edf(seegfile)
+    data = mne.io.read_raw_edf(seegfile,preload=True)
     print('Down sampling to ' + str(down_to_fs) + '.')
     data.resample(down_to_fs)
     fs = round(data.info['sfreq'])

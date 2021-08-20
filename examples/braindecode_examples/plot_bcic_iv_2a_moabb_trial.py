@@ -37,7 +37,7 @@ from braindecode.datasets.moabb import MOABBDataset
 
 subject_id = 3
 dataset = MOABBDataset(dataset_name="BNCI2014001", subject_ids=[subject_id])
-
+# 2 session * 6 run, a=dataset.datasets[0], a is a mne raw constitute 48 trials recorded with 26 channels. a can be further epoched into epochs.
 
 ######################################################################
 # Preprocessing
@@ -78,7 +78,7 @@ preprocessors = [
 ]
 
 # Transform the data
-preprocess(dataset, preprocessors)
+preprocess(dataset, preprocessors) # in place modification
 
 
 ######################################################################

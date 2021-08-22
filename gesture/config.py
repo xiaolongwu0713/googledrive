@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import mne
+
 try:
     mne.set_config('MNE_LOGGING_LEVEL', 'ERROR')
 except TypeError as err:
@@ -12,16 +13,25 @@ tmp_dir='/tmp/'
 import os, re
 location=os.getcwd()
 if re.compile('/Users/long/').match(location):
-    data_dir='/Volumes/Samsung_T5/data/gesture/LSJ/preprocessing_data/' # preprocessed data
+    data_dir='/Volumes/Samsung_T5/data/gesture/' # preprocessed data
+    tmp_data_dir='/Users/long/Documents/data/gesture/'
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
 elif re.compile('/content/drive').match(location):
     data_dir='/content/drive/MyDrive/data/gesture/' # googleDrive
     root_dir='/content/drive/MyDrive/' # googleDrive
-processed_data=data_dir
 
-paradigm=1
+# paradigm definition
+# channel:  SEEG+EMG+class
 
 default_frequency=1000
+
+# participants details
+classNum = 5
+Frequencies = np.array([[2, 1000], [3, 1000], [ 4, 1000], [5, 1000], [ 7, 1000], [ 8, 1000], [ 9, 1000], [ 10, 2000],
+    [13, 2000], [ 16, 2000], [ 17, 2000], [ 18, 2000], [ 19, 2000], [ 20, 1000], [ 21, 1000], [ 22, 2000], [ 23, 2000],  #[24, 2000], [ 25, 2000], [ 26, 2000],
+     [  29, 2000], [ 30, 2000], [ 31, 2000], [ 32, 2000], [ 34, 2000], [ 35, 1000],
+    [36, 2000], [ 37, 2000], [41, 2000]])
+
 
 fbands=[] #delta, theta, alpha,beta,gamma
 fbands.append([0.5, 4])
@@ -33,16 +43,6 @@ fbands.append([60, 125]) # genBandPower_znormalied.py
 
 ERD=[13,30]
 ERS=[55,100]
-# some cross module variables, you can import this variable as:
-# import grasp.config as myVar, then myVar.preds=...
-# OR, just make them global
-#preds=[]
-#targets=[]
-
-# Lambda is used by skorch get_loss function
-#Lambda = 1e-6
-preds=[]
-targets=[]
 
 def printVariables(variable_names):
     for k in variable_names:

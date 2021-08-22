@@ -60,8 +60,7 @@ dataset = MOABBDataset(dataset_name="BNCI2014001", subject_ids=[subject_id])
 #    `torchvision <https://pytorch.org/docs/stable/torchvision/index.html>`__.
 #
 
-from braindecode.datautil.preprocess import (
-    exponential_moving_standardize, preprocess, Preprocessor)
+from braindecode.datautil.preprocess import (exponential_moving_standardize, preprocess, Preprocessor)
 
 low_cut_hz = 4.  # low cut frequency for filtering
 high_cut_hz = 38.  # high cut frequency for filtering

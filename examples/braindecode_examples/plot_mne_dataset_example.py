@@ -10,7 +10,6 @@
 # License: BSD (3-clause)
 
 import mne
-
 from braindecode.datautil import (create_from_mne_raw, create_from_mne_epochs)
 
 ###############################################################################
@@ -23,17 +22,14 @@ event_codes = [5, 6, 9, 10, 13, 14]
 
 # This will download the files if you don't have them yet,
 # and then return the paths to the files.
-physionet_paths = mne.datasets.eegbci.load_data(
-    subject_id, event_codes, update_path=False)
+physionet_paths = mne.datasets.eegbci.load_data(subject_id, event_codes, update_path=False)
 
 # Load each of the files
-parts = [mne.io.read_raw_edf(path, preload=True, stim_channel='auto')
-         for path in physionet_paths]
+parts = [mne.io.read_raw_edf(path, preload=True, stim_channel='auto')for path in physionet_paths]
 
 ###############################################################################
 # Convert mne.RawArrays to a compatible data format:
-descriptions = [{"event_code": code, "subject": subject_id}
-                for code in event_codes]
+descriptions = [{"event_code": code, "subject": subject_id}for code in event_codes]
 windows_datasets = create_from_mne_raw(
     parts,
     trial_start_offset_samples=0,

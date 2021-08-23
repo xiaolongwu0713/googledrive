@@ -7,12 +7,11 @@
 #! pip install tensorflow-gpu == 1.12.0;
 
 import numpy as np
-from scipy.io import savemat
 from sklearn.model_selection import StratifiedKFold
 import os
 import h5py
-from gesture.EEGModels import DeepConvNet_210519_512_10
-from gesture.config import root_dir, data_dir
+from gesture.models.EEGModels import DeepConvNet_210519_512_10
+from gesture.config import data_dir
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 classNum = 5

@@ -33,7 +33,7 @@ class Deep4Net2(nn.Sequential):
         final_conv_length,
         n_filters_time=64,
         n_filters_spat=64,
-        filter_time_length=10,
+        filter_time_length=50,
         pool_time_length=3,
         pool_time_stride=3,
         n_filters_2=50,
@@ -110,7 +110,7 @@ class Deep4Net2(nn.Sequential):
             self.add_module("bnorm",nn.BatchNorm2d(n_filters_conv,momentum=self.batch_norm_alpha,affine=True,eps=1e-5,),)
         self.add_module("conv_nonlin", Expression(self.first_nonlin)) #elu
         self.add_module("pool",first_pool_class(kernel_size=(self.pool_time_length, 1), stride=(pool_stride, 1)),) #MaxPool2d
-        self.add_module("pool_nonlin", Expression(self.first_pool_nonlin)) # identity
+        #self.add_module("pool_nonlin", Expression(self.first_pool_nonlin)) # identity
 
         def add_conv_pool_block(model, n_filters_before, n_filters, filter_length, block_nr):
             suffix = "_{:d}".format(block_nr)
@@ -125,7 +125,7 @@ class Deep4Net2(nn.Sequential):
             #self.add_module("pool" + suffix,later_pool_class(kernel_size=(self.pool_time_length, 1),stride=(pool_stride, 1),),)
 
             #Expression(expression=identity)
-            self.add_module("pool_nonlin" + suffix, Expression(self.later_pool_nonlin)) # identity
+            #self.add_module("pool_nonlin" + suffix, Expression(self.later_pool_nonlin)) # identity
 
         add_conv_pool_block(self, n_filters_conv, self.n_filters_2, self.filter_length_2, 2)
         add_conv_pool_block(self, self.n_filters_2, self.n_filters_3, self.filter_length_3, 3)

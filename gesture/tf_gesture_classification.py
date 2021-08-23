@@ -16,26 +16,29 @@ from gesture.config import root_dir, data_dir
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 classNum = 5
+
+
 Inf = [[2, 1000], [3, 1000], [ 4, 1000], [5, 1000], [ 7, 1000], [ 8, 1000], [ 9, 1000], [ 10, 2000],
     [13, 2000], [ 16, 2000], [ 17, 2000], [ 18, 2000], [ 19, 2000], [ 20, 1000], [ 21, 1000], [ 22, 2000], [ 23, 2000],  #[24, 2000], [ 25, 2000], [ 26, 2000],
      [  29, 2000], [ 30, 2000], [ 31, 2000], [ 32, 2000], [ 34, 2000], [ 35, 1000],
     [36, 2000], [ 37, 2000], [41, 2000]]
 Inf = np.array(Inf)
-#Inf = Inf[[0,1,2,7,8,11,15,17,20,21,25],:] # choose the participants
-Inf = Inf[[0],:]
+#Inf = Inf[[0,1,2,7,8,11,15,17,20,21,25],:]
+Inf = Inf[[7],:]
 
 subjNum = np.size(Inf, 0)
-kfolds = 5
+kfolds = 2
 repeatTs = 1
-epochsCt = 25
+epochsCt = 50
 accuracy = np.zeros(( subjNum, epochsCt ))
 loss = np.zeros(( subjNum, epochsCt ))
-for subj in range( subjNum ):
+#for subj in range( subjNum ):
+for subj in [10,]:
     sampleRate = 1000
-    pn  = Inf[subj, 0]
-    #pn=subj
+    #pn  = Inf[subj, 0]
+    pn=subj
 
-    loadPath = data_dir+'P'+str(pn)+'/preprocessing3_Algorithm/preprocessingALL_3_Algorithm_v3.mat'
+    loadPath = data_dir+'preprocessing_tf/P'+str(pn)+'/preprocessingALL_3_Algorithm_v3.mat'
     #loadPath = 'H:/lsj/preprocessing_data/P' + str(pn) + '/preprocessing3_Algorithm/preprocessingALL_3_Algorithm_v3.mat'
     matDict = h5py.File(loadPath, 'r')
     data = matDict['preData']
@@ -60,7 +63,7 @@ for subj in range( subjNum ):
             testData = np.reshape(testData, (-1, kernel, channel, sample ))
             trainLabel = np.reshape(trainLabel, (-1, 1))
             testLabel = np.reshape(testLabel, (-1, 1))
-            trainLabel = np.eye(classNum)[trainLabel - 1]
+            trainLabel = np.eye(classNum)[trainLabel - 1] # one-hot encode the label
             testLabel = np.eye(classNum)[testLabel - 1]
             trainLabel = np.reshape(trainLabel, [-1, classNum])
             testLabel = np.reshape(testLabel, [-1, classNum])
@@ -69,14 +72,20 @@ for subj in range( subjNum ):
                                 dropoutRate=0.5)
             model.compile(loss='categorical_crossentropy', optimizer='Adam', metrics=['accuracy'])
             for epoch in range(epochsCt):
-
+                if epoch%5 == 0:
+                    print('Epoch: '+str(epoch))
                 fitted = model.fit(trainData, trainLabel, batch_size= 32,  epochs= 2)
                 los, accu = model.evaluate(testData, testLabel)
                 _accuracy[tampCt-1, epoch] = accu
                 _loss[tampCt - 1, epoch] = los
 
-    accuracy[subj, :] = np.mean(_accuracy, axis=0)
-    loss[subj, :] = np.mean(_loss, axis=0)
+    
 
+
+acc=np.mean(_accuracy,axis=0)
+
+_accuracy.shape, acc.shape
+
+acc
 
 

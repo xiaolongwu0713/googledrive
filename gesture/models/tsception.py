@@ -76,6 +76,7 @@ class TSception(nn.Module):
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
         self.float()
         x = torch.squeeze(x, dim=0)
+        x = torch.unsqueeze(x, dim=1)
         batch_size=x.shape[0]
         # y1 = self.Tception1(x)
         y2 = self.Tception2(x)

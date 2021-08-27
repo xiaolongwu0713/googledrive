@@ -1,3 +1,7 @@
+'''
+usage: just run this in cmd: python show3d_balls.py
+'''
+
 import os
 import sys
 #os.chdir(os.path.abspath(os.path.dirname(__file__)))

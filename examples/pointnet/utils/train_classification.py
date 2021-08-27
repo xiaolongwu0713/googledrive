@@ -2,6 +2,9 @@
 usage:
 download dataset as instructed in https://github.com/fxia22/pointnet.pytorch, mv to your locatin, change the --dataset
 parameter to the location, then run this in cmd line: python train_classification.py --nepoch=1 --dataset_type shapenet
+
+question: how to feed in 4D or higher dimension data?
+https://github.com/fxia22/pointnet.pytorch/issues/87
 '''
 
 from __future__ import print_function

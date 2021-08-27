@@ -1,29 +1,40 @@
+'''
+usage:
+download dataset as instructed in https://github.com/fxia22/pointnet.pytorch, mv to your locatin, change the --dataset
+parameter to the location, then run this in cmd line: python train_classification.py --nepoch=1 --dataset_type shapenet
+'''
+
 from __future__ import print_function
+import os
+import sys
+#os.chdir('/Users/long/Documents/BCI/python_scripts/googleDrive/examples/')
+sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive/'])
+
+print(os.getcwd())
 import argparse
 import os
 import random
 import torch
-import torch.nn.parallel
+#import torch.nn.parallel
 import torch.optim as optim
 import torch.utils.data
-from pointnet.dataset import ShapeNetDataset, ModelNetDataset
-from pointnet.model import PointNetCls, feature_transform_regularizer
+from examples.pointnet.pointnet.dataset import ShapeNetDataset, ModelNetDataset
+from examples.pointnet.pointnet.model import PointNetCls, feature_transform_regularizer
 import torch.nn.functional as F
 from tqdm import tqdm
-
+from examples.pointnet.utils.show3d_balls import showpoints
+# plot 3D objects with showpoints during debug: showpoints(3D_data);
+enable_cuda = torch.cuda.is_available()
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    '--batchSize', type=int, default=32, help='input batch size')
-parser.add_argument(
-    '--num_points', type=int, default=2500, help='input batch size')
-parser.add_argument(
-    '--workers', type=int, help='number of data loading workers', default=4)
-parser.add_argument(
-    '--nepoch', type=int, default=250, help='number of epochs to train for')
+parser.add_argument('--batchSize', type=int, default=32, help='input batch size')
+parser.add_argument('--num_points', type=int, default=2500, help='input batch size')
+parser.add_argument('--workers', type=int, help='number of data loading workers', default=0)
+parser.add_argument('--nepoch', type=int, default=1, help='number of epochs to train for')
 parser.add_argument('--outf', type=str, default='cls', help='output folder')
 parser.add_argument('--model', type=str, default='', help='model path')
-parser.add_argument('--dataset', type=str, required=True, help="dataset path")
+parser.add_argument('--dataset', type=str, help="dataset path",default='/Users/long/Documents/data/pointnet/shapenetcore_partanno_segmentation_benchmark_v0')
+#parser.add_argument('--dataset', type=str, help="dataset path")
 parser.add_argument('--dataset_type', type=str, default='shapenet', help="dataset type shapenet|modelnet40")
 parser.add_argument('--feature_transform', action='store_true', help="use feature transform")
 
@@ -93,17 +104,18 @@ if opt.model != '':
 
 optimizer = optim.Adam(classifier.parameters(), lr=0.001, betas=(0.9, 0.999))
 scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
-classifier.cuda()
+if (enable_cuda):
+    classifier.cuda()
 
 num_batch = len(dataset) / opt.batchSize
 
 for epoch in range(opt.nepoch):
-    scheduler.step()
     for i, data in enumerate(dataloader, 0):
         points, target = data
         target = target[:, 0]
-        points = points.transpose(2, 1)
-        points, target = points.cuda(), target.cuda()
+        points = points.transpose(2, 1) # torch.Size([32, 3, 2500])
+        if (enable_cuda):
+            points, target = points.cuda(), target.cuda()
         optimizer.zero_grad()
         classifier = classifier.train()
         pred, trans, trans_feat = classifier(points)
@@ -121,14 +133,15 @@ for epoch in range(opt.nepoch):
             points, target = data
             target = target[:, 0]
             points = points.transpose(2, 1)
-            points, target = points.cuda(), target.cuda()
+            if (enable_cuda):
+                points, target = points.cuda(), target.cuda()
             classifier = classifier.eval()
             pred, _, _ = classifier(points)
             loss = F.nll_loss(pred, target)
             pred_choice = pred.data.max(1)[1]
             correct = pred_choice.eq(target.data).cpu().sum()
             print('[%d: %d/%d] %s loss: %f accuracy: %f' % (epoch, i, num_batch, blue('test'), loss.item(), correct.item()/float(opt.batchSize)))
-
+    scheduler.step()
     torch.save(classifier.state_dict(), '%s/cls_model_%d.pth' % (opt.outf, epoch))
 
 total_correct = 0
@@ -137,7 +150,7 @@ for i,data in tqdm(enumerate(testdataloader, 0)):
     points, target = data
     target = target[:, 0]
     points = points.transpose(2, 1)
-    points, target = points.cuda(), target.cuda()
+    #points, target = points.cuda(), target.cuda()
     classifier = classifier.eval()
     pred, _, _ = classifier(points)
     pred_choice = pred.data.max(1)[1]

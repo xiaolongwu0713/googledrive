@@ -73,7 +73,7 @@ def get_channel_setting(pn):
         UseChn = [*range(0, 19)] + [*range(20, 33)] + [*range(38, 60)] + [*range(62, 216)]
         EmgChn = [60,61]
         TrigChn = [33,34,35,36,37]
-
+        activeChn=[57,65,66,67,70,71,72]+[*range(143,150)]+[158,]+[*range(162,168)]+[180,183]
         #Session_num=[1,2];
         #UseChn=[1:19,21:33,39:60,63:216];
         #EmgChn=[61:62];
@@ -324,5 +324,5 @@ def get_channel_setting(pn):
         #TrigChn=[46:50];
     else:
         print("No participant ID found.")
-    return Session_num,UseChn,EmgChn,TrigChn
+    return Session_num,UseChn,EmgChn,TrigChn,activeChn
 

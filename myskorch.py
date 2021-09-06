@@ -5,7 +5,6 @@ from skorch.utils import to_tensor
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 preds=[]
 targets=[]
 class on_epoch_begin_callback(Callback):

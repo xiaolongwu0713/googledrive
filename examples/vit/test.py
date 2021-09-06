@@ -3,7 +3,7 @@ from __future__ import print_function
 
 from prettytable import PrettyTable
 
-from comm_to_all import seed_everything, count_parameters
+from common_dl import set_random_seeds, count_parameters
 import timm
 import torch
 from timm.models import registry
@@ -54,7 +54,7 @@ seed = 42
 
 
 
-seed_everything(seed)
+set_random_seeds(seed)
 
 efficient_transformer = Linformer(
     dim=128,

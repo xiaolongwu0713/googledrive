@@ -11,7 +11,7 @@ from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
 from gesture.models.utils import squeeze_all
 
 
-class Deep4Net2(nn.Sequential):
+class deepnet(nn.Sequential):
     """
     Deep ConvNet model from [1]_.
 

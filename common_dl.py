@@ -26,6 +26,7 @@ def set_random_seeds(seed):
 
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
     cuda = torch.cuda.is_available()
     if cuda:
         torch.cuda.manual_seed(seed)
@@ -37,7 +38,7 @@ def count_parameters(model):
     total_params = 0
     for name, parameter in model.named_parameters():
         if not parameter.requires_grad: continue
-        param = parameter.numel()
+        param = parameter.numel() # numel: return how many number in that parameter
         table.add_row([name, param])
         total_params += param
     print(table)

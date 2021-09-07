@@ -20,6 +20,7 @@ if not os.path.exists(output_dir):
 Session_num,UseChn,EmgChn,TrigChn, activeChn = get_channel_setting(sid)
 # choose less channel
 activeChn=[57,]+[*range(147,150)]+[158,]+[*range(165,168)]+[180,183]
+#activeChn=[168,180,183]
 chn_num=len(activeChn)
 #original_fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == pn][0]
 fs=1000
@@ -76,23 +77,24 @@ tf_input_tmp=[]
 for i in range(5):
     epoch_tfr=tfr_morlet(list_of_epochs[i],freqs=freqs, n_cycles=n_cycles,use_fft=True,return_itc=False, average=False, decim=decim, n_jobs=1)
     epoch_tfr.apply_baseline([-3.5,0])
-    epoch_tfr.crop(tmin=0,tmax=4)
+    epoch_tfr.crop(tmin=0,tmax=4) # (20, 10, 148, 1001)
     tf_input_tmp.append(epoch_tfr)
 
 wind=int(1*new_fs)
 stride=int(0.5*new_fs)
-wind_num=((tf_input_tmp[0].data[0].shape[2]-wind)//stride+1) * len(epoch_tfr.events) # window number per trial * 20 trials in an epoch
+winds_per_trial=((tf_input_tmp[0].data[0].shape[2]-wind)//stride+1)
+wind_num=winds_per_trial * len(epoch_tfr.events) # window number per trial * 20 trials in an epoch
 wind_data=np.zeros((wind_num,chn_num,148,wind))
 tf_input=[] #(5,140, 23, 148, 250): (5 movement, windows number, channel,frequency, time)
 for i in range(5):
     tf_input.append([])
-    tmp=tf_input_tmp[i].data # (20, 23, 148, 1001) (20 trials, 23 channels, 148*1001 tf 2D)
-    for trial in tmp: # trial: (23, 148, 1001)
+    tmp=tf_input_tmp[i].data # one epoch data,(20, 23, 148, 1001) (20 trials, 23 channels, 148*1001 tf 2D)
+    for t in range(tmp.shape[0]): #iter through trials in epoch
+    #for trial in tmp: # trial: (23, 148, 1001)
+        trial=tmp[t]
         j=0
-        wind_data[j,:,:,:]=trial[:,:,:wind]
-        j = j + 1
-        while j<(trial.shape[2]-wind)//stride:
-            wind_data[j,:,:,:]=trial[:,:,j*stride:j*stride+wind]
+        while j<winds_per_trial:
+            wind_data[t*winds_per_trial+j,:,:,:]=trial[:,:,j*stride:j*stride+wind]
             j=j+1
     tf_input[i]=wind_data
 from sklearn.model_selection import train_test_split
@@ -119,6 +121,10 @@ y_train=np.concatenate(y_train_tmp)
 y_test=np.concatenate(y_test_tmp)
 del X_train_tmp, X_test_tmp, y_train_tmp, y_test_tmp
 
+mean=X_train.mean()
+std=X_train.std()
+X_train=(X_train-mean)/std
+X_test=(X_test-mean)/std
 
 # save dataset to numpy. too large to save it to npy.
 #dataset={}
@@ -129,7 +135,7 @@ del X_train_tmp, X_test_tmp, y_train_tmp, y_test_tmp
 #filename=output_dir+'dataset.npy'
 #np.save(filename, dataset)  # can't be saved because: OverflowError: cannot serialize a bytes object larger than 4 GiB
 
-filename=output_dir+'dataset.hdf5'
+filename=output_dir+'dataset_10chn.hdf5'
 f1 = h5py.File(filename, "w")
 ds1 = f1.create_dataset("X_train",data=X_train)
 ds2 = f1.create_dataset("X_test", data=X_test)
@@ -137,9 +143,17 @@ ds3 = f1.create_dataset("y_train", data=y_train)
 ds4 = f1.create_dataset("y_test",data=y_test)
 f1.close()
 
-filename=output_dir+'dataset.hdf5'
+'''
+## test
+sid = 10  # 4
+data_dir = data_dir + 'preprocessing/P' + str(sid) + '/tfInput/'
+filename=data_dir+'dataset_10chn.hdf5'
 f1 = h5py.File(filename, "r")
 list(f1.keys())
+X_train = f1['X_train'][:] # (650, 10, 148, 250)
+X_test = f1['X_test'][:] #(50, 10, 148, 250)
+y_train = f1['y_train'][:] # (650,)
+y_test = f1['y_test'][:]
 f1.close()
-
+'''
 

@@ -10,7 +10,7 @@ from braindecode.models.functions import identity, transpose_time_to_spat, squee
 from braindecode.util import np_to_var
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
 
-from common_dl import add_channel_dimm
+from common_dl import add_channel_dimm,init_weights
 from gesture.models.utils import squeeze_all
 
 
@@ -185,6 +185,19 @@ class deepnet(nn.Sequential):
         self.eval()
 
 
+def shortcut(block,x):  # @save
+    channels=[(i.in_channels, i.out_channels) for i in block if type(i) == nn.Conv2d]
+    input_channels=channels[0][0]
+    num_channels=channels[0][1]
+    strides = [i.stride for i in block if type(i) == nn.Conv2d]
+    stride=strides[0][0] * strides[0][1]
+    # 1,pad when using non-1 sized kernel; 2, make sure the shortcut stride = conv stride
+    if (not input_channels==num_channels) or (not stride==1): # when channel number or width/height changed
+        _shortcut = nn.Conv2d(input_channels, num_channels,kernel_size=1, stride=stride)
+        return _shortcut(x)
+    else:
+        return x
+
 # model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 class deepnet_resnet(nn.Module):
     def __init__(self,in_chans,n_classes,input_window_samples,n_filters_time=64,n_filters_spat=64,expand=True,
@@ -206,61 +219,42 @@ class deepnet_resnet(nn.Module):
             conv_channels = [64, 50,50,50,50]
             #conv_channels = [64, 64, 64, 64, 64]
 
-        self.add_module("expand4D", add_channel_dimm())
-        # conv2d(1,64,(10,1),stride=1)
-        self.add_module("conv_time",nn.Conv2d(1,self.n_filters_time,(1,self.filter_time_length),stride=1,))
-        # conv2d(64,64,(in_chn,1),stride=1)
-        self.add_module("conv_spat",nn.Conv2d(self.n_filters_time,self.n_filters_spat,(self.in_chans,1),stride=(1, 1)))
+        self.block0 = nn.Sequential(add_channel_dimm(),
+                                    nn.Conv2d(1,self.n_filters_time,(1,self.filter_time_length),stride=1,),
+                                    nn.Conv2d(self.n_filters_time,self.n_filters_spat,(self.in_chans,1),stride=(1, 1)),
+                                    nn.BatchNorm2d(self.n_filters_spat,affine=True,eps=1e-5,),
+                                    nn.ELU(),
+                                    nn.MaxPool2d(kernel_size=(1,3), stride=(1,2)))
 
-        self.add_module("bnorm",nn.BatchNorm2d(self.n_filters_spat,affine=True,eps=1e-5,),)
-        self.add_module("nonlin", nn.ELU()) #elu
-        self.add_module("maxpool",nn.MaxPool2d(kernel_size=(1,3), stride=(1,2)),) #MaxPool2d
 
-        class Residual(nn.Module):  # @save
-            def __init__(self, input_channels, num_channels, use_1x1conv=False,
-                         stride=1):
-                super().__init__()
-                self.do = nn.Dropout(p=self.drop_prob)
-                # 1,pad when using non-1 sized kernel; 2, make sure the shortcut stride = conv stride
-                self.conv1 = nn.Conv2d(input_channels, num_channels, kernel_size=(1, 11),padding=5, stride=stride)
-                if (not input_channels==num_channels) or (not stride==1): # when channel number or width/height changed
-                    self.shortcut = nn.Conv2d(input_channels, num_channels,
-                                           kernel_size=1, stride=stride)
-                else:
-                    self.shortcut = None
-            def forward(self, X):
-                Y = self.do(X)
-                Y = self.conv1(Y)
-                if self.shortcut:
-                    X = self.shortcut(X)
-                Y += X
-                return F.relu(Y)
+        kernel=11
+        padding=11//2
+        stride=2
+        self.block1 = nn.Sequential(nn.Dropout(p=self.drop_prob),
+                           nn.Conv2d(conv_channels[0],conv_channels[1], (1, kernel),padding=padding, stride=(1,stride)))
 
-        block1 = nn.Sequential(nn.Dropout(p=self.drop_prob),
-                           nn.Conv2d(conv_channels[0],conv_channels[1], (1, 10),stride=(1,2)))
-
-        block2=nn.Sequential(nn.BatchNorm2d(conv_channels[1], affine=True, eps=1e-5, ),
+        self.block2=nn.Sequential(nn.BatchNorm2d(conv_channels[1], affine=True, eps=1e-5, ),
                              nn.ELU(),
                              nn.Dropout(p=self.drop_prob),
-                             nn.Conv2d(conv_channels[1],conv_channels[2], (1,10),stride=(1,2))
+                             nn.Conv2d(conv_channels[1],conv_channels[2], (1,kernel),padding=padding,stride=(1,stride))
                              )
 
-        block3 = nn.Sequential(nn.BatchNorm2d(conv_channels[2], affine=True, eps=1e-5, ),
+        self.block3 = nn.Sequential(nn.BatchNorm2d(conv_channels[2], affine=True, eps=1e-5, ),
                                nn.ELU(),
                                nn.Dropout(p=self.drop_prob),
-                               nn.Conv2d(conv_channels[2],conv_channels[3], (1, 10), stride=(1, 2))
+                               nn.Conv2d(conv_channels[2],conv_channels[3], (1, kernel), stride=(1, stride))
                                )
 
-        block4 = nn.Sequential(nn.BatchNorm2d(conv_channels[3], affine=True, eps=1e-5, ),
+        self.block4 = nn.Sequential(nn.BatchNorm2d(conv_channels[3], affine=True, eps=1e-5, ),
                                nn.ELU(),
                                nn.Dropout(p=self.drop_prob),
-                               nn.Conv2d(conv_channels[3],conv_channels[4], (1, 10), stride=(1, 2))
+                               nn.Conv2d(conv_channels[3],conv_channels[4], (1, kernel), stride=(1, stride))
                                )
 
-        self.add_module("block1", block1)
-        self.add_module("block2", block2)
-        self.add_module("block3", block3)
-        #self.add_module("block4", block4)
+        #self.add_module("block1", self.block1)
+        #self.add_module("block2", self.block2)
+        #self.add_module("block3", self.block3)
+        #self.add_module("block4", self.block4)
 
         #self.add_module("bn_lastb" ,nn.BatchNorm2d(self.n_filters_4, affine=True, eps=1e-5, ), )
         #self.add_module("elu_lastb", nn.ELU())  # elu
@@ -268,58 +262,43 @@ class deepnet_resnet(nn.Module):
 
         # self.add_module('drop_classifier', nn.Dropout(p=self.drop_prob))
         a=torch.randn(1, 1, in_chans, input_window_samples)
-        out = self(a)
+        out = self.block0(a) # torch.Size([1, 64, 1, 245])
         out_channels=out.shape[1]
         n_out_time,n_out_spatial = out.shape[2], out.shape[3]
 
-        #self.add_module("conv_classifier",nn.Conv2d(self.n_filters_4,self.n_classes,(self.final_conv_length, 1),bias=True,),)
-        self.add_module("globalAvgPooling",nn.AvgPool2d((n_out_time,n_out_spatial)))
-        self.add_module("squeeze1", Expression(squeeze_all))
-        self.add_module("fc", nn.Linear(out_channels,n_classes))
-        self.add_module("softmax", nn.LogSoftmax())
         #self.add_module("squeeze2", Expression(squeeze_final_output))
+        self.block_final = nn.Sequential(nn.AvgPool2d((n_out_time,n_out_spatial)),
+                                         Expression(squeeze_all),
+                                         nn.Linear(out_channels,n_classes))
+        self.softmax = nn.LogSoftmax()
 
-
-        for m in self:
-            if (type(m) == nn.Linear or type(m) == nn.Conv2d):
-                torch.nn.init.xavier_uniform_(m.weight,gain=1)
-            if (type(m) == nn.BatchNorm2d):
-                init.constant_(m.weight, 1)
-                init.constant_(m.bias, 0)
+        self.apply(init_weights)
 
         # Start in eval mode
         self.eval()
 
+    def forward(self, x):
+        x = self.block0(x)
 
-class Residual(nn.Module):  #@save
-    """The Residual block of ResNet."""
-    def __init__(self, input_channels, num_channels, use_1x1conv=False,
-                 strides=1):
-        super().__init__()
-        self.conv1 = nn.Conv2d(input_channels, num_channels, kernel_size=3,
-                               padding=1, stride=strides)
-        self.conv2 = nn.Conv2d(num_channels, num_channels, kernel_size=3,
-                               padding=1)
-        if use_1x1conv:
-            self.conv3 = nn.Conv2d(input_channels, num_channels,
-                                   kernel_size=1, stride=strides)
-        else:
-            self.conv3 = None
-        self.bn1 = nn.BatchNorm2d(num_channels)
-        self.bn2 = nn.BatchNorm2d(num_channels)
+        y = self.block1(x)
+        ff=shortcut(self.block1,y)
+        x=y+ff
 
-    def forward(self, X):
-        Y = F.relu(self.bn1(self.conv1(X)))
-        Y = self.bn2(self.conv2(Y))
-        if self.conv3:
-            X = self.conv3(X)
-        Y += X
-        return F.relu(Y)
+        y = self.block2(x)
+        ff = shortcut(self.block2, y)
+        x = y + ff
 
+        y = self.block3(x)
+        ff = shortcut(self.block3, y)
+        x = y + ff
 
-blk = Residual(3, 3)
-X = torch.rand(4, 3, 6, 6)
-Y = blk(X)
-Y.shape
+        y = self.block4(x)
+        ff = shortcut(self.block4, y)
+        x = y + ff
+
+        x = self.block_final(x)
+
+        return self.softmax(x)
+
 
 

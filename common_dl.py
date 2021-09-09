@@ -1,11 +1,18 @@
 import os
 
+from torch import nn
 import torch
 import numpy as np
 import random
 from prettytable import PrettyTable
 from torch.utils.data import Dataset, DataLoader
 
+def init_weights(m):
+    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+        torch.nn.init.xavier_uniform(m.weight)
+    if (type(m) == nn.BatchNorm2d):
+        torch.nn.init.constant_(m.weight, 1)
+        torch.nn.init.constant_(m.bias, 0)
 
 # convert input of (batch, height, width) to (batch, channel, height, width)
 class add_channel_dimm(torch.nn.Module):

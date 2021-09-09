@@ -35,9 +35,11 @@ from gesture.preprocess.chn_settings import get_channel_setting
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
-model = deepnet_resnet(208,5,input_window_samples=500,expand=False)
-a=torch.FloatTensor(1, 1, 208, 500)
-out=model(a)
+#model = deepnet_resnet(208,5,input_window_samples=500,expand=True)
+#model = deepnet(208,5,input_window_samples=500,final_conv_length="auto")
+#model.train()
+#a=torch.FloatTensor(1, 1, 208, 500)
+#out=model(a)
 
 pn=10 #4
 Session_num,UseChn,EmgChn,TrigChn,activeChn = get_channel_setting(pn)
@@ -144,11 +146,10 @@ input_window_samples = one_window.shape[2] # 500
 #model = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 #model = EEGNetv4(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
-#model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) #(58% no stand)/( 55% with standardization)
+model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) #(58% no stand)/( 55% with standardization)
 #model=TSception(1000,n_chans,3,3,0.5)
-model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
-test=torch.tensor(np.ones((1, n_chans, input_window_samples, 1)))
-out=model(test)
+#model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
+
 # Send model to GPU
 if cuda:
     model.cuda()

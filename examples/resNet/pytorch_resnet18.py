@@ -1,6 +1,7 @@
 # License: BSD
 # Author: Sasank Chilamkurthy
-
+# this is an example from pytorch: https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html
+# two class: bee vs ant
 from __future__ import print_function, division
 
 import torch

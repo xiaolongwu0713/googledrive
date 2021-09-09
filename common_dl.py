@@ -6,17 +6,15 @@ import random
 from prettytable import PrettyTable
 from torch.utils.data import Dataset, DataLoader
 
+
+# convert input of (batch, height, width) to (batch, channel, height, width)
+class add_channel_dimm(torch.nn.Module):
+    def forward(self, x):
+        while(len(x.shape) < 4):
+            x = x.unsqueeze(1)
+        return x
+
 def squeeze_all(x):
-    """Removes empty dimension at end and potentially removes empty time
-     dimension. It does  not just use squeeze as we never want to remove
-     first dimension.
-
-    Returns
-    -------
-    x: torch.Tensor
-        squeezed tensor
-    """
-
     return torch.squeeze(x)
 
 def set_random_seeds(seed):

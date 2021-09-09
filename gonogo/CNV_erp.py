@@ -57,9 +57,10 @@ epoch56=mne.Epochs(raw, event56, tmin=-3, tmax=1,baseline=None) # varying reacti
 epoch1112=mne.Epochs(raw, event1112, tmin=-7, tmax=6,baseline=None) # 3s task cue and 3s executing cue
 epoch2122=mne.Epochs(raw, event2122, tmin=0, tmax=3,baseline=None) # 3s executing cue
 epoch11=mne.Epochs(raw, event11, tmin=-7, tmax=3.5,baseline=None)
+epoch11a=mne.Epochs(raw, event11, tmin=-7, tmax=4.0,baseline=None)
 #epoch12=mne.Epochs(raw, event12, tmin=-7, tmax=6,baseline=None)
 
-cnv1112 = epoch1112.load_data().copy().pick(picks=['seeg']).filter(l_freq=0.1, h_freq=250) # evoked data
+cnv1112 = epoch1112.load_data().copy().pick(picks=['seeg']).filter(l_freq=0.1, h_freq=1) # evoked data
 cnv11_avg=cnv1112['11'].average(method='mean') # evoked.data returns the underlying data
 cnv12_avg=cnv1112['12'].average(method='mean')
 cnv11_avg.plot()
@@ -69,3 +70,11 @@ cnv11b_avg=cnv1112b['11'].average(method='mean') # evoked.data returns the under
 cnv12b_avg=cnv1112b['12'].average(method='mean')
 cnv11b_avg.pick(picks=[46]).plot()
 
+
+cnv11 = epoch11.load_data().copy().pick(picks=['seeg']).filter(l_freq=0.05, h_freq=2)
+cnv11_avg=cnv11.average(method='mean')
+cnv11_avg.pick(picks=[42]).plot()
+
+cnv11a = epoch11a.load_data().copy().pick(picks=['seeg']).filter(l_freq=0.05, h_freq=2)
+cnv11a_avg=cnv11a.average(method='mean')
+cnv11a_avg.pick(picks=[46]).plot()

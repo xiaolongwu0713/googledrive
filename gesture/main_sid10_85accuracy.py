@@ -24,7 +24,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet, deepnet_resnet
+from gesture.models.deepmodel import deepnet,deepnet_resnet
 from gesture.models.EEGModels import DeepConvNet_210519_512_10
 from gesture.models.tsception import TSception
 
@@ -35,16 +35,16 @@ from gesture.preprocess.chn_settings import get_channel_setting
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
-model = deepnet_resnet(208,5,input_window_samples=500,expand=False)
-a=torch.FloatTensor(1, 1, 208, 500)
-out=model(a)
+import inspect as i
+import sys
+sys.stdout.write(i.getsource(deepnet))
 
 pn=10 #4
-Session_num,UseChn,EmgChn,TrigChn,activeChn = get_channel_setting(pn)
+Session_num,UseChn,EmgChn,TrigChn, activeChn = get_channel_setting(pn)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == pn][0]
 fs=1000
 
-#[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == pn][0]
+[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == pn][0]
 
 loadPath = data_dir+'preprocessing'+'/P'+str(pn)+'/preprocessing2.mat'
 mat=hdf5storage.loadmat(loadPath)
@@ -138,20 +138,20 @@ set_random_seeds(seed=seed, cuda=cuda)
 n_classes = 5
 # Extract number of chans and time steps from dataset
 one_window=windows_datasets.datasets[0].windows.get_data()
-n_chans = one_window.shape[1] # 208
-input_window_samples = one_window.shape[2] # 500
+n_chans = one_window.shape[1]
+input_window_samples = one_window.shape[2]
 
 #model = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 #model = EEGNetv4(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) #(58% no stand)/( 55% with standardization)
+model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples)
 #model=TSception(1000,n_chans,3,3,0.5)
-model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
-test=torch.tensor(np.ones((1, n_chans, input_window_samples, 1)))
-out=model(test)
 # Send model to GPU
 if cuda:
     model.cuda()
+
+
 
 
 # These values we found good for shallow network:

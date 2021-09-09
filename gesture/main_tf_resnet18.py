@@ -1,3 +1,5 @@
+# The testing accuracy doesn't change at all. Don't understand.
+
 #%cd /content/drive/MyDrive/
 # raw_data is imported from global config
 
@@ -34,9 +36,9 @@ from common_dl import count_parameters
 from gesture.models.resnet import my_resnet18
 
 sid = 10  # 4
-
+chn_num=10
 data_dir = data_dir + 'preprocessing/P' + str(sid) + '/tfInput/'
-filename=data_dir+'dataset_3chn.hdf5'
+filename=data_dir+'dataset_'+str(chn_num)+'chn.hdf5'
 f1 = h5py.File(filename, "r")
 list(f1.keys())
 X_train = f1['X_train'][:] # (650, 10, 148, 250)
@@ -45,21 +47,31 @@ y_train = f1['y_train'][:] # (650,)
 y_test = f1['y_test'][:]
 f1.close()
 
+mean=X_train.mean()
+std=X_train.std()
+X_train=(X_train-mean)/std
+X_test=(X_test-mean)/std
+
+
+batch_size=batch_size
 train_ds = myDataset(X_train, y_train)
 val_ds = myDataset(X_test, y_test)
-train_loader = DataLoader(dataset=train_ds, batch_size=4, shuffle=True, pin_memory=False)
-val_loader = DataLoader(dataset=val_ds, batch_size=4, pin_memory=False)
+train_loader = DataLoader(dataset=train_ds, batch_size=batch_size, shuffle=True, pin_memory=False)
+val_loader = DataLoader(dataset=val_ds, batch_size=batch_size, pin_memory=False)
 #test it
 #(x,y)=iter(train_loader).next() # x: torch.Size([1, 10, 148, 250]); y: torch.Size([1])
 
+
+X_test.shape
+
+len(val_loader)*4
 
 cuda = torch.cuda.is_available()
 device = 'cuda' if cuda else 'cpu'
 seed = 20200220
 set_random_seeds(seed=seed) # same as braindecode random seeding
 
-net=my_resnet18(10,5, pretrained=False,logsoftmax=False).float()
-#net=my_resnet18(10,5, pretrained=False,logsoftmax=False).float()
+net=my_resnet18(chn_num,5, pretrained=False,logsoftmax=False).float()
 
 if cuda:
     net.cuda()
@@ -70,32 +82,6 @@ lr = 0.0001
 weight_decay = 1e-10
 batch_size = 4
 epoch_num = 500
-
-location=os.getcwd()
-if re.compile('/Users/long/').match(location):
-    my_callbacks=[
-        "accuracy", ("lr_scheduler", LRScheduler('CosineAnnealingLR', T_max=epoch_num - 1)),
-        ('on_epoch_begin_callback', on_epoch_begin_callback),('on_batch_end_callback',on_batch_end_callback),
-    ]
-elif re.compile('/content/drive').match(location):
-   my_callbacks=[
-        "accuracy", ("lr_scheduler", LRScheduler('CosineAnnealingLR', T_max=epoch_num - 1)),
-    ]
-
-
-clf = EEGClassifier(
-    net,
-    criterion=torch.nn.NLLLoss,  #torch.nn.NLLLoss/CrossEntropyLoss
-    optimizer=torch.optim.Adam, #optimizer=torch.optim.AdamW,
-    train_split=predefined_split(val_ds),  # using valid_set for validation; None means no validate:both train and test on training dataset.
-    optimizer__lr=lr,
-    optimizer__weight_decay=weight_decay,
-    batch_size=batch_size,
-    callbacks=my_callbacks,
-    device=device,
-)
-
-#clf.fit(train_ds, y=None, epochs=epoch_num)
 
 #criterion=torch.nn.NLLLoss()
 #optimizer = torch.optim.Adam(net.parameters(), lr=lr)
@@ -180,23 +166,20 @@ for epoch in range(epoch_num):
                 _, preds = torch.max(outputs, 1)
 
                 running_corrects += torch.sum(preds.cpu() == val_y.data)
-                running_loss += loss.item() * trainx.size(0)
             
-        epoch_acc = running_corrects.double() / len(val_loader)
-        epoch_loss = running_loss / len(val_loader)
-        print("Evaluation accuracy: " + str(epoch_acc.item()) + ".")
+        epoch_acc = running_corrects.double() / (len(val_loader)*batch_size)
+        print("Evaluation accuracy: " + str(running_corrects.item()) + '/('+ str(len(val_loader)) + '*'+str(batch_size)+')='+ str(epoch_acc.item()) + ".")
 
 
 
-y_pred
+trainx, trainy =iter(train_loader).next()
+y_pred = net(trainx.float().cuda())
+loss = criterion(y_pred, trainy.type(torch.LongTensor).cuda())
+loss.backward() # calculate the gradient and store in .grad attribute.
+optimizer.step()
 
 b=list(net.named_parameters())
 
-[torch.count_nonzero(i[1].grad).gt(0).item() for i in b] # which one has disabled grad
+[torch.count_nonzero(i[1].grad).gt(0).item() for i in b] # false means grad is zero
 
-# why there are two layers with zero grad?
-[bi[0] for bi in b if not torch.count_nonzero(bi[1].grad).gt(0).item()] # which one has grad equae to zero
-
-net
-
-net.model.layer1[0].conv1.weight.grad
+[bi[0] for bi in b if not bi[1].requires_grad]

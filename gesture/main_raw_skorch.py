@@ -24,7 +24,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet, deepnet_resnet
+from gesture.models.deepmodel import deepnet,deepnet_resnet
 from gesture.models.d2l_resnet import d2lresnet
 from gesture.models.EEGModels import DeepConvNet_210519_512_10
 from gesture.models.tsception import TSception
@@ -36,14 +36,18 @@ from gesture.preprocess.chn_settings import get_channel_setting
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
-a=torch.randn(32, 208, 500)
-model = deepnet_resnet(208,5,input_window_samples=500,expand=True)
+import inspect as i
+import sys
+#sys.stdout.write(i.getsource(deepnet))
+
+a=torch.randn(1, 208, 500)
+#model = deepnet_resnet(208,5,input_window_samples=500,expand=False)
+model=TSception(1000, 208, 10, 10,0.5)
 model.train()
 b=model(a)
 
-
 pn=10 #4
-Session_num,UseChn,EmgChn,TrigChn, activeChan= get_channel_setting(pn)
+Session_num,UseChn,EmgChn,TrigChn, activeChan = get_channel_setting(pn)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == pn][0]
 fs=1000
 
@@ -149,8 +153,9 @@ input_window_samples = one_window.shape[2]
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 
-#model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=False)
-model=d2lresnet
+#model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) 
+model=TSception
+
 #model=TSception(1000,n_chans,3,3,0.5)
 # Send model to GPU
 if cuda:
@@ -161,7 +166,7 @@ if cuda:
 lr = 0.0001
 weight_decay = 1e-10
 batch_size = 32
-n_epochs = 100
+n_epochs = 200
 
 location=os.getcwd()
 if re.compile('/Users/long/').match(location):
@@ -176,7 +181,8 @@ elif re.compile('/content/drive').match(location):
 
 clf = EEGClassifier(
     model,
-    criterion=torch.nn.NLLLoss,  #torch.nn.NLLLoss/CrossEntropyLoss
+    #criterion=torch.nn.NLLLoss,  #torch.nn.NLLLoss/CrossEntropyLoss
+    criterion=torch.nn.CrossEntropyLoss,
     optimizer=torch.optim.Adam, #optimizer=torch.optim.AdamW,
     train_split=predefined_split(valid_set),  # using valid_set for validation; None means no validate:both train and test on training dataset.
     optimizer__lr=lr,

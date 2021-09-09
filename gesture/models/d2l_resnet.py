@@ -45,16 +45,23 @@ def resnet_block(input_channels, num_channels, num_residuals,
     return blk
 
 
-b1 = nn.Sequential(add_channel_dimm(),nn.Conv2d(1, 64, kernel_size=(1,50), stride=(1,1)),
-                   nn.BatchNorm2d(64), nn.ReLU(),
-                   nn.MaxPool2d(kernel_size=(3,3), stride=(1,1)))
-b2 = nn.Sequential(*resnet_block(64, 64, 1, first_block=True))
-b3 = nn.Sequential(*resnet_block(64, 128, 1))
-b4 = nn.Sequential(*resnet_block(128, 256, 1))
-b5 = nn.Sequential(*resnet_block(256, 512, 1))
-b6 = nn.Sequential(*resnet_block(512, 1024, 1))
+class d2lresnet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        #self.block_num=block_num
+        b1 = nn.Sequential(add_channel_dimm(),nn.Conv2d(1, 64, kernel_size=(1,50), stride=(1,1)),
+                           nn.BatchNorm2d(64), nn.ReLU(),
+                           nn.MaxPool2d(kernel_size=(3,3), stride=(1,1)))
+        b2 = nn.Sequential(*resnet_block(64, 64, 1, first_block=True))
+        b3 = nn.Sequential(*resnet_block(64, 128, 1))
+        b4 = nn.Sequential(*resnet_block(128, 256, 1))
+        b5 = nn.Sequential(*resnet_block(256, 512, 1))
+        b6 = nn.Sequential(*resnet_block(512, 1024, 1))
 
-d2lresnet = nn.Sequential(b1, b2, b3, b4, b5,b6, nn.AdaptiveAvgPool2d((1, 1)),squeeze_all(),nn.Linear(1024, 5))
+        self.d2lresnet = nn.Sequential(b1, b2, b3, b4, b5,b6, nn.AdaptiveAvgPool2d((1, 1)),squeeze_all(),nn.Linear(1024, 5))
+
+    def forward(self,x):
+        return self.d2lresnet(x) # use CrossEntropyLoss loss
 
 #x=torch.randn(32,1,208,500)
 

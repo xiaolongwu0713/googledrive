@@ -7,7 +7,7 @@ from torch.nn import Parameter
 import math
 # concate along the plan channel, not the time. Try to test if result is better if reserve physical meaning.
 class TSception(nn.Module):
-    def __init__(self, sampling_rate, chnNum, num_T, num_S,dropout):  # sampling_rate=1000
+    def __init__(self, sampling_rate, chnNum, num_T=64, num_S=64,dropout=0.5):  # sampling_rate=1000
         # input_size: EEG channel x datapoint
         super(TSception, self).__init__()
         # try to use shorter conv kernel to capture high frequency
@@ -18,54 +18,16 @@ class TSception(nn.Module):
         # by setting the convolutional kernel being (1,lenght) and the strids being 1 we can use conv2d to
         # achieve the 1d convolution operation
 
-        self.Tception1 = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, win[0]), stride=1, padding=(0, 250)),  # kernel: 500
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
-        self.Tception2 = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, win[1]), stride=1, padding=(0, 125)),  # 250
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
-        self.Tception3 = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, win[2] + 1), stride=1, padding=(0, 63)),  # kernel: 126
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
-        self.Tception4 = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, win[3]), stride=1, padding=(0, 31)),  # kernel:62
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
-        self.Tception5 = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, win[4] + 1), stride=1, padding=(0, 16)),  # 32
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
-        self.Tception6 = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, win[5] + 1), stride=1, padding=(0, 8)),  # 15
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
-        self.Tception7 = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, win[6] + 1), stride=1, padding=(0, 4)),  # 7
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 16), stride=(1, 8)))
+        self.Tception = nn.Sequential(
+            nn.Conv2d(1, num_T, kernel_size=(1, 100), stride=1, padding=(0, 250)),  # kernel: 500
+            nn.BatchNorm2d(num_T),
+            nn.ReLU())
 
-        self.Sception1 = nn.Sequential(
-            nn.Conv2d(num_S * 6, num_S * 6, kernel_size=(chnNum, 1), stride=1, padding=0),
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
-        self.Sception2 = nn.Sequential(
-            nn.Conv2d(num_S * 6, num_S * 6, kernel_size=(int(chnNum * 0.5), 1), stride=(int(chnNum * 0.5), 1),
-                      padding=0),
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
-        self.Sception3 = nn.Sequential(
-            nn.Conv2d(num_S * 6, num_S * 6, kernel_size=(int(chnNum * 0.5 * 0.5), 1),
-                      stride=(int(chnNum * 0.5 * 0.5), 1), padding=0),
-            nn.ReLU(),
-            nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8)))
+        self.Sception = nn.Sequential(
+            nn.Conv2d(num_S , num_S , kernel_size=(chnNum, 1), stride=1, padding=0),
+            nn.BatchNorm2d(num_S),
+            nn.ReLU())
 
-        self.BN_t = nn.BatchNorm2d(num_S * 6)
-        self.BN_s = nn.BatchNorm2d(num_S * 6)
-
-        self.drop = nn.Dropout(dropout)
         self.avg = nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8))
         self.lstm1 = nn.LSTM(90, 45, batch_first=True)
 
@@ -75,7 +37,7 @@ class TSception(nn.Module):
         self.softmax=nn.LogSoftmax(dim=1)
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
         self.float()
-        x = torch.squeeze(x, dim=0)
+        #x = torch.squeeze(x, dim=0)
         x = torch.unsqueeze(x, dim=1)
         batch_size=x.shape[0]
         # y1 = self.Tception1(x)
@@ -86,7 +48,7 @@ class TSception(nn.Module):
         y6 = self.Tception6(x)
         y7 = self.Tception7(x)  # (batch_size, plan, channel, time)
         out = torch.cat((y2, y3, y4, y5, y6, y7), dim=1)  # concate alone plan
-        #out = self.BN_t(out) #Todo: braindecode didn't use normalization between t and s filter.
+        out = self.BN_t(out) #Todo: braindecode didn't use normalization between t and s filter.
 
         z1 = self.Sception1(out)
         z2 = self.Sception2(out)

@@ -185,23 +185,23 @@ class deepnet(nn.Sequential):
         self.eval()
 
 
-def shortcut(block,x):  # @save
-    channels=[(i.in_channels, i.out_channels) for i in block if type(i) == nn.Conv2d]
-    input_channels=channels[0][0]
-    num_channels=channels[0][1]
+def shortcut(block):  # @save
+    channels = [(i.in_channels, i.out_channels) for i in block if type(i) == nn.Conv2d]
+    input_channels = channels[0][0]
+    num_channels = channels[0][1]
     strides = [i.stride for i in block if type(i) == nn.Conv2d]
-    stride=strides[0][0] * strides[0][1]
+    stride = strides[0][0] * strides[0][1]
     # 1,pad when using non-1 sized kernel; 2, make sure the shortcut stride = conv stride
-    if (not input_channels==num_channels) or (not stride==1): # when channel number or width/height changed
-        _shortcut = nn.Conv2d(input_channels, num_channels,kernel_size=1, stride=stride)
-        return _shortcut(x)
+    if (not input_channels == num_channels) or (not stride == 1):  # when channel number or width/height changed
+        _shortcut = nn.Conv2d(input_channels, num_channels, kernel_size=1, stride=stride)
     else:
-        return x
+        _shortcut = Expression(expression=identity)
+    return _shortcut
 
 # model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 class deepnet_resnet(nn.Module):
     def __init__(self,in_chans,n_classes,input_window_samples,n_filters_time=64,n_filters_spat=64,expand=True,
-        filter_time_length=10,drop_prob=0.5,pool_time_length=3,pool_time_stride=3,n_filters_2=50,filter_length_2=10,n_filters_3=50,
+        filter_time_length=50,drop_prob=0.5,pool_time_length=3,pool_time_stride=3,n_filters_2=50,filter_length_2=10,n_filters_3=50,
         filter_length_3=10,n_filters_4=50,filter_length_4=10,first_nonlin=elu,first_pool_mode="max",first_pool_nonlin=identity,
         later_nonlin=elu,later_pool_mode="max",later_pool_nonlin=identity,double_time_convs=False,
     ):
@@ -224,47 +224,42 @@ class deepnet_resnet(nn.Module):
                                     nn.Conv2d(self.n_filters_time,self.n_filters_spat,(self.in_chans,1),stride=(1, 1)),
                                     nn.BatchNorm2d(self.n_filters_spat,affine=True,eps=1e-5,),
                                     nn.ELU(),
-                                    nn.MaxPool2d(kernel_size=(1,3), stride=(1,2)))
-
+                                    nn.MaxPool2d(kernel_size=(1,3), stride=(1,3)))
 
         kernel=11
         padding=11//2
         stride=2
         self.block1 = nn.Sequential(nn.Dropout(p=self.drop_prob),
-                           nn.Conv2d(conv_channels[0],conv_channels[1], (1, kernel),padding=padding, stride=(1,stride)))
+                           nn.Conv2d(conv_channels[0],conv_channels[1], (1, kernel),padding=(0,padding), stride=(1,stride)))
 
         self.block2=nn.Sequential(nn.BatchNorm2d(conv_channels[1], affine=True, eps=1e-5, ),
                              nn.ELU(),
                              nn.Dropout(p=self.drop_prob),
-                             nn.Conv2d(conv_channels[1],conv_channels[2], (1,kernel),padding=padding,stride=(1,stride))
+                             nn.Conv2d(conv_channels[1],conv_channels[2], (1,kernel),padding=(0,padding),stride=(1,stride))
                              )
 
         self.block3 = nn.Sequential(nn.BatchNorm2d(conv_channels[2], affine=True, eps=1e-5, ),
                                nn.ELU(),
                                nn.Dropout(p=self.drop_prob),
-                               nn.Conv2d(conv_channels[2],conv_channels[3], (1, kernel), stride=(1, stride))
+                               nn.Conv2d(conv_channels[2],conv_channels[3], (1, kernel),padding=(0,padding), stride=(1, stride))
                                )
 
         self.block4 = nn.Sequential(nn.BatchNorm2d(conv_channels[3], affine=True, eps=1e-5, ),
                                nn.ELU(),
                                nn.Dropout(p=self.drop_prob),
-                               nn.Conv2d(conv_channels[3],conv_channels[4], (1, kernel), stride=(1, stride))
+                               nn.Conv2d(conv_channels[3],conv_channels[4], (1, kernel),padding=(0,padding), stride=(1, stride))
                                )
 
-        #self.add_module("block1", self.block1)
-        #self.add_module("block2", self.block2)
-        #self.add_module("block3", self.block3)
-        #self.add_module("block4", self.block4)
+        self.sc1 = shortcut(self.block1)
+        self.sc2 = shortcut(self.block2)
+        self.sc3 = shortcut(self.block3)
+        self.sc4 = shortcut(self.block4)
 
-        #self.add_module("bn_lastb" ,nn.BatchNorm2d(self.n_filters_4, affine=True, eps=1e-5, ), )
-        #self.add_module("elu_lastb", nn.ELU())  # elu
-        #self.add_module("do_lastb", nn.Dropout(p=self.drop_prob))
+        x = torch.randn(1, in_chans, input_window_samples)
+        all=nn.Sequential(self.block0,self.block1,self.block2,self.block3,self.block4)
+        out=all(x)
+        out_channels,n_out_time,n_out_spatial = out.shape[1],out.shape[2], out.shape[3]
 
-        # self.add_module('drop_classifier', nn.Dropout(p=self.drop_prob))
-        a=torch.randn(1, 1, in_chans, input_window_samples)
-        out = self.block0(a) # torch.Size([1, 64, 1, 245])
-        out_channels=out.shape[1]
-        n_out_time,n_out_spatial = out.shape[2], out.shape[3]
 
         #self.add_module("squeeze2", Expression(squeeze_final_output))
         self.block_final = nn.Sequential(nn.AvgPool2d((n_out_time,n_out_spatial)),
@@ -277,23 +272,25 @@ class deepnet_resnet(nn.Module):
         # Start in eval mode
         self.eval()
 
-    def forward(self, x):
-        x = self.block0(x)
 
-        y = self.block1(x)
-        ff=shortcut(self.block1,y)
+
+    def forward(self, x):
+        x = self.block0(x) #torch.Size([32, 64, 1, 150])
+
+        y = self.block1(x) #torch.Size([32, 50, 11, 75])
+        ff= self.sc1(x)
         x=y+ff
 
         y = self.block2(x)
-        ff = shortcut(self.block2, y)
+        ff= self.sc2(x)
         x = y + ff
 
         y = self.block3(x)
-        ff = shortcut(self.block3, y)
+        ff= self.sc3(x)
         x = y + ff
 
         y = self.block4(x)
-        ff = shortcut(self.block4, y)
+        ff= self.sc4(x)
         x = y + ff
 
         x = self.block_final(x)

@@ -21,8 +21,11 @@ class add_channel_dimm(torch.nn.Module):
             x = x.unsqueeze(1)
         return x
 
-def squeeze_all(x):
-    return torch.squeeze(x)
+
+class squeeze_all(torch.nn.Module):
+    def forward(self, x):
+        return torch.squeeze(x)
+
 
 def set_random_seeds(seed):
     os.environ['PYTHONHASHSEED'] = str(seed)

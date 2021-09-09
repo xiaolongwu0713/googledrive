@@ -25,6 +25,7 @@ from sklearn.preprocessing import StandardScaler
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
 from gesture.models.deepmodel import deepnet, deepnet_resnet
+from gesture.models.d2l_resnet import d2lresnet
 from gesture.models.EEGModels import DeepConvNet_210519_512_10
 from gesture.models.tsception import TSception
 
@@ -148,8 +149,8 @@ input_window_samples = one_window.shape[2]
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 
-model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=False) 
-
+#model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=False)
+model=d2lresnet
 #model=TSception(1000,n_chans,3,3,0.5)
 # Send model to GPU
 if cuda:

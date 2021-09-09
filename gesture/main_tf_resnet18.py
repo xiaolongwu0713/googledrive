@@ -22,7 +22,7 @@ import torch
 from torch.optim import lr_scheduler
 from torch import nn
 from sklearn.metrics import accuracy_score
-from gesture.models.resnet import _my_resnet18, my_resnet18
+from gesture.models.resnet18 import _my_resnet18, my_resnet18
 from skorch.callbacks import LRScheduler
 from skorch.helper import predefined_split
 from braindecode import EEGClassifier
@@ -33,7 +33,7 @@ from myskorch import on_epoch_begin_callback, on_batch_end_callback
 from common_dl import count_parameters
 
 
-from gesture.models.resnet import my_resnet18
+from gesture.models.resnet18 import my_resnet18
 
 sid = 10  # 4
 chn_num=10

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import torch
 from torch import nn
-from gesture.models.resnet import my_resnet18
+from gesture.models.resnet18 import my_resnet18
 from skorch.callbacks import LRScheduler
 from skorch.helper import predefined_split
 from braindecode import EEGClassifier
@@ -28,7 +28,7 @@ from common_dl import myDataset, set_random_seeds
 from myskorch import on_epoch_begin_callback, on_batch_end_callback
 
 
-from gesture.models.resnet import my_resnet18
+from gesture.models.resnet18 import my_resnet18
 
 sid = 10  # 4
 

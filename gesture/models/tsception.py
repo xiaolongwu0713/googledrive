@@ -33,10 +33,10 @@ class TSception(nn.Module):
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
         self.float()
         #x = torch.randn(1, 208, 500)
-        #x = torch.squeeze(x, dim=0)
         x = torch.unsqueeze(x, dim=1) # torch.Size([1, 1, 208, 500])
         y=self.Tception(x)
         y=self.Sception(y) # torch.Size([1, 64, 1, 500])
+
         y=y.permute(0,2,1,3) # torch.Size([1, 1,64,500])
         y=torch.cat((x,y),2) # torch.Size([1, 1, 272, 500])
         y=torch.squeeze(y,dim=1)
@@ -46,3 +46,28 @@ class TSception(nn.Module):
         out = self.linear(torch.squeeze(out[:, -1, :]))
 
         return out
+
+x = torch.randn(1, 208, 500)
+x = torch.unsqueeze(x, dim=1)
+t=[]
+for i in range(10):
+    ti=nn.Sequential(
+                nn.Conv2d(1, 6, kernel_size=(1, 101), stride=1, padding=(0, 50)),  # kernel: 500
+                nn.BatchNorm2d(6),
+                nn.ReLU())
+    t.append(ti)
+yt=[ti(x) for ti in t ]
+ytcat=torch.cat(yt, dim=1)
+
+s=[]
+for i in range(10):
+    si = nn.Sequential(
+        nn.Conv2d(6, 6, kernel_size=(208,1), stride=1, padding=0),  # kernel: 500
+        nn.BatchNorm2d(6),
+        nn.ReLU())
+    s.append(si)
+ys=[s[i](yt[i]) for i in range(10)]
+yscat=torch.cat(ys,dim=1) # torch.Size([1, 60, 1, 500])
+
+
+

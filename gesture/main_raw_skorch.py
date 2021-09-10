@@ -40,11 +40,12 @@ import inspect as i
 import sys
 #sys.stdout.write(i.getsource(deepnet))
 
-a=torch.randn(1, 208, 500)
+#a=torch.randn(1, 208, 500)
 #model = deepnet_resnet(208,5,input_window_samples=500,expand=False)
-model=TSception(1000, 208, 10, 10,0.5)
-model.train()
-b=model(a)
+#model=TSception(208)
+#model=d2lresnet()
+#model.train()
+#b=model(a)
 
 pn=10 #4
 Session_num,UseChn,EmgChn,TrigChn, activeChan = get_channel_setting(pn)
@@ -154,7 +155,7 @@ input_window_samples = one_window.shape[2]
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 
 #model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) 
-model=TSception
+model=TSception(208)
 
 #model=TSception(1000,n_chans,3,3,0.5)
 # Send model to GPU

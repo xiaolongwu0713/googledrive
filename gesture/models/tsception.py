@@ -7,19 +7,18 @@ from torch.nn import Parameter
 import math
 # concate along the plan channel, not the time. Try to test if result is better if reserve physical meaning.
 class TSception(nn.Module):
-    def __init__(self, sampling_rate, chnNum, num_T=64, num_S=64,dropout=0.5):  # sampling_rate=1000
+    def __init__(self,chnNum, num_T=64, num_S=64,dropout=0.5):  # sampling_rate=1000
         # input_size: EEG channel x datapoint
         super(TSception, self).__init__()
         # try to use shorter conv kernel to capture high frequency
-        self.inception_window = [0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125]
-        win = [int(tt * sampling_rate) for tt in self.inception_window]
+
         # [500, 250, 125, 62, 31, 15, 7]
         # in order to have a same padding, all kernel size shoule be even number, then stride=kernel_size/2
         # by setting the convolutional kernel being (1,lenght) and the strids being 1 we can use conv2d to
         # achieve the 1d convolution operation
 
         self.Tception = nn.Sequential(
-            nn.Conv2d(1, num_T, kernel_size=(1, 100), stride=1, padding=(0, 250)),  # kernel: 500
+            nn.Conv2d(1, num_T, kernel_size=(1, 101), stride=1, padding=(0, 50)),  # kernel: 500
             nn.BatchNorm2d(num_T),
             nn.ReLU())
 
@@ -28,50 +27,22 @@ class TSception(nn.Module):
             nn.BatchNorm2d(num_S),
             nn.ReLU())
 
-        self.avg = nn.AvgPool2d(kernel_size=(1, 8), stride=(1, 8))
-        self.lstm1 = nn.LSTM(90, 45, batch_first=True)
+        self.lstm = nn.LSTM(272, 128, batch_first=True)
 
-        self.linear1 = nn.Sequential(
-            nn.Linear(45, 5),
-            nn.ReLU())
-        self.softmax=nn.LogSoftmax(dim=1)
+        self.linear=nn.Linear(128,5)
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
         self.float()
+        #x = torch.randn(1, 208, 500)
         #x = torch.squeeze(x, dim=0)
-        x = torch.unsqueeze(x, dim=1)
-        batch_size=x.shape[0]
-        # y1 = self.Tception1(x)
-        y2 = self.Tception2(x)
-        y3 = self.Tception3(x)
-        y4 = self.Tception4(x)
-        y5 = self.Tception5(x)
-        y6 = self.Tception6(x)
-        y7 = self.Tception7(x)  # (batch_size, plan, channel, time)
-        out = torch.cat((y2, y3, y4, y5, y6, y7), dim=1)  # concate alone plan
-        out = self.BN_t(out) #Todo: braindecode didn't use normalization between t and s filter.
+        x = torch.unsqueeze(x, dim=1) # torch.Size([1, 1, 208, 500])
+        y=self.Tception(x)
+        y=self.Sception(y) # torch.Size([1, 64, 1, 500])
+        y=y.permute(0,2,1,3) # torch.Size([1, 1,64,500])
+        y=torch.cat((x,y),2) # torch.Size([1, 1, 272, 500])
+        y=torch.squeeze(y,dim=1)
+        y = y.permute(0,2,1) # batch_size, time, input_size
 
-        z1 = self.Sception1(out)
-        z2 = self.Sception2(out)
-        z3 = self.Sception2(out)
-        out_final = torch.cat((z1, z2, z3), dim=2)
-        out = self.BN_s(out_final)
+        out, _ = self.lstm(y) # torch.Size([1, 272, 128])
+        out = self.linear(torch.squeeze(out[:, -1, :]))
 
-        # Todo: test the effect of log(power)
-        out = torch.pow(out, 2) # ([28, 18, 5, 15])
-        # Braindecode use avgpool2d here
-        # out = self.avg(out)
-        out = torch.log(out)
-        # Todo: test if drop is beneficial
-        out = self.drop(out)
-
-        # Todo: try without LSTM.
-        out = out.permute(0, 3, 1, 2)  # (batchsize, seq, height, width), ([280, 38, 3, 7])
-        seqlen = out.shape[1]
-        input_size = int(out.shape[2] * out.shape[3])
-        out = out.reshape(batch_size, seqlen, input_size)  # ([280, 38, 21])
-
-        out, _ = self.lstm1(out)
-        pred = self.linear1(torch.squeeze(out[:, -1, :]))
-        pred = torch.squeeze(pred)
-        probs = self.softmax(pred)
-        return probs
+        return out

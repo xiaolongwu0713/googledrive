@@ -1,98 +1,69 @@
-#%cd /content/drive/MyDrive/
-# raw_data is imported from global config
-
-#%%capture
-#! pip install hdf5storage
-#! pip install mne==0.23.0
-#! pip install torch
-#! pip install tensorflow-gpu == 1.12.0
-#! pip install Braindecode==0.5.1
-
-import os, re
-import hdf5storage
+'''
+2s task, 2s rest.
+'''
+import scipy.io
 import numpy as np
-from scipy.io import savemat
-from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
-from braindecode.datautil import (create_from_mne_raw, create_from_mne_epochs)
+import mne
 import torch
-from braindecode.util import set_random_seeds
+from braindecode import EEGClassifier
+from braindecode.datautil import create_from_mne_epochs
+from scipy import signal
 from skorch.callbacks import LRScheduler
 from skorch.helper import predefined_split
-from braindecode import EEGClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
 
-from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet,deepnet_resnet
+from common_dl import set_random_seeds
+from common_dsp import *
 from gesture.models.d2l_resnet import d2lresnet
-from gesture.models.EEGModels import DeepConvNet_210519_512_10
-from gesture.models.tsception import TSception
+from myskorch import on_epoch_begin_callback, on_batch_end_callback
+from ecog_finger.config import *
 
-from gesture.myskorch import on_epoch_begin_callback, on_batch_end_callback
-from gesture.config import *
-from gesture.preprocess.chn_settings import get_channel_setting
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-
-
-import inspect as i
-import sys
-#sys.stdout.write(i.getsource(deepnet))
-
-#a=torch.randn(1, 1, 208, 500)
-#model = deepnet_resnet(208,5,input_window_samples=500,expand=False)
-#model.train()
-#b=model(a)
-
-pn=10 #4
-Session_num,UseChn,EmgChn,TrigChn, activeChan = get_channel_setting(pn)
-#fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == pn][0]
+sid=1
 fs=1000
 
-[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == pn][0]
+filename=data_dir+'fingerflex/data/'+str(sid)+'/1_fingerflex.mat'
+mat=scipy.io.loadmat(filename)
+data=np.transpose(mat['data']) # (46, 610040)
+chn_num=data.shape[0]
+flex=np.transpose(mat['flex']) #(5, 610040)
+cue=np.transpose(mat['cue']) # (1, 610040)
+data=np.concatenate((data,cue,flex),axis=0) # (47, 610040) / (52, 610040)
 
-loadPath = data_dir+'preprocessing'+'/P'+str(pn)+'/preprocessing2.mat'
-mat=hdf5storage.loadmat(loadPath)
-data = mat['Datacell']
-channelNum=int(mat['channelNum'][0,0])
-data=np.concatenate((data[0,0],data[0,1]),0)
-del mat
-# standardization
-# no effect. why?
-chn_data=data[:,-3:]
-data=data[:,:-3]
-scaler = StandardScaler()
-scaler.fit(data)
-data=scaler.transform((data))
-data=np.concatenate((data,chn_data),axis=1)
-
-# stim0 is trigger channel, stim1 is trigger position calculated from EMG signal.
-chn_names=np.append(["seeg"]*len(UseChn),["stim0", "emg","stim1"])
-chn_types=np.append(["seeg"]*len(UseChn),["stim", "emg","stim"])
+chn_names=np.append(["ecog"]*chn_num,["stim","thumb","index","middle","ring","little"])
+chn_types=np.append(["ecog"]*chn_num,["stim", "emg","emg","emg","emg","emg"])
 info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
-raw = mne.io.RawArray(data.transpose(), info)
+raw = mne.io.RawArray(data, info)
 
+events = mne.find_events(raw, stim_channel='stim')
+events=events-[0,0,1]
+'''
+verify the events are picked up correctly.
+a=np.asarray([i for i in events if i[2]==1])
+fig,ax=plt.subplots()
+ax.plot(cue[0,:111080])
+for i in a[:6]:
+    ax.axvline(x=i[0],linewidth=1,color='r',linestyle='--')
+'''
+event1=events[(events[:,2]==0)]
+event2=events[(events[:,2]==1)]
+event3=events[(events[:,2]==2)]
+event4=events[(events[:,2]==3)]
+event5=events[(events[:,2]==4)]
 
-# gesture/events type: 1,2,3,4,5
-events0 = mne.find_events(raw, stim_channel='stim0')
-events1 = mne.find_events(raw, stim_channel='stim1')
-# events number should start from 0: 0,1,2,3,4, instead of 1,2,3,4,5
-events0=events0-[0,0,1]
-events1=events1-[0,0,1]
+tmin=-1
+tmax=3
+epoch1=mne.Epochs(raw, event1, tmin=tmin, tmax=tmax,baseline=None) # 1s rest + 2s task + 1s rest
+epoch2=mne.Epochs(raw, event2, tmin=tmin, tmax=tmax,baseline=None)
+epoch3=mne.Epochs(raw, event3, tmin=tmin, tmax=tmax,baseline=None)
+epoch4=mne.Epochs(raw, event4, tmin=tmin, tmax=tmax,baseline=None)
+epoch5=mne.Epochs(raw, event5, tmin=tmin, tmax=tmax,baseline=None)
 
-#print(events[:5])  # show the first 5
-# Epoch from 4s before(idle) until 4s after(movement) stim1.
-raw=raw.pick(["seeg"])
-epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None)
-# or epoch from 0s to 4s which only contain movement data.
-# epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None)
+#data1=epoch1.load_data().pick(picks=['ecog']).get_data() #(30 trial, 46 chn, 4001 times)
+#data2=epoch2.load_data().pick(picks=['ecog']).get_data()
+#data3=epoch3.load_data().pick(picks=['ecog']).get_data()
+#data4=epoch4.load_data().pick(picks=['ecog']).get_data()
+#data5=epoch5.load_data().pick(picks=['ecog']).get_data()
 
-epoch1=epochs['0'] # 20 trials. 8001 time points per trial for 8s.
-epoch2=epochs['1']
-epoch3=epochs['2']
-epoch4=epochs['3']
-epoch5=epochs['4']
 list_of_epochs=[epoch1,epoch2,epoch3,epoch4,epoch5]
 
 #note: windows_datasets is of class BaseConcatDataset. windows_datasets.datasets is a list of all
@@ -100,7 +71,7 @@ list_of_epochs=[epoch1,epoch2,epoch3,epoch4,epoch5]
 #windows_datasets.datasets[0].windows is an epoch again created by a sliding window from one trial.
 
 
-# 20 trials/epoch * 5 epochs =100 trials=100 datasets
+# 30 trials/epoch * 5 epochs =100 trials=150 datasets
 # 1 dataset can be slided into ~161(depends on wind_size and stride) windows.
 windows_datasets = create_from_mne_epochs(
     list_of_epochs,
@@ -113,14 +84,14 @@ windows_datasets = create_from_mne_epochs(
 # train/valid/test split based on description column
 desc=windows_datasets.description
 desc=desc.rename(columns={0: 'split'})
-trials_per_epoch=epoch1.events.shape[0] # 20 trial per epoch list/class
+trials_per_epoch=epoch1.events.shape[0] # 30 trial per epoch list/class
 import random
-val_test_num=2 # two val and two test trials
+val_test_num=2 # two val and two test trials/per finger
 random_index = random.sample(range(trials_per_epoch), val_test_num*2)
 sorted(random_index)
-val_index=[rand+iclass*20 for iclass in range(5) for rand in sorted(random_index[:2]) ]
-test_index=[rand+iclass*20 for iclass in range(5) for rand in sorted(random_index[-2:])]
-train_index=[item for  item in list(range(100)) if item not in val_index+test_index]
+val_index=[rand+iclass*30 for iclass in range(5) for rand in sorted(random_index)[:2] ]
+test_index=[rand+iclass*30 for iclass in range(5) for rand in sorted(random_index)[-2:]]
+train_index=[item for  item in list(range(150)) if item not in val_index+test_index]
 desc.iloc[val_index]='validate'
 desc.iloc[test_index]='test'
 desc.iloc[train_index]='train'
@@ -139,7 +110,7 @@ if cuda:
     torch.backends.cudnn.benchmark = True
 seed = 20200220  # random seed to make results reproducible
 # Set random seed to be able to reproduce results
-set_random_seeds(seed=seed, cuda=cuda)
+set_random_seeds(seed=seed)
 
 n_classes = 5
 # Extract number of chans and time steps from dataset
@@ -154,9 +125,9 @@ input_window_samples = one_window.shape[2]
 
 #model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%
 
-#model=d2lresnet() # 92%
+model=d2lresnet() # 92%
 
-model=TSception(208)
+#model=TSception(208)
 
 #model=TSception(1000,n_chans,3,3,0.5)
 # Send model to GPU

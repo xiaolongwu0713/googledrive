@@ -27,19 +27,37 @@ class TSception(nn.Module):
             nn.BatchNorm2d(num_S),
             nn.ReLU())
 
-        self.lstm = nn.LSTM(272, 128, batch_first=True)
+        self.t = []
+        for i in range(10):
+            ti = nn.Sequential(
+                nn.Conv2d(1, 6, kernel_size=(1, 101), stride=1, padding=(0, 50)),  # kernel: 500
+                nn.BatchNorm2d(6),
+                nn.ReLU())
+            self.t.append(ti)
 
-        self.linear=nn.Linear(128,5)
+        self.s = []
+        for i in range(10):
+            si = nn.Sequential(
+                nn.Conv2d(6, 6, kernel_size=(208, 1), stride=1, padding=0),  # kernel: 500
+                nn.BatchNorm2d(6),
+                nn.ReLU())
+            self.s.append(si)
+
+
+        self.lstm = nn.LSTM(60, 60, batch_first=True,dropout=0.5)
+
+        self.linear=nn.Linear(60,5)
     def forward(self, x):  # ([128, 1, 4, 1024]): (batch_size, )
         self.float()
         #x = torch.randn(1, 208, 500)
         x = torch.unsqueeze(x, dim=1) # torch.Size([1, 1, 208, 500])
-        y=self.Tception(x)
-        y=self.Sception(y) # torch.Size([1, 64, 1, 500])
+        #y=self.Tception(x)
+        #y=self.Sception(y) # torch.Size([1, 64, 1, 500])
+        yt = [ti(x) for ti in self.t]
+        ys = [self.s[i](yt[i]) for i in range(10)]
+        y = torch.cat(ys, dim=1)
 
-        y=y.permute(0,2,1,3) # torch.Size([1, 1,64,500])
-        y=torch.cat((x,y),2) # torch.Size([1, 1, 272, 500])
-        y=torch.squeeze(y,dim=1)
+        y=torch.squeeze(y)
         y = y.permute(0,2,1) # batch_size, time, input_size
 
         out, _ = self.lstm(y) # torch.Size([1, 272, 128])

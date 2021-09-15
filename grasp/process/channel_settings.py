@@ -68,6 +68,7 @@ badtrials[2].append([])
 
 # subject 6
 FS[6]=2000
+chnNum[6]=111
 useChannels[6]=np.concatenate((np.arange(0,15),np.arange(16,29),np.arange(37,119))) #110 channels
 triggerChannels[6]=29
 # activeChannels[6]: 19 channels

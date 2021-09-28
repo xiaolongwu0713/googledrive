@@ -24,9 +24,10 @@ rtime=mat['ReactionTime']
 rtime=np.concatenate((rtime[0,0],rtime[0,1]),axis=0)
 data=mat['DATA']
 data=np.concatenate((data[0,0],data[0,1]),axis=0) #(2160440, 63)
-events=mat['Trigger']
-events=np.concatenate((events[0,0],events[0,1]),axis=0) # two sessions
-events[:, [1,2]] = events[:, [2,1]] # swap 1st and 2nd column to: timepoint, duration, event code
+events=mat['Trigger'] # timepoint, code, reaction time
+events[0,1][:,0]=events[0,1][:,0]+events[0,0].shape[0] # continue to the first session
+events=np.concatenate((events[0,0],events[0,1][:,0]+events[0,0].shape[0]),axis=0) # two sessions
+events[:, [1,2]] = events[:, [2,1]] # swap 1st and 2nd column to: timepoint, reaction time, event code
 events=events.astype(int)
 
 del mat

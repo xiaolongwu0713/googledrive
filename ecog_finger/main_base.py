@@ -85,6 +85,7 @@ labels_test=[]
 total_len=epoch1.shape[2]
 labels=[]
 
+test_number=200
 for i in range(5):
     Xi_train = []
     Xi_test = []
@@ -102,16 +103,16 @@ for i in range(5):
         if stride * last_s + wind<total_len-100:
             tmp=trial[:,-wind:]
             Xi.append(tmp)
-    Xi_train=np.asarray(Xi[:-10]) # (260, 63, 500)
-    Xi_test = np.asarray(Xi[-10:]) # (10, 63, 500)
+    Xi_train=np.asarray(Xi[:-test_number]) # (260, 63, 500)
+    Xi_test = np.asarray(Xi[-test_number:]) # (10, 63, 500)
 
     X_train.append(Xi_train)
     X_test.append(Xi_test)
 
     samples_number=len(Xi)
     label=[i]*samples_number
-    label_train=label[:-10]
-    label_test=label[-10:]
+    label_train=label[:-test_number]
+    label_test=label[-test_number:]
 
     labels_train.append(label_train)
     labels_test.append(label_test)
@@ -151,8 +152,11 @@ lr = 0.0002
 weight_decay = 1e-10
 epoch_num = 500
 
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
+#criterion = nn.CrossEntropyLoss()
+criterion = nn.NLLLoss()
+optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+#optimizer = torch.optim.Adadelta(net.parameters(), lr=0.01)
+#optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
 # Decay LR by a factor of 0.1 every 7 epochs
 lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 epoch_num = 500
@@ -164,12 +168,9 @@ for epoch in range(epoch_num):
     net.train()
 
     loss_epoch = 0
-    # trial=0
-    target = []
-    predict = []
 
     running_loss = 0.0
-    running_corrects = 0.0
+    running_corrects = 0
     for batch, (trainx, trainy) in enumerate(train_loader):
         #print("batch: " + str(batch)+ "/28")
         optimizer.zero_grad()
@@ -178,9 +179,8 @@ for epoch in range(epoch_num):
         else:
             trainx = trainx.float()
         y_pred = net(trainx)
-        _, preds = torch.max(y_pred, 1)
-
-        target = target + trainy.numpy().tolist()
+        preds = y_pred.argmax(dim=1, keepdim=True)
+        #_, preds = torch.max(y_pred, 1)
 
         if cuda:
             loss = criterion(y_pred, trainy.squeeze().cuda())
@@ -190,7 +190,7 @@ for epoch in range(epoch_num):
         loss.backward()  # calculate the gradient and store in .grad attribute.
         optimizer.step()
         running_loss += loss.item() * trainx.shape[0]
-        running_corrects += torch.sum(preds.cpu() == trainy.squeeze())
+        running_corrects += torch.sum(preds.cpu().squeeze() == trainy.squeeze())
 
     lr_scheduler.step()
     epoch_loss = running_loss / train_size
@@ -198,7 +198,7 @@ for epoch in range(epoch_num):
     print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
 
     running_loss = 0.0
-    running_corrects = 0.0
+    running_corrects = 0
     if epoch % 1 == 0:
         net.eval()
         # print("Validating...")
@@ -211,7 +211,8 @@ for epoch in range(epoch_num):
                     val_x = val_x.float()
                     # val_y = val_y.float()
                 outputs = net(val_x)
-                _, preds = torch.max(outputs, 1)
+                #_, preds = torch.max(outputs, 1)
+                preds = outputs.argmax(dim=1, keepdim=True)
 
                 running_corrects += torch.sum(preds.cpu().squeeze() == val_y.squeeze())
 

@@ -57,8 +57,10 @@ class d2lresnet(nn.Module):
         b4 = nn.Sequential(*resnet_block(128, 256, 1))
         b5 = nn.Sequential(*resnet_block(256, 512, 1))
         b6 = nn.Sequential(*resnet_block(512, 1024, 1))
+        b7 = nn.Sequential(*resnet_block(1024, 2048, 1))
 
-        self.d2lresnet = nn.Sequential(b1, b2, b3, b4, b5,b6, nn.AdaptiveAvgPool2d((1, 1)),squeeze_all(),nn.Linear(1024, 5))
+        self.d2lresnet = nn.Sequential(b1, b2, b3, b4, b5,b6,b7, nn.AdaptiveAvgPool2d((1, 1)),squeeze_all(),
+                                       nn.Linear(2048, 1024),nn.Linear(1024, 5))
 
     def forward(self,x):
         y=self.d2lresnet(x) # use CrossEntropyLoss loss

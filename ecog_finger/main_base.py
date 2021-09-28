@@ -85,7 +85,7 @@ labels_test=[]
 total_len=epoch1.shape[2]
 labels=[]
 
-test_number=200
+test_number=10
 for i in range(5):
     Xi_train = []
     Xi_test = []
@@ -136,8 +136,10 @@ batch_size = 32
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True, pin_memory=False)
 val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True, pin_memory=False)
 
-train_size=X_train.shape[0]
-val_size=X_val.shape[0]
+train_size=len(train_loader.dataset)
+val_size=len(val_loader.dataset)
+
+train_size
 
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
@@ -173,12 +175,15 @@ for epoch in range(epoch_num):
     running_corrects = 0
     for batch, (trainx, trainy) in enumerate(train_loader):
         #print("batch: " + str(batch)+ "/28")
+        #print("batch: " + str(batch))
+        #print("trainy shape: " + str(trainy.shape))
         optimizer.zero_grad()
         if (cuda):
             trainx = trainx.float().cuda()
         else:
             trainx = trainx.float()
         y_pred = net(trainx)
+        #print("y_pred shape: " + str(y_pred.shape))
         preds = y_pred.argmax(dim=1, keepdim=True)
         #_, preds = torch.max(y_pred, 1)
 
@@ -191,11 +196,12 @@ for epoch in range(epoch_num):
         optimizer.step()
         running_loss += loss.item() * trainx.shape[0]
         running_corrects += torch.sum(preds.cpu().squeeze() == trainy.squeeze())
-
+    #print("train_size: " + str(train_size))
     lr_scheduler.step()
     epoch_loss = running_loss / train_size
     epoch_acc = running_corrects.double() / train_size
-    print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
+    print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,epoch_acc.item()))
+    #print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
 
     running_loss = 0.0
     running_corrects = 0
@@ -217,7 +223,7 @@ for epoch in range(epoch_num):
                 running_corrects += torch.sum(preds.cpu().squeeze() == val_y.squeeze())
 
         epoch_acc = running_corrects.double() / val_size
-        print("Evaluation accuracy: " + str(epoch_acc.item()) + ".")
+        print("Evaluation accuracy: {:.2f}.".format(epoch_acc.item()))
 
 
 

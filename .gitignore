@@ -10,7 +10,8 @@
 .idea/
 .git/
 
-data/
+grasp/
+#data/
 result_*/
 __pycache__/
 gesture_classification.py

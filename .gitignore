@@ -5,7 +5,11 @@
 *.mat
 *.png
 *.pdf
+*.tgz
+*.tar
 .idea/
+.git/
+
 data/
 result_*/
 __pycache__/

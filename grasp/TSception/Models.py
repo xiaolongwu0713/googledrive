@@ -170,7 +170,6 @@ class TSception2(nn.Module):
         # Todo: test if drop is beneficial
         out = self.drop(out)
 
-        # Todo: try without LSTM.
         out = out.permute(0, 3, 1, 2)  # (batchsize, seq, height, width), ([280, 38, 3, 7])
         seqlen = out.shape[1]
         input_size = int(out.shape[2] * out.shape[3])

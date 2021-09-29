@@ -8,9 +8,10 @@ import timm
 import torch
 from timm.models import registry
 timm.list_models(pretrained=False)
-model = timm.create_model('visformer_tiny',num_classes=5)
 
-x     = torch.randn(1, 6, 224, 224) # can be any channel
+model = timm.create_model('visformer_tiny',num_classes=5,in_chans=1)
+model2 = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,features_only=True)
+x = torch.randn(1, 1, 100, 500) # can be any channel
 model(x).shape
 count_parameters(model)
 
@@ -65,12 +66,11 @@ efficient_transformer = Linformer(
 )
 
 ### change channels=6 for 6 input plans ####
-linformer_model = ViT(dim=128,image_size=224,patch_size=32,num_classes=2,channels=6,transformer=efficient_transformer,)
+l_model = ViT(dim=128,image_size=224,patch_size=32,num_classes=2,channels=6,transformer=efficient_transformer)
 
 ### change the class __init__ function to have more plans ###
-vit_model = ViT(image_size = 256,patch_size = 32,num_classes = 1000,dim = 1024,depth = 6,heads = 16,mlp_dim = 2048,dropout = 0.1,emb_dropout = 0.1)
-
+v_model = ViT(image_size = 256,patch_size = 32,num_classes = 1000,dim = 1024,depth = 6,heads = 16,mlp_dim = 2048,dropout = 0.1,emb_dropout = 0.1)
 
 x = torch.randn(1, 6, 224, 224) # can be any channels
-model(x)
-count_parameters(vit_model)
+y=v_model(x)
+count_parameters(v_model)

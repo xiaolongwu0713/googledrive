@@ -144,8 +144,12 @@ input_window_samples = one_window.shape[2]
 #model = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 #model = EEGNetv4(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
-#model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) #(58% no stand)/( 55% with standardization)
-model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples)
+model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) #87%
+
+#expand=True/False with 4 blocks: 69%; no block 4(conv_channels=all64):78% ; no block 4(conv_channels=64,50505050):76%
+#model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=False) 
+
+
 #model=TSception(1000,n_chans,3,3,0.5)
 # Send model to GPU
 if cuda:

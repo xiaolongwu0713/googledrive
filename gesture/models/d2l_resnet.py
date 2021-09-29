@@ -59,11 +59,13 @@ class d2lresnet(nn.Module):
         b6 = nn.Sequential(*resnet_block(512, 1024, 1))
         b7 = nn.Sequential(*resnet_block(1024, 2048, 1))
 
-        self.d2lresnet = nn.Sequential(b1, b2, b3, b4, b5,b6,b7, nn.AdaptiveAvgPool2d((1, 1)),squeeze_all(),
-                                       nn.Linear(2048, 1024),nn.Linear(1024, 5))
+        self.d2lresnet = nn.Sequential(b1, b2, b3, b4, b5,b6,b7, nn.AdaptiveAvgPool2d((1, 1)),squeeze_all())
+        self.dropoutAndlinear=nn.Sequential(nn.Dropout(p=0.5),nn.Linear(2048, 1024),nn.Linear(1024, 5))
+
 
     def forward(self,x):
         y=self.d2lresnet(x) # use CrossEntropyLoss loss
+        y=self.dropoutAndlinear(y)
         y = F.log_softmax(y, dim=1)
         return y
     #x=torch.randn(32,1,208,500)

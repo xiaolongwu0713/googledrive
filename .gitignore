@@ -1,5 +1,5 @@
 *.zip
-*.txt
+#*.txt
 *.pth
 *.npy
 *.mat

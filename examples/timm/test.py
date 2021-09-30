@@ -11,7 +11,7 @@ from timm.models import registry
 #timm.list_models(pretrained=False)
 
 # customize the input with in_chans and img_size parameter.
-model = timm.create_model('visformer_tiny',num_classes=5,in_chans=3,img_size=[496,500])
+model = timm.create_model('visformer_tiny',num_classes=5,in_chans=3,img_size=[496,500]) # or visformer_small
 #model2 = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,features_only=True)
 x = torch.randn(1, 3, 496, 500) # can be any channel
 model(x).shape

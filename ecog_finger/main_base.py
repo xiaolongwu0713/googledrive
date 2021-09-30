@@ -187,8 +187,6 @@ val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True, pi
 train_size=len(train_loader.dataset)
 val_size=len(val_loader.dataset)
 
-train_size
-
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
 if cuda:
@@ -210,7 +208,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
 #optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 # Decay LR by a factor of 0.1 every 7 epochs
-lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 epoch_num = 500
 
 for epoch in range(epoch_num):
@@ -243,7 +241,7 @@ for epoch in range(epoch_num):
         running_loss += loss.item() * trainx.shape[0]
         running_corrects += torch.sum(preds.cpu().squeeze() == trainy.squeeze())
     #print("train_size: " + str(train_size))
-    lr_schedulerr.step()
+    lr_schedulerr.step() # test it
     epoch_loss = running_loss / train_size
     epoch_acc = running_corrects.double() / train_size
     print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,epoch_acc.item()))

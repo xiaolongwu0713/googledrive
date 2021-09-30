@@ -31,6 +31,7 @@ fbands.append([13, 30]) # beta
 fbands.append([60, 125]) # genBandPower_znormalied.py
 #fbands.append([60, 140]) # gamma: 55-85
 
+
 ERD=[13,30]
 ERS=[55,100]
 # some cross module variables, you can import this variable as:

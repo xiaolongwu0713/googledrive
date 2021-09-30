@@ -12,6 +12,16 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     b, a = butter_bandpass(lowcut, highcut, fs, order=order)
     y = lfilter(b, a, data)
     return y
+
+fbands2={}
+fbands2['theta']=[1, 8]
+fbands2['alpha']=[8, 12]
+fbands2['beta1']=[12,20]
+fbands2['beta2']=[20,32]
+fbands2['gamma1']=[32,50]
+fbands2['gamma2']=[50,100]
+fbands2['gamma3']=[100,150]
+
 '''
 T=0.001#
 fs=1/T

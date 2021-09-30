@@ -7,7 +7,8 @@ from common_dl import set_random_seeds, count_parameters
 import timm
 import torch
 from timm.models import registry
-timm.list_models(pretrained=False)
+
+#timm.list_models(pretrained=False)
 
 model = timm.create_model('visformer_tiny',num_classes=5,in_chans=1)
 model2 = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,features_only=True)

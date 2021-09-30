@@ -35,47 +35,56 @@ except TypeError as err:
 
 sid=2
 fs=1000
+input='rawAndbands'
 use_active_only=False
 if use_active_only:
     active_chn=get_channel_setting(sid)
 else:
     active_chn='all'
 
-filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
-mat=scipy.io.loadmat(filename)
-data=mat['data'] # (46, 610040)
-data=data[:,:-1]
+if input=='raw':
+    filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
+    mat=scipy.io.loadmat(filename)
+    data=mat['data'] # (46, 610040)
+    data=data[:,:-1]
 
-if 1==1:
-    scaler = StandardScaler()
-    scaler.fit(data)
-    data=scaler.transform((data))
-data=np.transpose(data)
-chn_num=data.shape[0]
-flex=np.transpose(mat['flex']) #(5, 610040)
-cue=np.transpose(mat['cue']) # (1, 610040)
-data=np.concatenate((data,cue),axis=0) # (47, 610040) / (47, 610040)
+    if 1==1:
+        scaler = StandardScaler()
+        scaler.fit(data)
+        data=scaler.transform((data))
+    data=np.transpose(data)
+    chn_num=data.shape[0]
+    flex=np.transpose(mat['flex']) #(5, 610040)
+    cue=np.transpose(mat['cue']) # (1, 610040)
+    data=np.concatenate((data,cue),axis=0) # (47, 610040) / (47, 610040)
 
-chn_names=np.append(["ecog"]*chn_num,["stim"])  #,"thumb","index","middle","ring","little"])
-chn_types=np.append(["ecog"]*chn_num,["stim"])  #, "emg","emg","emg","emg","emg"])
-info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
-raw = mne.io.RawArray(data, info)
+    chn_names=np.append(["ecog"]*chn_num,["stim"])  #,"thumb","index","middle","ring","little"])
+    chn_types=np.append(["ecog"]*chn_num,["stim"])  #, "emg","emg","emg","emg","emg"])
+    info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
+    raw = mne.io.RawArray(data, info)
 
-events = mne.find_events(raw, stim_channel='stim')
-events=events-[0,0,1] #(150, 3)
-raw=raw.pick(picks=['ecog'])
+    events = mne.find_events(raw, stim_channel='stim')
+    events=events-[0,0,1] #(150, 3)
+    raw=raw.pick(picks=['ecog'])
 
 
-epochs = mne.Epochs(raw, events, tmin=0, tmax=2,baseline=None)
-# or epoch from 0s to 4s which only contain movement data.
-# epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None)
+    epochs = mne.Epochs(raw, events, tmin=0, tmax=2,baseline=None)
+    # or epoch from 0s to 4s which only contain movement data.
+    # epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None)
 
-epoch1=epochs['0'].get_data() # 20 trials. 8001 time points per trial for 8s.
-epoch2=epochs['1'].get_data()
-epoch3=epochs['2'].get_data()
-epoch4=epochs['3'].get_data()
-epoch5=epochs['4'].get_data()
-list_of_epochs = [epoch1, epoch2, epoch3, epoch4, epoch5]
+    epoch1=epochs['0'].get_data() # 20 trials. 8001 time points per trial for 8s.
+    epoch2=epochs['1'].get_data()
+    epoch3=epochs['2'].get_data()
+    epoch4=epochs['3'].get_data()
+    epoch5=epochs['4'].get_data()
+    list_of_epochs = [epoch1, epoch2, epoch3, epoch4, epoch5]
+
+else:
+    list_of_epochs=[]
+    save_to = data_dir + 'fingerflex/data/' + str(sid) + '/'
+    for fingeri in range(5):
+        tmp = mne.read_epochs(save_to + 'rawBandEpoch'+str(fingeri)+'.fif')
+        list_of_epochs.append(tmp.get_data())
 
 wind=500
 stride=200
@@ -84,7 +93,7 @@ X_train=[]
 X_test=[]
 labels_train=[]
 labels_test=[]
-total_len=epoch1.shape[2]
+total_len=list_of_epochs[0].shape[2]
 labels=[]
 
 test_number=10

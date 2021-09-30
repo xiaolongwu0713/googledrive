@@ -1,10 +1,11 @@
 #%cd /content/drive/MyDrive/
 
-#capture
+#%%capture
 #! pip install hdf5storage
 #! pip install mne==0.23.0
 #! pip install torch==1.7.0
 #! pip install Braindecode==0.5.1
+#! pip install timm
 
 import scipy.io
 import numpy as np
@@ -13,6 +14,7 @@ import mne
 import torch
 from torch.optim import lr_scheduler
 from torch import nn
+import timm
 from common_dl import myDataset
 from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
@@ -23,7 +25,6 @@ from gesture.models.d2l_resnet import d2lresnet
 from myskorch import on_epoch_begin_callback, on_batch_end_callback
 from ecog_finger.config import *
 from ecog_finger.preprocess.chn_settings import  get_channel_setting
-import timm
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -35,13 +36,47 @@ except TypeError as err:
 
 sid=2
 fs=1000
-input='rawAndbands'
 use_active_only=False
 if use_active_only:
     active_chn=get_channel_setting(sid)
 else:
     active_chn='all'
 
+if 1==2:
+    filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
+    mat=scipy.io.loadmat(filename)
+    data=mat['data'] # (46, 610040)
+
+    if 1==1:
+        scaler = StandardScaler()
+        scaler.fit(data)
+        data=scaler.transform((data))
+    data=np.transpose(data)
+    chn_num=data.shape[0]
+    flex=np.transpose(mat['flex']) #(5, 610040)
+    cue=np.transpose(mat['cue']) # (1, 610040)
+    data=np.concatenate((data,cue),axis=0) # (47, 610040) / (47, 610040)
+    chn_names=np.append(["ecog"]*chn_num,["stim"])  #,"thumb","index","middle","ring","little"])
+    chn_types=np.append(["ecog"]*chn_num,["stim"])  #, "emg","emg","emg","emg","emg"])
+    info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
+    raw = mne.io.RawArray(data, info)
+
+    events = mne.find_events(raw, stim_channel='stim')
+    events=events-[0,0,1] #(150, 3)
+    raw=raw.pick(picks=['ecog'])
+    epochs = mne.Epochs(raw, events, tmin=0, tmax=2,baseline=None)
+    # or epoch from 0s to 4s which only contain movement data.
+    # epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None)
+
+    epoch1=epochs['0'].get_data() # 20 trials. 8001 time points per trial for 8s.
+    epoch2=epochs['1'].get_data()
+    epoch3=epochs['2'].get_data()
+    epoch4=epochs['3'].get_data()
+    epoch5=epochs['4'].get_data()
+    list_of_epochs = [epoch1, epoch2, epoch3, epoch4, epoch5]
+
+
+input='rawAndbands'
 if input=='raw':
     filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)
@@ -86,6 +121,7 @@ else:
         tmp = mne.read_epochs(save_to + 'rawBandEpoch'+str(fingeri)+'.fif')
         list_of_epochs.append(tmp.get_data())
 
+
 wind=500
 stride=200
 s=0
@@ -103,6 +139,7 @@ for i in range(5):
     Xi=[]
     #ss=(total_len-wind)//stride
     for trial in list_of_epochs[i]: # (63, 2001)
+        #trial=np.concatenate((trial,trial[-3:,:]),axis=0)
         s = 0
         while stride*s+wind<total_len:
             start=s * stride
@@ -160,22 +197,21 @@ seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
 
 #net=d2lresnet()
-net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1)
+net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=[496,500])
 net = net.to(device)
-lr = 0.0002
-weight_decay = 1e-10
 
+lr = 0.05
+weight_decay = 1e-10
+epoch_num = 500
 
 criterion = nn.CrossEntropyLoss()
 #criterion = nn.NLLLoss()
-#optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-optimizer = torch.optim.Adadelta(net.parameters(), lr=0.02)
-#optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
+#optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
+#optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 # Decay LR by a factor of 0.1 every 7 epochs
-lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 epoch_num = 500
-
-len(train_loader)
 
 for epoch in range(epoch_num):
     print("------ epoch " + str(epoch) + " -----")
@@ -198,7 +234,7 @@ for epoch in range(epoch_num):
         #_, preds = torch.max(y_pred, 1)
 
         if cuda:
-            loss = criterion(y_pred, trainy.squeeze().cuda().long())
+            loss = criterion(y_pred, trainy.squeeze().cuda())
         else:
             loss = criterion(y_pred, trainy.squeeze())
 
@@ -207,7 +243,7 @@ for epoch in range(epoch_num):
         running_loss += loss.item() * trainx.shape[0]
         running_corrects += torch.sum(preds.cpu().squeeze() == trainy.squeeze())
     #print("train_size: " + str(train_size))
-    lr_scheduler.step()
+    lr_schedulerr.step()
     epoch_loss = running_loss / train_size
     epoch_acc = running_corrects.double() / train_size
     print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,epoch_acc.item()))
@@ -235,6 +271,4 @@ for epoch in range(epoch_num):
 
         epoch_acc = running_corrects.double() / val_size
         print("Evaluation accuracy: {:.2f}.".format(epoch_acc.item()))
-
-
 

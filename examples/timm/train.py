@@ -14,6 +14,10 @@ NVIDIA CUDA specific speedups adopted from NVIDIA Apex examples
 
 Hacked together by / Copyright 2020 Ross Wightman (https://github.com/rwightman)
 """
+
+"""
+run train.py directly. Change the data_dir parameter in train.py
+"""
 import argparse
 import time
 import yaml
@@ -312,7 +316,6 @@ def main():
 
     #args.data_dir = '/Users/long/Documents/data/timm/imagenette2-320'
     args.data_dir = 'C:/Users/wuxiaolong/Desktop/BCI/data/imagenette2-320'
-
     args.model = 'visformer_tiny'
     
     if args.log_wandb:

@@ -71,7 +71,7 @@ parser.add_argument('-c', '--config', default='', type=str, metavar='FILE',
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 
 # Dataset / Model parameters
-parser.add_argument('data_dir', metavar='DIR',
+parser.add_argument('--data_dir', metavar='DIR',
                     help='path to dataset')
 parser.add_argument('--dataset', '-d', metavar='NAME', default='',
                     help='dataset type (default: ImageFolder/ImageTar if empty)')
@@ -309,6 +309,11 @@ def _parse_args():
 def main():
     setup_default_logging()
     args, args_text = _parse_args()
+
+    #args.data_dir = '/Users/long/Documents/data/timm/imagenette2-320'
+    args.data_dir = 'C:/Users/wuxiaolong/Desktop/BCI/data/imagenette2-320'
+
+    args.model = 'visformer_tiny'
     
     if args.log_wandb:
         if has_wandb:

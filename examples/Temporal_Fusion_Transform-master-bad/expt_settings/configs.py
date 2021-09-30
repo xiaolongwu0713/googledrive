@@ -16,7 +16,7 @@
 # Lint as: python3
 """Default configs for TFT experiments.
 
-Contains the default output paths for data, serialised models and predictions
+Contains the default output paths for data, serialised models.bak and predictions
 for the main experiments used in the publication.
 """
 
@@ -35,7 +35,7 @@ class ExperimentConfig(object):
     root_folder: Root folder to contain all experimental outputs.
     experiment: Name of experiment to run.
     data_folder: Folder to store data for experiment.
-    model_folder: Folder to store serialised models.
+    model_folder: Folder to store serialised models.bak.
     results_folder: Folder to store results.
     data_csv_path: Path to primary data csv file used in experiment.
     hyperparam_iterations: Default number of random search iterations for

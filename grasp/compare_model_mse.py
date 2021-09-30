@@ -32,7 +32,7 @@ for model in np.arange(len(models)):
     mse_tmp[model]=np.load(mse_dir+file_prefix+'.'+file_surfix)
 
 # analysis the mse separately for 4 movement
-# mse[movement][model] will output 8 mse number for i-th movement decoded by 6 models
+# mse[movement][model] will output 8 mse number for i-th movement decoded by 6 models.bak
 testNum=8
 mse=[]
 for movement in range(movements):

@@ -9,20 +9,20 @@ from timm import list_models, create_model, set_scriptable, has_model_default_ke
     get_model_default_value
 
 if hasattr(torch._C, '_jit_set_profiling_executor'):
-    # legacy executor is too slow to compile large models for unit tests
+    # legacy executor is too slow to compile large models.bak for unit tests
     # no need for the fusion performance here
     torch._C._jit_set_profiling_executor(True)
     torch._C._jit_set_profiling_mode(False)
 
-# transformer models don't support many of the spatial / feature based model functionalities
+# transformer models.bak don't support many of the spatial / feature based model functionalities
 NON_STD_FILTERS = [
     'vit_*', 'tnt_*', 'pit_*', 'swin_*', 'coat_*', 'cait_*', '*mixer_*', 'gmlp_*', 'resmlp_*', 'twins_*',
     'convit_*', 'levit*', 'visformer*', 'deit*', 'jx_nest_*', 'nest_*', 'xcit_*', 'crossvit_*', 'beit_*']
 NUM_NON_STD = len(NON_STD_FILTERS)
 
-# exclude models that cause specific test failures
+# exclude models.bak that cause specific test failures
 if 'GITHUB_ACTIONS' in os.environ:  # and 'Linux' in platform.system():
-    # GitHub Linux runner is slower and hits memory limits sooner than MacOS, exclude bigger models
+    # GitHub Linux runner is slower and hits memory limits sooner than MacOS, exclude bigger models.bak
     EXCLUDE_FILTERS = [
         '*efficientnet_l2*', '*resnext101_32x48d', '*in21k', '*152x4_bitm', '*101x3_bitm', '*50x3_bitm',
         '*nfnet_f3*', '*nfnet_f4*', '*nfnet_f5*', '*nfnet_f6*', '*nfnet_f7*', '*efficientnetv2_xl*',
@@ -242,7 +242,7 @@ if 'GITHUB_ACTIONS' not in os.environ:
         create_model(model_name, pretrained=True, features_only=True)
 
 EXCLUDE_JIT_FILTERS = [
-    '*iabn*', 'tresnet*',  # models using inplace abn unlikely to ever be scriptable
+    '*iabn*', 'tresnet*',  # models.bak using inplace abn unlikely to ever be scriptable
     'dla*', 'hrnet*', 'ghostnet*',  # hopefully fix at some point
     'vit_large_*', 'vit_huge_*',
 ]
@@ -273,7 +273,7 @@ EXCLUDE_FEAT_FILTERS = [
     '*pruned*',  # hopefully fix at some point
 ] + NON_STD_FILTERS
 if 'GITHUB_ACTIONS' in os.environ:  # and 'Linux' in platform.system():
-    # GitHub Linux runner is slower and hits memory limits sooner than MacOS, exclude bigger models
+    # GitHub Linux runner is slower and hits memory limits sooner than MacOS, exclude bigger models.bak
     EXCLUDE_FEAT_FILTERS += ['*resnext101_32x32d', '*resnext101_32x16d']
 
 
@@ -285,7 +285,7 @@ def test_model_forward_features(model_name, batch_size):
     model = create_model(model_name, pretrained=False, features_only=True)
     model.eval()
     expected_channels = model.feature_info.channels()
-    assert len(expected_channels) >= 4  # all models here should have at least 4 feature levels by default, some 5 or 6
+    assert len(expected_channels) >= 4  # all models.bak here should have at least 4 feature levels by default, some 5 or 6
 
     input_size = _get_input_size(model=model, target=TARGET_FFEAT_SIZE)
     if max(input_size) > MAX_FFEAT_SIZE:

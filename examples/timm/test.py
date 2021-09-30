@@ -11,7 +11,7 @@ from timm.models import registry
 #timm.list_models(pretrained=False)
 
 model = timm.create_model('visformer_tiny',num_classes=5,in_chans=1)
-model2 = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,features_only=True)
+#model2 = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,features_only=True)
 x = torch.randn(1, 1, 100, 500) # can be any channel
 model(x).shape
 count_parameters(model)

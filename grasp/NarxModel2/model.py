@@ -272,7 +272,7 @@ class DA_RNN(nn.Module):
                 #ax.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
                 ax.plot(y_predicts, label='Prediction',linewidth=0.1)
                 ax.legend(loc='upper left')
-                figname = '/Users/long/BCI/python_scripts/models/NARX/result/predOnTrain'+str(epoch)+'.pdf'
+                figname = '/Users/long/BCI/python_scripts/models.bak/NARX/result/predOnTrain'+str(epoch)+'.pdf'
                 fig.savefig(figname)
                 plt.close(fig)
 
@@ -327,7 +327,7 @@ class DA_RNN(nn.Module):
             # ax.plot(range(self.T, len(y_train_pred) + self.T),y_train_pred, label='Predicted - Train')
             ax.plot(y_preds, label='Prediction', linewidth=0.1)
             ax.legend(loc='upper left')
-            figname = '/Users/long/BCI/python_scripts/models/NARX/result/predOnTest' + str(epoch) + '.pdf'
+            figname = '/Users/long/BCI/python_scripts/models.bak/NARX/result/predOnTest' + str(epoch) + '.pdf'
             fig.savefig(figname)
             plt.close(fig)
         return y_preds

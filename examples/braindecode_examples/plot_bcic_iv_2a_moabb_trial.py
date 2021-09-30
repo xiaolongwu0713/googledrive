@@ -2,7 +2,7 @@
 Trialwise Decoding on BCIC IV 2a Dataset
 ========================================
 
-This tutorial shows you how to train and test deep learning models with
+This tutorial shows you how to train and test deep learning models.bak with
 Braindecode in a classical EEG setting: you have trials of data with
 labels (e.g., Right Hand, Left Hand, etc.).
 
@@ -142,8 +142,8 @@ valid_set = splitted['session_E']
 # predefined convolutional neural network architectures for raw
 # time-domain EEG. Here, we use the shallow ConvNet model from `Deep
 # learning with convolutional neural networks for EEG decoding and
-# visualization <https://arxiv.org/abs/1703.05051>`__. These models are
-# pure `PyTorch <https://pytorch.org>`__ deep learning models, therefore
+# visualization <https://arxiv.org/abs/1703.05051>`__. These models.bak are
+# pure `PyTorch <https://pytorch.org>`__ deep learning models.bak, therefore
 # to use your own model, it just has to be a normal PyTorch
 # `nn.Module <https://pytorch.org/docs/stable/nn.html#torch.nn.Module>`__.
 #

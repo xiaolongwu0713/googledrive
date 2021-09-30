@@ -2,7 +2,7 @@
 """ ImageNet Validation Script
 
 This is intended to be a lean and easily modifiable ImageNet validation script for evaluating pretrained
-models or training checkpoints against ImageNet or similarly organized image datasets. It prioritizes
+models.bak or training checkpoints against ImageNet or similarly organized image datasets. It prioritizes
 canonical PyTorch, standard Python style, and good performance. Repurpose as you see fit.
 
 Hacked together by Ross Wightman (https://github.com/rwightman)
@@ -287,7 +287,7 @@ def main():
         model_cfgs = [(args.model, c) for c in sorted(checkpoints, key=natural_key)]
     else:
         if args.model == 'all':
-            # validate all models in a list of names with pretrained checkpoints
+            # validate all models.bak in a list of names with pretrained checkpoints
             args.pretrained = True
             model_names = list_models(pretrained=True, exclude_filters=['*_in21k', '*_in22k'])
             model_cfgs = [(n, '') for n in model_names]
@@ -298,7 +298,7 @@ def main():
 
     if len(model_cfgs):
         results_file = args.results_file or './results-all.csv'
-        _logger.info('Running bulk validation on these pretrained models: {}'.format(', '.join(model_names)))
+        _logger.info('Running bulk validation on these pretrained models.bak: {}'.format(', '.join(model_names)))
         results = []
         try:
             start_batch_size = args.batch_size

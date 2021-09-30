@@ -194,7 +194,7 @@ def save(tf_session, model_folder, cp_name, scope=None):
 
   Args:
     tf_session: Session containing graph
-    model_folder: Folder to save models
+    model_folder: Folder to save models.bak
     cp_name: Name of Tensorflow checkpoint
     scope: Variable scope containing variables to save
   """

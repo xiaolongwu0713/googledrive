@@ -1,5 +1,5 @@
 """
-Run this script to generate the model-index files in `models` from the templates in `.templates/models`.
+Run this script to generate the model-index files in `models.bak` from the templates in `.templates/models.bak`.
 """
 
 import argparse
@@ -12,7 +12,7 @@ import modelindex
 
 def generate_readmes(templates_path: Path, dest_path: Path):
     """Add the code snippet template to the readmes"""
-    readme_templates_path = templates_path / "models"
+    readme_templates_path = templates_path / "models.bak"
     code_template_path = templates_path / "code_snippets.md"
 
     env = Environment(
@@ -46,7 +46,7 @@ def main():
     parser.add_argument(
         "-d",
         "--dest",
-        default=Path(__file__).parent / "models",
+        default=Path(__file__).parent / "models.bak",
         type=str,
         help="Destination folder that contains the generated model-index files.",
     )

@@ -43,7 +43,7 @@ You can run different modes with following codes.
 * If you want to train on ModelNet10, you can use `--num_category 10`.
 ```shell
 # ModelNet40
-## Select different models in ./models 
+## Select different models.bak in ./models.bak 
 
 ## e.g., pointnet2_ssg without normal features
 python train_classification.py --model pointnet2_cls_ssg --log_dir pointnet2_cls_ssg

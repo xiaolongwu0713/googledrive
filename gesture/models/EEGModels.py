@@ -1,5 +1,5 @@
 """
- ARL_EEGModels - A collection of Convolutional Neural Network models for EEG
+ ARL_EEGModels - A collection of Convolutional Neural Network models.bak for EEG
  Signal Processing and Classification, using Keras and Tensorflow
 
  Requirements:

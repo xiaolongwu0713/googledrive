@@ -25,7 +25,7 @@ def convert(mxnet_name, torch_name):
 
     # convert parameters
     # NOTE: we are relying on the fact that the order of parameters
-    # are usually exactly the same between these models, thus no key name mapping
+    # are usually exactly the same between these models.bak, thus no key name mapping
     # is necessary. Asserts will trip if this is not the case.
     for (tn, tv), (mn, mv) in zip(torchp, mxp):
         m_split = mn.split('_')

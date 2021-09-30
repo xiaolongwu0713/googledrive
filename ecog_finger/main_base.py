@@ -23,6 +23,7 @@ from gesture.models.d2l_resnet import d2lresnet
 from myskorch import on_epoch_begin_callback, on_batch_end_callback
 from ecog_finger.config import *
 from ecog_finger.preprocess.chn_settings import  get_channel_setting
+import timm
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -43,6 +44,7 @@ else:
 filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
 mat=scipy.io.loadmat(filename)
 data=mat['data'] # (46, 610040)
+data=data[:,:-1]
 
 if 1==1:
     scaler = StandardScaler()
@@ -148,16 +150,17 @@ if cuda:
 seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
 
-net=d2lresnet()
+#net=d2lresnet()
+net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1)
 net = net.to(device)
 lr = 0.0002
 weight_decay = 1e-10
-epoch_num = 500
 
-#criterion = nn.CrossEntropyLoss()
-criterion = nn.NLLLoss()
-optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-#optimizer = torch.optim.Adadelta(net.parameters(), lr=0.01)
+
+criterion = nn.CrossEntropyLoss()
+#criterion = nn.NLLLoss()
+#optimizer = torch.optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+optimizer = torch.optim.Adadelta(net.parameters(), lr=0.0001)
 #optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
 # Decay LR by a factor of 0.1 every 7 epochs
 lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
@@ -174,9 +177,7 @@ for epoch in range(epoch_num):
     running_loss = 0.0
     running_corrects = 0
     for batch, (trainx, trainy) in enumerate(train_loader):
-        #print("batch: " + str(batch)+ "/28")
-        #print("batch: " + str(batch))
-        #print("trainy shape: " + str(trainy.shape))
+        trainx=torch.unsqueeze(trainx,dim=1)
         optimizer.zero_grad()
         if (cuda):
             trainx = trainx.float().cuda()
@@ -188,7 +189,7 @@ for epoch in range(epoch_num):
         #_, preds = torch.max(y_pred, 1)
 
         if cuda:
-            loss = criterion(y_pred, trainy.squeeze().cuda())
+            loss = criterion(y_pred, trainy.squeeze().cuda().long())
         else:
             loss = criterion(y_pred, trainy.squeeze())
 
@@ -210,6 +211,7 @@ for epoch in range(epoch_num):
         # print("Validating...")
         with torch.no_grad():
             for _, (val_x, val_y) in enumerate(val_loader):
+                val_x = torch.unsqueeze(val_x, dim=1)
                 if (cuda):
                     val_x = val_x.float().cuda()
                     # val_y = val_y.float().cuda()

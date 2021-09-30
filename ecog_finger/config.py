@@ -11,4 +11,6 @@ if re.compile('/Users/long/').match(location):
 elif re.compile('/content/drive').match(location):
     data_dir='/content/drive/MyDrive/data/ecog/' # googleDrive
     root_dir='/content/drive/MyDrive/' # googleDrive
-
+elif re.compile('C:').match(location):
+    data_dir='C:/Users/wuxiaolong/Desktop/BCI/data/' # googleDrive
+    root_dir='C:/Users/wuxiaolong/Desktop/BCI/googledrive/' # googleDrive

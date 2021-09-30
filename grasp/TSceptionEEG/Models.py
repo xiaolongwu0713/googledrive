@@ -4,13 +4,13 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 '''
-This is the models of TSception and its variant
+This is the models.bak of TSception and its variant
 
-To use the models, please manage the data into
+To use the models.bak, please manage the data into
 the dimension of(mini-batch, 1, EEG-channels,data point)
 before feed the data into forward()
 
-For more details about the models, please refer to our paper:
+For more details about the models.bak, please refer to our paper:
 
 Yi Ding, Neethu Robinson, Qiuhao Zeng, Dou Chen, Aung Aung Phyo Wai, Tih-Shih Lee, Cuntai Guan,
 "TSception: A Deep Learning Framework for Emotion Detection Useing EEG"(IJCNN 2020)

@@ -24,7 +24,7 @@ def convert_nest(checkpoint_path, arch):
         - https://console.cloud.google.com/storage/browser/gresearch/nest-checkpoints
     `arch` is needed to 
     Returns a state dict that can be used with `torch.nn.Module.load_state_dict`
-    Hint: Follow timm.models.nest.Nest.__init__ and 
+    Hint: Follow timm.models.bak.nest.Nest.__init__ and
     https://github.com/google-research/nested-transformer/blob/main/models/nest_net.py
     """
     assert arch in ['nest_base', 'nest_small', 'nest_tiny'], "Your `arch` is not supported"

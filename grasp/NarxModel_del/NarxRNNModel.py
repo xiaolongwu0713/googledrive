@@ -60,12 +60,12 @@ def main():
 
     #fig1 = plt.figure()
     #plt.semilogy(range(len(model.iter_losses)), model.iter_losses)
-    #plt.savefig("/Users/long/BCI/python_scripts/models/NARX/NARX_iter_loss.png")
+    #plt.savefig("/Users/long/BCI/python_scripts/models.bak/NARX/NARX_iter_loss.png")
     #plt.close(fig1)
 
     #fig2 = plt.figure()
     #plt.semilogy(range(len(model.epoch_losses)), model.epoch_losses)
-    #plt.savefig("/Users/long/BCI/python_scripts/models/NARX/NARX_epoch_loss.png")
+    #plt.savefig("/Users/long/BCI/python_scripts/models.bak/NARX/NARX_epoch_loss.png")
     #plt.close(fig2)
     #print('Finished Training')
 

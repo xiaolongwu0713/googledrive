@@ -16,7 +16,7 @@ class ModelEma:
     """ Model Exponential Moving Average (DEPRECATED)
 
     Keep a moving average of everything in the model state_dict (parameters and buffers).
-    This version is deprecated, it does not work with scripted models. Will be removed eventually.
+    This version is deprecated, it does not work with scripted models.bak. Will be removed eventually.
 
     This is intended to allow functionality like
     https://www.tensorflow.org/api_docs/python/tf/train/ExponentialMovingAverage

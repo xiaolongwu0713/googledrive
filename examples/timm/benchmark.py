@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ Model Benchmark Script
 
-An inference and train step benchmark script for timm models.
+An inference and train step benchmark script for timm models.bak.
 
 Hacked together by Ross Wightman (https://github.com/rwightman)
 """
@@ -434,7 +434,7 @@ def main():
             model_names = [line.rstrip() for line in f]
         model_cfgs = [(n, None) for n in model_names]
     elif args.model == 'all':
-        # validate all models in a list of names with pretrained checkpoints
+        # validate all models.bak in a list of names with pretrained checkpoints
         args.pretrained = True
         model_names = list_models(pretrained=True, exclude_filters=['*in21k'])
         model_cfgs = [(n, None) for n in model_names]
@@ -445,7 +445,7 @@ def main():
 
     if len(model_cfgs):
         results_file = args.results_file or './benchmark.csv'
-        _logger.info('Running bulk validation on these pretrained models: {}'.format(', '.join(model_names)))
+        _logger.info('Running bulk validation on these pretrained models.bak: {}'.format(', '.join(model_names)))
         results = []
         try:
             for m, _ in model_cfgs:

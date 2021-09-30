@@ -225,7 +225,7 @@ def _posterize_level_to_arg(level, _hparams):
 
 
 def _posterize_increasing_level_to_arg(level, hparams):
-    # As per Tensorflow models research and UDA impl
+    # As per Tensorflow models.bak research and UDA impl
     # range [4, 0], 'keep 4 down to 0 MSB of original image',
     # intensity/severity of augmentation increases with level
     return 4 - _posterize_level_to_arg(level, hparams)[0],

@@ -24,7 +24,7 @@ torch.cuda.manual_seed(seed)
 class EncoderDecoder(nn.Module):
     """
     A standard Encoder-Decoder architecture. Base for this and many
-    other models.
+    other models.bak.
     """
 
     def __init__(self, encoder, decoder, src_embed, trg_embed, generator):

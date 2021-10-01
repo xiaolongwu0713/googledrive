@@ -123,7 +123,7 @@ else:
 
 
 wind=500
-stride=200
+stride=50
 s=0
 X_train=[]
 X_test=[]
@@ -186,6 +186,8 @@ val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True, pi
 
 train_size=len(train_loader.dataset)
 val_size=len(val_loader.dataset)
+
+train_size
 
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
@@ -269,4 +271,6 @@ for epoch in range(epoch_num):
 
         epoch_acc = running_corrects.double() / val_size
         print("Evaluation accuracy: {:.2f}.".format(epoch_acc.item()))
+
+
 

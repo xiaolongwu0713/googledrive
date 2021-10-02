@@ -42,41 +42,8 @@ if use_active_only:
 else:
     active_chn='all'
 
-if 1==2:
-    filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
-    mat=scipy.io.loadmat(filename)
-    data=mat['data'] # (46, 610040)
-
-    if 1==1:
-        scaler = StandardScaler()
-        scaler.fit(data)
-        data=scaler.transform((data))
-    data=np.transpose(data)
-    chn_num=data.shape[0]
-    flex=np.transpose(mat['flex']) #(5, 610040)
-    cue=np.transpose(mat['cue']) # (1, 610040)
-    data=np.concatenate((data,cue),axis=0) # (47, 610040) / (47, 610040)
-    chn_names=np.append(["ecog"]*chn_num,["stim"])  #,"thumb","index","middle","ring","little"])
-    chn_types=np.append(["ecog"]*chn_num,["stim"])  #, "emg","emg","emg","emg","emg"])
-    info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
-    raw = mne.io.RawArray(data, info)
-
-    events = mne.find_events(raw, stim_channel='stim')
-    events=events-[0,0,1] #(150, 3)
-    raw=raw.pick(picks=['ecog'])
-    epochs = mne.Epochs(raw, events, tmin=0, tmax=2,baseline=None)
-    # or epoch from 0s to 4s which only contain movement data.
-    # epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None)
-
-    epoch1=epochs['0'].get_data() # 20 trials. 8001 time points per trial for 8s.
-    epoch2=epochs['1'].get_data()
-    epoch3=epochs['2'].get_data()
-    epoch4=epochs['3'].get_data()
-    epoch5=epochs['4'].get_data()
-    list_of_epochs = [epoch1, epoch2, epoch3, epoch4, epoch5]
-
-
-input='rawAndbands'
+#input='rawAndbands'
+input='raw'
 if input=='raw':
     filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)
@@ -114,7 +81,8 @@ if input=='raw':
     epoch5=epochs['4'].get_data()
     list_of_epochs = [epoch1, epoch2, epoch3, epoch4, epoch5]
 
-else:
+
+elif input=='rawAndbands':
     list_of_epochs=[]
     save_to = data_dir + 'fingerflex/data/' + str(sid) + '/'
     for fingeri in range(5):
@@ -197,6 +165,8 @@ seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
 
 #net=d2lresnet()
+if input=='raw':
+    img_size=[]
 net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=[496,500])
 net = net.to(device)
 

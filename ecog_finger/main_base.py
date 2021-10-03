@@ -7,6 +7,23 @@
 #! pip install Braindecode==0.5.1
 #! pip install timm
 
+import sys, os, re
+location=os.getcwd()
+if len(sys.argv)>1: # command line
+    sid = sys.argv[1]
+    print("Running from CMD")
+    print('Python%son%s'%(sys.version,sys.platform))
+    sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+else: # IDE
+    print("Running from IDE")
+    sid=2
+
+if re.compile('/content/drive').match(location): # google colab
+    sid=2
+
+print("processing on sid:" + str(sid) + '.')
+
+
 import scipy.io
 import numpy as np
 import matplotlib.pyplot as plt

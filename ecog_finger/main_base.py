@@ -61,8 +61,10 @@ else:
 
 project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
 model_path=project_dir + 'pth' +'/'
-input='rawAndbands'
-#input='raw'
+if not os.path.exists(model_path):
+    os.makedirs(model_path)
+#input='rawAndbands'
+input='raw'
 if input=='raw':
     filename=project_dir + str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)
@@ -175,8 +177,8 @@ set_random_seeds(seed=seed)
 
 #net=d2lresnet()
 img_size=[chn_num,wind]
-#net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
-net = deepnet(chn_number,n_class,input_window_samples=wind,final_conv_length='auto',) # 81%
+net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
+#net = deepnet(chn_number,n_class,input_window_samples=wind,final_conv_length='auto',) # 81%
 net = net.to(device)
 
 lr = 0.05
@@ -214,7 +216,7 @@ for epoch in range(epoch_num):
         #_, preds = torch.max(y_pred, 1)
 
         if cuda:
-            loss = criterion(y_pred, trainy.squeeze().cuda())
+            loss = criterion(y_pred, trainy.squeeze().cuda().long())
         else:
             loss = criterion(y_pred, trainy.squeeze())
 

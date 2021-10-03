@@ -247,6 +247,7 @@ net_test = net.to(device)
 optimizer = torch.optim.Adadelta(net_test.parameters(), lr=lr)
 
 
+test_acc=[]
 for test_epoch in load_epoch:
 
     running_corrects = 0
@@ -271,8 +272,9 @@ for test_epoch in load_epoch:
 
             running_corrects += torch.sum(preds.cpu().squeeze() == test_y.squeeze())
 
-    test_acc = running_corrects.double() / test_size
-    print("Evaluation accuracy: {:.2f}.".format(test_acc.item()))
-
-
-
+    test_acci = running_corrects.double() / test_size
+    print("Evaluation accuracy: {:.2f}.".format(test_acci.item()))
+    test_acc.append(test_acci.item())
+test_acc=np.asarray(test_acc)
+filename=project_dir+'test_acc'
+np.save(filename,test_acc)

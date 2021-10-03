@@ -61,8 +61,8 @@ else:
 
 project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
 model_path=project_dir + 'pth' +'/'
-input='rawAndbands'
-#input='raw'
+#input='rawAndbands'
+input='raw'
 if input=='raw':
     filename=project_dir + str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)

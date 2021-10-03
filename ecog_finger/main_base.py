@@ -62,7 +62,7 @@ else:
 project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
 model_path=project_dir + 'pth' +'/'
 input='rawAndbands'
-input='raw'
+#input='raw'
 if input=='raw':
     filename=project_dir + str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)
@@ -111,7 +111,7 @@ elif input=='rawAndbands':
 
 
 wind=500
-stride=50
+stride=200
 s=0
 X=[]
 X_train=[]
@@ -201,7 +201,8 @@ for epoch in range(epoch_num):
     running_loss = 0.0
     running_corrects = 0
     for batch, (trainx, trainy) in enumerate(train_loader):
-        trainx=torch.unsqueeze(trainx,dim=1)
+        if isinstance(net, timm.models.visformer.Visformer):
+            trainx=torch.unsqueeze(trainx,dim=1)
         optimizer.zero_grad()
         if (cuda):
             trainx = trainx.float().cuda()
@@ -243,7 +244,8 @@ for epoch in range(epoch_num):
         # print("Validating...")
         with torch.no_grad():
             for _, (val_x, val_y) in enumerate(val_loader):
-                val_x = torch.unsqueeze(val_x, dim=1)
+                if isinstance(net, timm.models.visformer.Visformer):
+                    val_x = torch.unsqueeze(val_x, dim=1)
                 if (cuda):
                     val_x = val_x.float().cuda()
                     # val_y = val_y.float().cuda()
@@ -281,7 +283,8 @@ for test_epoch in load_epoch:
     # print("Validating...")
     with torch.no_grad():
         for _, (test_x, test_y) in enumerate(test_loader):
-            test_x = torch.unsqueeze(test_x, dim=1)
+            if isinstance(net, timm.models.visformer.Visformer):
+                test_x = torch.unsqueeze(test_x, dim=1)
             if (cuda):
                 test_x = test_x.float().cuda()
             else:

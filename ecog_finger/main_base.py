@@ -61,8 +61,6 @@ else:
 
 project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
 model_path=project_dir + 'pth' +'/'
-if not os.path.exists(model_path):
-    os.makedirs(model_path)
 #input='rawAndbands'
 input='raw'
 if input=='raw':

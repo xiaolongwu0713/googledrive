@@ -42,10 +42,12 @@ if use_active_only:
 else:
     active_chn='all'
 
+project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
+model_path=project_dir + 'pth' +'/'
 input='rawAndbands'
 input='raw'
 if input=='raw':
-    filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
+    filename=project_dir + str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)
     data=mat['data'] # (46, 610040)
     data=data[:,:-1]
@@ -91,24 +93,22 @@ elif input=='rawAndbands':
     chn_num=list_of_epochs[0].shape[1]
 
 
-wind=200
-stride=200
+wind=500
+stride=50
 s=0
+X=[]
 X_train=[]
 X_test=[]
+y=[]
 labels_train=[]
 labels_test=[]
 total_len=list_of_epochs[0].shape[2]
-labels=[]
 
-test_number=10
 for i in range(5):
     Xi_train = []
     Xi_test = []
     Xi=[]
-    #ss=(total_len-wind)//stride
     for trial in list_of_epochs[i]: # (63, 2001)
-        #trial=np.concatenate((trial,trial[-3:,:]),axis=0)
         s = 0
         while stride*s+wind<total_len:
             start=s * stride
@@ -120,41 +120,32 @@ for i in range(5):
         if stride * last_s + wind<total_len-100:
             tmp=trial[:,-wind:]
             Xi.append(tmp)
-    Xi_train=np.asarray(Xi[:-test_number]) # (260, 63, 500)
-    Xi_test = np.asarray(Xi[-test_number:]) # (10, 63, 500)
 
-    X_train.append(Xi_train)
-    X_test.append(Xi_test)
+    X.append(Xi)
 
     samples_number=len(Xi)
     label=[i]*samples_number
-    label_train=label[:-test_number]
-    label_test=label[-test_number:]
+    y.append(label)
 
-    labels_train.append(label_train)
-    labels_test.append(label_test)
+X=np.concatenate(X,axis=0) # (1300, 63, 500)
+y=np.asarray(y)
+y=np.reshape(y,(-1,1)) # (5, 270)
 
-
-X_train=np.concatenate(X_train,axis=0) # (1300, 63, 500)
-X_test=np.concatenate(X_test,axis=0) # (50, 63, 500)
-
-labels_train=np.asarray(labels_train)
-labels_train=np.reshape(labels_train,(-1,1)) # (5, 270)
-labels_test=np.asarray(labels_test)
-labels_test=np.reshape(labels_test,(-1,1)) # (5, 270)
-
-# (871, 63, 500)/ (429, 63, 500)
-X_train, X_val, y_train, y_val = train_test_split(X_train, labels_train, test_size=0.33, random_state=42)
+X_train, X_val_test, y_train, y_val_test = train_test_split(X, y, test_size=0.4, random_state=42)
+X_val, X_test, y_val, y_test = train_test_split(X_val_test, y_val_test, test_size=0.5, random_state=42)
 
 train_set=myDataset(X_train,y_train)
 val_set=myDataset(X_val,y_val)
+test_set=myDataset(X_test,y_test)
 
 batch_size = 32
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True, pin_memory=False)
 val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True, pin_memory=False)
+test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=True, pin_memory=False)
 
 train_size=len(train_loader.dataset)
 val_size=len(val_loader.dataset)
+test_size=len(test_loader.dataset)
 
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
@@ -179,7 +170,7 @@ optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
 #optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 # Decay LR by a factor of 0.1 every 7 epochs
 lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
-epoch_num = 500
+epoch_num = 20
 
 for epoch in range(epoch_num):
     print("------ epoch " + str(epoch) + " -----")
@@ -217,6 +208,14 @@ for epoch in range(epoch_num):
     print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,epoch_acc.item()))
     #print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
 
+    state = {
+            'net': net.state_dict(),
+            'optimizer': optimizer.state_dict(),
+             'epoch': epoch,
+             'loss': epoch_loss
+        }
+    savepath = model_path + 'checkpoint' + str(epoch) + '.pth'
+    torch.save(state, savepath)
     running_loss = 0.0
     running_corrects = 0
     if epoch % 1 == 0:
@@ -239,6 +238,41 @@ for epoch in range(epoch_num):
 
         epoch_acc = running_corrects.double() / val_size
         print("Evaluation accuracy: {:.2f}.".format(epoch_acc.item()))
+
+
+load_epoch=range(20)
+#load_epoch=load_epoch[10]
+net_test = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
+net_test = net.to(device)
+optimizer = torch.optim.Adadelta(net_test.parameters(), lr=lr)
+
+
+for test_epoch in load_epoch:
+
+    running_corrects = 0
+
+    load_path=model_path + 'checkpoint' + str(test_epoch) + '.pth'
+    checkpoint=torch.load(load_path)
+    net_test.load_state_dict(checkpoint['net'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    net_test.eval()
+
+    # print("Validating...")
+    with torch.no_grad():
+        for _, (test_x, test_y) in enumerate(test_loader):
+            test_x = torch.unsqueeze(test_x, dim=1)
+            if (cuda):
+                test_x = test_x.float().cuda()
+            else:
+                test_x = test_x.float()
+            outputs = net_test(test_x)
+            #_, preds = torch.max(outputs, 1)
+            preds = outputs.argmax(dim=1, keepdim=True)
+
+            running_corrects += torch.sum(preds.cpu().squeeze() == test_y.squeeze())
+
+    test_acc = running_corrects.double() / test_size
+    print("Evaluation accuracy: {:.2f}.".format(test_acc.item()))
 
 
 

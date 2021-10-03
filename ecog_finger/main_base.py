@@ -42,6 +42,7 @@ from gesture.models.d2l_resnet import d2lresnet
 from myskorch import on_epoch_begin_callback, on_batch_end_callback
 from ecog_finger.config import *
 from ecog_finger.preprocess.chn_settings import  get_channel_setting
+from gesture.models.deepmodel import deepnet
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -51,7 +52,6 @@ try:
 except TypeError as err:
     print(err)
 
-sid=2
 fs=1000
 use_active_only=False
 if use_active_only:
@@ -147,6 +147,8 @@ for i in range(5):
 X=np.concatenate(X,axis=0) # (1300, 63, 500)
 y=np.asarray(y)
 y=np.reshape(y,(-1,1)) # (5, 270)
+n_class=5
+chn_number=X.shape[1]
 
 X_train, X_val_test, y_train, y_val_test = train_test_split(X, y, test_size=0.4, random_state=42)
 X_val, X_test, y_val, y_test = train_test_split(X_val_test, y_val_test, test_size=0.5, random_state=42)
@@ -173,7 +175,8 @@ set_random_seeds(seed=seed)
 
 #net=d2lresnet()
 img_size=[chn_num,wind]
-net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
+#net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
+net = deepnet(chn_number,n_class,input_window_samples=wind,final_conv_length='auto',) # 81%
 net = net.to(device)
 
 lr = 0.05

@@ -42,7 +42,7 @@ if use_active_only:
 else:
     active_chn='all'
 
-#input='rawAndbands'
+input='rawAndbands'
 input='raw'
 if input=='raw':
     filename=data_dir+'fingerflex/data/'+str(sid)+'/'+str(sid)+'_fingerflex.mat'
@@ -80,7 +80,7 @@ if input=='raw':
     epoch4=epochs['3'].get_data()
     epoch5=epochs['4'].get_data()
     list_of_epochs = [epoch1, epoch2, epoch3, epoch4, epoch5]
-
+    chn_num=epoch1.shape[1]
 
 elif input=='rawAndbands':
     list_of_epochs=[]
@@ -88,10 +88,11 @@ elif input=='rawAndbands':
     for fingeri in range(5):
         tmp = mne.read_epochs(save_to + 'rawBandEpoch'+str(fingeri)+'.fif')
         list_of_epochs.append(tmp.get_data())
+    chn_num=list_of_epochs[0].shape[1]
 
 
-wind=500
-stride=50
+wind=200
+stride=200
 s=0
 X_train=[]
 X_test=[]
@@ -155,8 +156,6 @@ val_loader = DataLoader(dataset=val_set, batch_size=batch_size, shuffle=True, pi
 train_size=len(train_loader.dataset)
 val_size=len(val_loader.dataset)
 
-train_size
-
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
 if cuda:
@@ -165,9 +164,8 @@ seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
 
 #net=d2lresnet()
-if input=='raw':
-    img_size=[]
-net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=[496,500])
+img_size=[chn_num,wind]
+net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
 net = net.to(device)
 
 lr = 0.05

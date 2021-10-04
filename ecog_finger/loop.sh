@@ -1,15 +1,12 @@
 #/bin/bash
 cwd=`pwd`
-echo $HOSTNAME
-if [[ $HOSTNAME == "workstation" ]];
-then
-	echo "here"
+if [[ $HOSTNAME == "workstation"  ]];then
 	source /cygdrive/c/Users/wuxiaolong/venv/Scripts/activate
-elif [[ $HOSTNAME == "longsMac" ]];
-then
+	echo "workstation"
+fi
+if [[ $HOSTNAME == "longsMac"  ]];then
 	source /usr/local/venv/gesture/bin/activate
-else
-	echo "wrong place"
+	echo "longsMac"
 fi
 #for sid in 1 2 3 4 5 6 7 8 9
 #do

@@ -1,5 +1,6 @@
 import os, re
 import socket
+import pre_all # add python project path
 
 import sys
 #print('Python%son%s'%(sys.version,sys.platform))

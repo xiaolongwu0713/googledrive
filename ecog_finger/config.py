@@ -1,5 +1,6 @@
 import os, re
 import socket
+import pre_all # add python project path
 
 sids=[1,2,3,4,5,6,7,8,9]
 

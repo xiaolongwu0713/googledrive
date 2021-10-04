@@ -7,7 +7,7 @@ import sys
 if socket.gethostname() == 'longsMac':
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 elif socket.gethostname() == 'workstation':
-    sys.path.extend([''])
+    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
 
 sids=[1,2,3,4,5,6,7,8,9]
 
@@ -23,5 +23,5 @@ elif re.compile('/content/drive').match(location):  # googleDrive
     data_dir='/content/drive/MyDrive/data/ecog/'
     root_dir='/content/drive/MyDrive/'
 elif re.compile('C:').match(location): # windows workstation
-    data_dir='C:/Users/wuxiaolong/Desktop/BCI/data/'
+    data_dir='C:/Users/wuxiaolong/Desktop/BCI/data/ecog/'
     root_dir='C:/Users/wuxiaolong/Desktop/BCI/googledrive/'

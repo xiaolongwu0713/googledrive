@@ -9,22 +9,32 @@
 
 import sys, os, re
 location=os.getcwd()
-if len(sys.argv)>1: # command line
-    sid = sys.argv[1]
-    print("Running from CMD")
-    #print('Python%son%s'%(sys.version,sys.platform))
+import socket
 
+sid=2
+if socket.gethostname() == 'longsMac':
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-else: # IDE
-    print("Running from IDE")
-    sid=2
+    if len(sys.argv) > 1:
+        print("Running from cmd on longsMac")
+        sid = sys.argv[1]
+    else:  # IDE
+        print("Running from IDE on longsMac")
+elif socket.gethostname() == 'workstation':
+    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
+    if len(sys.argv) > 1:
+        print("Running from cmd on workstation")
+        sid = sys.argv[1]
+    else:  # IDE
+        print("Running from IDE on workstation")
+
 
 if re.compile('/content/drive').match(location): # google colab
-    sid=2
+    pass
 
-print("processing on sid:" + str(sid) + '.')
+print("SID:" + str(sid) + '.')
 
-
+import pre_all # add python project path
+from ecog_finger.config import *
 import scipy.io
 import numpy as np
 import matplotlib.pyplot as plt
@@ -41,7 +51,7 @@ from common_dl import set_random_seeds
 from common_dsp import *
 from gesture.models.d2l_resnet import d2lresnet
 from myskorch import on_epoch_begin_callback, on_batch_end_callback
-from ecog_finger.config import *
+
 from ecog_finger.preprocess.chn_settings import  get_channel_setting
 from gesture.models.deepmodel import deepnet
 
@@ -65,7 +75,7 @@ model_path=project_dir + 'pth' +'/'
 #input='rawAndbands'
 input='raw'
 if input=='raw':
-    filename=project_dir + str(sid)+'_fingerflex.mat'
+    filename=project_dir + str(sid)+'_fingerflex'
     mat=scipy.io.loadmat(filename)
     data=mat['data'] # (46, 610040)
     data=data[:,:-1]

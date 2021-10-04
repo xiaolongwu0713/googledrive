@@ -19,7 +19,7 @@ elif socket.gethostname() == 'workstation':
 # below is for google colab
 sid=1
 wind=500
-stride=200
+stride=50
 # overwrite above is running from cmd
 if len(sys.argv) > 1:
     sid = int(float(sys.argv[1]))
@@ -200,7 +200,7 @@ lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 epoch_num = 20
 
 for epoch in range(epoch_num):
-    print("------ epoch " + str(epoch) + " -----")
+    print("------ epoch/wind/stride: " + str(epoch) +'/' + str(wind)+'/'+str(stride)+'/' + " -----")
     net.train()
 
     loss_epoch = 0
@@ -283,6 +283,7 @@ for test_epoch in load_epoch:
 
     load_path=model_path + 'checkpoint' + str(test_epoch) + '.pth'
     checkpoint=torch.load(load_path)
+    os.remove(load_path) # disk run out of space
     net_test.load_state_dict(checkpoint['net'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     net_test.eval()
@@ -306,5 +307,5 @@ for test_epoch in load_epoch:
     print("Evaluation accuracy: {:.2f}.".format(test_acci.item()))
     test_acc.append(test_acci.item())
 test_acc=np.asarray(test_acc)
-filename=project_dir+'test_acc'
+filename=model_path + 'test_acc'
 np.save(filename,test_acc)

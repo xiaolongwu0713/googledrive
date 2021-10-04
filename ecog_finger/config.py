@@ -1,6 +1,13 @@
 import os, re
 import socket
 
+import sys
+#print('Python%son%s'%(sys.version,sys.platform))
+if socket.gethostname() == 'longsMac':
+    sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+elif socket.gethostname() == 'workstation':
+    sys.path.extend([''])
+
 sids=[1,2,3,4,5,6,7,8,9]
 
 if socket.gethostname() == 'ScottsMachine': # change this to your $HOSTNAME

@@ -12,7 +12,8 @@ location=os.getcwd()
 if len(sys.argv)>1: # command line
     sid = sys.argv[1]
     print("Running from CMD")
-    print('Python%son%s'%(sys.version,sys.platform))
+    #print('Python%son%s'%(sys.version,sys.platform))
+
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 else: # IDE
     print("Running from IDE")

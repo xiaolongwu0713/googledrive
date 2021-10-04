@@ -7,29 +7,18 @@
 #! pip install Braindecode==0.5.1
 #! pip install timm
 
-import sys, os, re
-location=os.getcwd()
+import sys, os
 import socket
-
-sid=2
 if socket.gethostname() == 'longsMac':
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-    if len(sys.argv) > 1:
-        print("Running from cmd on longsMac")
-        sid = sys.argv[1]
-    else:  # IDE
-        print("Running from IDE on longsMac")
+    print("Running on longsMac")
 elif socket.gethostname() == 'workstation':
     sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
-    if len(sys.argv) > 1:
-        print("Running from cmd on workstation")
-        sid = sys.argv[1]
-    else:  # IDE
-        print("Running from IDE on workstation")
+    print("Running on workstation")
 
-
-if re.compile('/content/drive').match(location): # google colab
-    pass
+sid=1
+if len(sys.argv) > 1:
+    sid = sys.argv[1]
 
 print("SID:" + str(sid) + '.')
 
@@ -78,7 +67,9 @@ if input=='raw':
     filename=project_dir + str(sid)+'_fingerflex'
     mat=scipy.io.loadmat(filename)
     data=mat['data'] # (46, 610040)
-    data=data[:,:-1]
+    chn_num_original=data.shape[1]
+    if chn_num_original%2: # odd channel number. visformer_tiny expects an even channel number
+        data=np.concatenate((data, np.expand_dims(data[:, -1], 1)), axis=1)
 
     if 1==1:
         scaler = StandardScaler()

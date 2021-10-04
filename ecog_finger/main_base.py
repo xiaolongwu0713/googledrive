@@ -22,9 +22,9 @@ wind=500
 stride=200
 # overwrite above is running from cmd
 if len(sys.argv) > 1:
-    sid = sys.argv[1]
-    wind=sys.argv[2]
-    stride=sys.argv[3]
+    sid = int(float(sys.argv[1]))
+    wind=int(float(sys.argv[2]))
+    stride=int(float(sys.argv[3]))
 
 print("SID:" + str(sid) + '.')
 
@@ -66,7 +66,7 @@ else:
     active_chn='all'
 
 project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
-model_path=project_dir + 'pth' +'/'+str(wind)+str(stride)+'/'
+model_path=project_dir + 'pth' +'/'+str(wind)+'_'+str(stride)+'/'
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 #input='rawAndbands'

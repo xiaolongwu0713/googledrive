@@ -16,9 +16,15 @@ elif socket.gethostname() == 'workstation':
     sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
     print("Running on workstation")
 
+# below is for google colab
 sid=1
+wind=500
+stride=200
+# overwrite above is running from cmd
 if len(sys.argv) > 1:
     sid = sys.argv[1]
+    wind=sys.argv[2]
+    stride=sys.argv[3]
 
 print("SID:" + str(sid) + '.')
 
@@ -60,7 +66,7 @@ else:
     active_chn='all'
 
 project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
-model_path=project_dir + 'pth' +'/'
+model_path=project_dir + 'pth' +'/'+str(wind)+str(stride)+'/'
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 #input='rawAndbands'
@@ -114,9 +120,6 @@ elif input=='rawAndbands':
     chn_num=list_of_epochs[0].shape[1]
 
 
-wind=500
-stride=200
-s=0
 X=[]
 X_train=[]
 X_test=[]

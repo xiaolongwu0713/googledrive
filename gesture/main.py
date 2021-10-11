@@ -5,8 +5,8 @@
 #! pip install hdf5storage
 #! pip install mne==0.23.0
 #! pip install torch
-#! pip install tensorflow-gpu == 1.12.0
 #! pip install Braindecode==0.5.1
+#! pip install timm
 
 import os, re
 import hdf5storage
@@ -16,6 +16,7 @@ from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 from braindecode.datautil import (create_from_mne_raw, create_from_mne_epochs)
 import torch
+import timm
 from braindecode.util import set_random_seeds
 from skorch.callbacks import LRScheduler
 from skorch.helper import predefined_split
@@ -60,12 +61,13 @@ data=np.concatenate((data[0,0],data[0,1]),0)
 del mat
 # standardization
 # no effect. why?
-chn_data=data[:,-3:]
-data=data[:,:-3]
-scaler = StandardScaler()
-scaler.fit(data)
-data=scaler.transform((data))
-data=np.concatenate((data,chn_data),axis=1)
+if 1==1:
+    chn_data=data[:,-3:]
+    data=data[:,:-3]
+    scaler = StandardScaler()
+    scaler.fit(data)
+    data=scaler.transform((data))
+    data=np.concatenate((data,chn_data),axis=1)
 
 # stim0 is trigger channel, stim1 is trigger position calculated from EMG signal.
 chn_names=np.append(["seeg"]*len(UseChn),["stim0", "emg","stim1"])
@@ -102,10 +104,12 @@ list_of_epochs=[epoch1,epoch2,epoch3,epoch4,epoch5]
 
 # 20 trials/epoch * 5 epochs =100 trials=100 datasets
 # 1 dataset can be slided into ~161(depends on wind_size and stride) windows.
+wind=500
+stride=20
 windows_datasets = create_from_mne_epochs(
     list_of_epochs,
-    window_size_samples=500,
-    window_stride_samples=250,
+    window_size_samples=wind,
+    window_stride_samples=stride,
     drop_last_window=False
 )
 
@@ -141,6 +145,12 @@ seed = 20200220  # random seed to make results reproducible
 # Set random seed to be able to reproduce results
 set_random_seeds(seed=seed, cuda=cuda)
 
+# These values we found good for shallow network:
+lr = 0.0001
+weight_decay = 1e-10
+batch_size = 32
+n_epochs = 200
+
 n_classes = 5
 # Extract number of chans and time steps from dataset
 one_window=windows_datasets.datasets[0].windows.get_data()
@@ -150,25 +160,34 @@ input_window_samples = one_window.shape[2]
 #model = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 #model = EEGNetv4(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 
-#model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 85%
+#model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 81%
 
 #model = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%
 
 #model=d2lresnet() # 92%
 
-model=TSception(208)
+#model=TSception(208)
 
 #model=TSception(1000,n_chans,3,3,0.5)
-# Send model to GPU
+
+img_size=[n_chans,wind]
+model = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
+lr=0.05
+
+
+from torch import nn
+class test(nn.Module):
+    def __init__(self,timm_net):
+        super().__init__()
+        self.timm_net=timm_net
+    def forward(self, x):
+        x=torch.unsqueeze(x,1)
+        y=self.timm_net(x)
+        return y
+
+net=test(model)
 if cuda:
-    model.cuda()
-
-
-# These values we found good for shallow network:
-lr = 0.0001
-weight_decay = 1e-10
-batch_size = 32
-n_epochs = 200
+    net.cuda()
 
 location=os.getcwd()
 if re.compile('/Users/long/').match(location):
@@ -182,10 +201,10 @@ elif re.compile('/content/drive').match(location):
     ]
 
 clf = EEGClassifier(
-    model,
+    net,
     #criterion=torch.nn.NLLLoss,  #torch.nn.NLLLoss/CrossEntropyLoss
     criterion=torch.nn.CrossEntropyLoss,
-    optimizer=torch.optim.Adam, #optimizer=torch.optim.AdamW,
+    optimizer=torch.optim.Adadelta, #optimizer=torch.optim.AdamW, torch.optim.Adam, optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
     train_split=predefined_split(valid_set),  # using valid_set for validation; None means no validate:both train and test on training dataset.
     optimizer__lr=lr,
     optimizer__weight_decay=weight_decay,
@@ -196,3 +215,5 @@ clf = EEGClassifier(
 # Model training for a specified number of epochs. `y` is None as it is already supplied
 # in the dataset.
 clf.fit(train_set, y=None, epochs=n_epochs)
+
+

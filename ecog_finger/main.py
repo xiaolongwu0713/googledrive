@@ -6,30 +6,24 @@
 #! pip install torch==1.7.0
 #! pip install Braindecode==0.5.1
 #! pip install timm
-
-import sys, os
-import socket
-if socket.gethostname() == 'longsMac':
+import random
+import sys, os, re
+location=os.getcwd()
+if len(sys.argv)>1: # command line
+    sid = sys.argv[1]
+    print("Running from CMD")
+    print('Python%son%s'%(sys.version,sys.platform))
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-    print("Running on longsMac")
-elif socket.gethostname() == 'workstation':
-    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
-    print("Running on workstation")
+else: # IDE
+    print("Running from IDE")
+    sid=2
 
-# below is for google colab
-sid=1
-wind=500
-stride=50
-# overwrite above is running from cmd
-if len(sys.argv) > 1:
-    sid = int(float(sys.argv[1]))
-    wind=int(float(sys.argv[2]))
-    stride=int(float(sys.argv[3]))
+if re.compile('/content/drive').match(location): # google colab
+    sid=2
 
-print("SID:" + str(sid) + '.')
+print("processing on sid:" + str(sid) + '.')
 
-import pre_all # add python project path
-from ecog_finger.config import *
+
 import scipy.io
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,6 +33,7 @@ from torch.optim import lr_scheduler
 from torch import nn
 import timm
 from common_dl import myDataset
+from comm_utils import slide_epochs
 from torch.utils.data import DataLoader
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -46,7 +41,7 @@ from common_dl import set_random_seeds
 from common_dsp import *
 from gesture.models.d2l_resnet import d2lresnet
 from myskorch import on_epoch_begin_callback, on_batch_end_callback
-
+from ecog_finger.config import *
 from ecog_finger.preprocess.chn_settings import  get_channel_setting
 from gesture.models.deepmodel import deepnet
 
@@ -59,6 +54,7 @@ except TypeError as err:
     print(err)
 
 fs=1000
+class_number=5
 use_active_only=False
 if use_active_only:
     active_chn=get_channel_setting(sid)
@@ -66,18 +62,17 @@ else:
     active_chn='all'
 
 project_dir=data_dir+'fingerflex/data/'+str(sid)+'/'
-model_path=project_dir + 'pth' +'/'+str(wind)+'_'+str(stride)+'/'
+model_path=project_dir + 'pth' +'/'
 if not os.path.exists(model_path):
     os.makedirs(model_path)
+
 #input='rawAndbands'
 input='raw'
 if input=='raw':
-    filename=project_dir + str(sid)+'_fingerflex'
+    filename=project_dir + str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)
     data=mat['data'] # (46, 610040)
-    chn_num_original=data.shape[1]
-    if chn_num_original%2: # odd channel number. visformer_tiny expects an even channel number
-        data=np.concatenate((data, np.expand_dims(data[:, -1], 1)), axis=1)
+    data=data[:,:-1]
 
     if 1==1:
         scaler = StandardScaler()
@@ -119,46 +114,57 @@ elif input=='rawAndbands':
         list_of_epochs.append(tmp.get_data())
     chn_num=list_of_epochs[0].shape[1]
 
+# validate=test=2 trials
+trial_number=[list(range(epochi.shape[0])) for epochi in list_of_epochs] #[ [0,1,2,...29],[0,1,2...29],... ]
+test_trials=[random.sample(epochi, 2) for epochi in trial_number]
+# len(test_trials[0]) # test trials number
+trial_number_left=[np.setdiff1d(trial_number[i],test_trials[i]) for i in range(class_number)]
 
-X=[]
+val_trials=[random.sample(list(epochi), 2) for epochi in trial_number_left]
+train_trials=[np.setdiff1d(trial_number_left[i],val_trials[i]).tolist() for i in range(class_number)]
+
+# no missing trials
+assert [sorted(test_trials[i]+val_trials[i]+train_trials[i]) for i in range(class_number)] == trial_number
+
+test_epochs=[epochi[test_trials[clas],:,:] for clas,epochi in enumerate(list_of_epochs)] # [ epoch0,epoch1,epch2,epoch3,epoch4 ]
+val_epochs=[epochi[val_trials[clas],:,:] for clas,epochi in enumerate(list_of_epochs)]
+train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_of_epochs)]
+
+wind=500
+stride=200
 X_train=[]
+y_train=[]
+X_val=[]
+y_val=[]
 X_test=[]
-y=[]
-labels_train=[]
-labels_test=[]
-total_len=list_of_epochs[0].shape[2]
+y_test=[]
 
-for i in range(5):
-    Xi_train = []
-    Xi_test = []
-    Xi=[]
-    for trial in list_of_epochs[i]: # (63, 2001)
-        s = 0
-        while stride*s+wind<total_len:
-            start=s * stride
-            tmp=trial[:,start:(start+wind)]
-            Xi.append(tmp)
-            s=s+1
-        # add the last window
-        last_s=s-1
-        if stride * last_s + wind<total_len-100:
-            tmp=trial[:,-wind:]
-            Xi.append(tmp)
+for clas, epochi in enumerate(test_epochs):
+    Xi,y=slide_epochs(epochi,clas,wind, stride)
+    assert Xi.shape[0]==len(y)
+    X_test.append(Xi)
+    y_test.append(y)
+X_test=np.concatenate(X_test,axis=0) # (1300, 63, 500)
+y_test=np.asarray(y_test)
+y_test=np.reshape(y_test,(-1,1)) # (5, 270)
 
-    X.append(Xi)
+for clas, epochi in enumerate(val_epochs):
+    Xi,y=slide_epochs(epochi,clas,wind, stride)
+    assert Xi.shape[0]==len(y)
+    X_val.append(Xi)
+    y_val.append(y)
+X_val=np.concatenate(X_val,axis=0) # (1300, 63, 500)
+y_val=np.asarray(y_val)
+y_val=np.reshape(y_val,(-1,1)) # (5, 270)
 
-    samples_number=len(Xi)
-    label=[i]*samples_number
-    y.append(label)
-
-X=np.concatenate(X,axis=0) # (1300, 63, 500)
-y=np.asarray(y)
-y=np.reshape(y,(-1,1)) # (5, 270)
-n_class=5
-chn_number=X.shape[1]
-
-X_train, X_val_test, y_train, y_val_test = train_test_split(X, y, test_size=0.4, random_state=42)
-X_val, X_test, y_val, y_test = train_test_split(X_val_test, y_val_test, test_size=0.5, random_state=42)
+for clas, epochi in enumerate(train_epochs):
+    Xi,y=slide_epochs(epochi,clas,wind, stride)
+    assert Xi.shape[0]==len(y)
+    X_train.append(Xi)
+    y_train.append(y)
+X_train=np.concatenate(X_train,axis=0) # (1300, 63, 500)
+y_train=np.asarray(y_train)
+y_train=np.reshape(y_train,(-1,1)) # (5, 270)
 
 train_set=myDataset(X_train,y_train)
 val_set=myDataset(X_val,y_val)
@@ -182,8 +188,8 @@ set_random_seeds(seed=seed)
 
 #net=d2lresnet()
 img_size=[chn_num,wind]
-net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
-#net = deepnet(chn_number,n_class,input_window_samples=wind,final_conv_length='auto',) # 81%
+#net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
+net = deepnet(chn_number,n_class,input_window_samples=wind,final_conv_length='auto',) # 81%
 net = net.to(device)
 
 lr = 0.05
@@ -200,7 +206,7 @@ lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 epoch_num = 20
 
 for epoch in range(epoch_num):
-    print("------ epoch/wind/stride: " + str(epoch) +'/' + str(wind)+'/'+str(stride)+'/' + " -----")
+    print("------ epoch " + str(epoch) + " -----")
     net.train()
 
     loss_epoch = 0
@@ -283,7 +289,6 @@ for test_epoch in load_epoch:
 
     load_path=model_path + 'checkpoint' + str(test_epoch) + '.pth'
     checkpoint=torch.load(load_path)
-    os.remove(load_path) # disk run out of space
     net_test.load_state_dict(checkpoint['net'])
     optimizer.load_state_dict(checkpoint['optimizer'])
     net_test.eval()
@@ -307,5 +312,5 @@ for test_epoch in load_epoch:
     print("Evaluation accuracy: {:.2f}.".format(test_acci.item()))
     test_acc.append(test_acci.item())
 test_acc=np.asarray(test_acc)
-filename=model_path + 'test_acc'
+filename=project_dir+'test_acc'
 np.save(filename,test_acc)

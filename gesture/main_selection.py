@@ -1,40 +1,28 @@
 #%cd /content/drive/MyDrive/
 # raw_data is imported from global config
 
+import os
+os.getcwd()
+
 #%%capture
 #! pip install hdf5storage
 #! pip install mne==0.23.0
 #! pip install torch
 #! pip install Braindecode==0.5.1
-#! pip install timm
 
 import os, re
+import matplotlib.pyplot as plt
 import hdf5storage
 import numpy as np
-from scipy.io import savemat
-from sklearn.model_selection import StratifiedKFold
-import matplotlib.pyplot as plt
-from braindecode.datautil import (create_from_mne_raw, create_from_mne_epochs)
 import torch
-import timm
 import random
 from common_dl import set_random_seeds
 from common_dl import myDataset
 from comm_utils import slide_epochs
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
-from skorch.callbacks import LRScheduler
-from skorch.helper import predefined_split
-from braindecode import EEGClassifier
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-
-from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet,deepnet_resnet
+from example.gumbelSelection.ChannelSelection.models import MSFBCNN
 from gesture.models.selectionModels import selectionNet
-from gesture.models.d2l_resnet import d2lresnet
-from gesture.models.EEGModels import DeepConvNet_210519_512_10
 
 from gesture.myskorch import on_epoch_begin_callback, on_batch_end_callback
 from gesture.config import *
@@ -47,7 +35,6 @@ set_random_seeds(seed=seed)
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
 
-
 import inspect as i
 import sys
 #sys.stdout.write(i.getsource(deepnet))
@@ -59,7 +46,10 @@ Session_num,UseChn,EmgChn,TrigChn, activeChan = get_channel_setting(sid)
 fs=1000
 
 project_dir=data_dir+'preprocessing'+'/P'+str(sid)+'/'
+result_dir=project_dir + 'result' + '/'
 model_path=project_dir + 'pth' +'/'
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir)
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 
@@ -110,8 +100,6 @@ epoch5=epochs['4'].get_data()
 list_of_epochs=[epoch1,epoch2,epoch3,epoch4,epoch5]
 total_len=list_of_epochs[0].shape[2]
 
-
-
 # validate=test=2 trials
 trial_number=[list(range(epochi.shape[0])) for epochi in list_of_epochs] #[ [0,1,2,...19],[0,1,2...19],... ]
 test_trials=[random.sample(epochi, 2) for epochi in trial_number]
@@ -130,7 +118,7 @@ train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_o
 
 
 wind=500
-stride=100
+stride=50
 X_train=[]
 y_train=[]
 X_val=[]
@@ -191,27 +179,21 @@ n_epochs = 200
 one_window=next(iter(train_set))[0]
 n_chans = one_window.shape[0]
 
-#net = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
-#net = EEGNetv4(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
-
-#net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
-net = selectionNet(n_chans,class_number,wind,10,) # 81%
-#net = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%
-
-#net=d2lresnet() # 92%
-
-#net=TSception(208)
-
-#net=TSception(1000,n_chans,3,3,0.5)
-
 img_size=[n_chans,wind]
 #net = timm.create_model('visformer_tiny',num_classes=n_classes,in_chans=1,img_size=img_size)
+#net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
+selection_number=10
+net=MSFBCNN([n_chans,wind],class_number)
+#net = selectionNet(n_chans,class_number,wind,selection_number) # 81%
+
 if cuda:
     net.cuda()
 
-lr = 0.05
-weight_decay = 1e-10
-
+lr = 0.0005
+#weight_decay = 1e-10
+weight_decay = 5e-4
+lamba=0.1
+epoch_num = 100
 criterion = torch.nn.CrossEntropyLoss()
 #criterion = nn.NLLLoss()
 #optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
@@ -220,10 +202,23 @@ optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
 # Decay LR by a factor of 0.1 every 7 epochs
 lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
 
-epoch_num = 100
+def exponential_decay_schedule(start_value,end_value,epochs,end_epoch):
+    t = torch.FloatTensor(torch.arange(0.0,epochs))
+    p = torch.clamp(t/end_epoch,0,1)
+    out = start_value*torch.pow(end_value/start_value,p)
 
+    return out
+start_temp=10
+end_temp=0.1
+temperature_schedule = exponential_decay_schedule(start_temp,end_temp,epoch_num,int(epoch_num*3/4))
+thresh_schedule = exponential_decay_schedule(3.0,1.1,epoch_num,epoch_num)
+
+net.set_freeze(False)
 for epoch in range(epoch_num):
     print("------ epoch " + str(epoch) + " -----")
+    if isinstance(net, selectionNet):
+        net.set_thresh(thresh_schedule[epoch])
+        net.set_temperature(temperature_schedule[epoch])
     net.train()
 
     loss_epoch = 0
@@ -231,14 +226,12 @@ for epoch in range(epoch_num):
     running_loss = 0.0
     running_corrects = 0
     for batch, (trainx, trainy) in enumerate(train_loader):
-        if isinstance(net, timm.models.visformer.Visformer):
-            trainx=torch.unsqueeze(trainx,dim=1)
         optimizer.zero_grad()
         if (cuda):
             trainx = trainx.float().cuda()
         else:
             trainx = trainx.float()
-        y_pred = net(trainx) # torch.Size([32, 208, 500])
+        y_pred = net(trainx)
         #print("y_pred shape: " + str(y_pred.shape))
         preds = y_pred.argmax(dim=1, keepdim=True)
         #_, preds = torch.max(y_pred, 1)
@@ -247,7 +240,8 @@ for epoch in range(epoch_num):
             loss = criterion(y_pred, trainy.squeeze().cuda().long())
         else:
             loss = criterion(y_pred, trainy.squeeze())
-
+        reg = net.regularizer(lamba,weight_decay)
+        loss=loss+reg
         loss.backward()  # calculate the gradient and store in .grad attribute.
         optimizer.step()
         running_loss += loss.item() * trainx.shape[0]
@@ -267,6 +261,13 @@ for epoch in range(epoch_num):
         }
     savepath = model_path + 'checkpoint' + str(epoch) + '.pth'
     #torch.save(state, savepath)
+
+    H, sel, probas = net.monitor()
+    ax.plot(probas.detach().cpu().numpy())
+    #fig.savefig(result_dir + 'prob_dist' + str(epoch) + '.png')
+    ax.clear()
+
+
     running_loss = 0.0
     running_corrects = 0
     if epoch % 1 == 0:
@@ -274,8 +275,6 @@ for epoch in range(epoch_num):
         # print("Validating...")
         with torch.no_grad():
             for _, (val_x, val_y) in enumerate(val_loader):
-                if isinstance(net, timm.models.visformer.Visformer):
-                    val_x = torch.unsqueeze(val_x, dim=1)
                 if (cuda):
                     val_x = val_x.float().cuda()
                     # val_y = val_y.float().cuda()

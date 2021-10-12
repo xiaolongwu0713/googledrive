@@ -6,7 +6,7 @@
 #! pip install torch==1.7.0
 #! pip install Braindecode==0.5.1
 #! pip install timm
-import random
+
 import sys, os, re
 location=os.getcwd()
 if len(sys.argv)>1: # command line
@@ -26,6 +26,7 @@ print("processing on sid:" + str(sid) + '.')
 
 import scipy.io
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import mne
 import torch
@@ -47,6 +48,9 @@ from gesture.models.deepmodel import deepnet
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+
+seed = 20200220  # random seed to make results reproducible
+set_random_seeds(seed=seed)
 
 try:
     mne.set_config('MNE_LOGGING_LEVEL','ERROR')
@@ -72,7 +76,14 @@ if input=='raw':
     filename=project_dir + str(sid)+'_fingerflex.mat'
     mat=scipy.io.loadmat(filename)
     data=mat['data'] # (46, 610040)
-    data=data[:,:-1]
+    # timm expect even channels
+    chn_num=data.shape[0]
+    if chn_num%2:# even channels
+        pass
+    else:
+        data=np.concatenate((data, data[-1,:]),axis=0)
+
+    #data=data[:,:-1]
 
     if 1==1:
         scaler = StandardScaler()
@@ -114,6 +125,8 @@ elif input=='rawAndbands':
         list_of_epochs.append(tmp.get_data())
     chn_num=list_of_epochs[0].shape[1]
 
+
+
 # validate=test=2 trials
 trial_number=[list(range(epochi.shape[0])) for epochi in list_of_epochs] #[ [0,1,2,...29],[0,1,2...29],... ]
 test_trials=[random.sample(epochi, 2) for epochi in trial_number]
@@ -130,8 +143,10 @@ test_epochs=[epochi[test_trials[clas],:,:] for clas,epochi in enumerate(list_of_
 val_epochs=[epochi[val_trials[clas],:,:] for clas,epochi in enumerate(list_of_epochs)]
 train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_of_epochs)]
 
+
+
 wind=500
-stride=200
+stride=50
 X_train=[]
 y_train=[]
 X_val=[]
@@ -165,6 +180,7 @@ for clas, epochi in enumerate(train_epochs):
 X_train=np.concatenate(X_train,axis=0) # (1300, 63, 500)
 y_train=np.asarray(y_train)
 y_train=np.reshape(y_train,(-1,1)) # (5, 270)
+chn_num=X_train.shape[1]
 
 train_set=myDataset(X_train,y_train)
 val_set=myDataset(X_val,y_val)
@@ -183,13 +199,11 @@ cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses t
 device = 'cuda' if cuda else 'cpu'
 if cuda:
     torch.backends.cudnn.benchmark = True
-seed = 20200220  # random seed to make results reproducible
-set_random_seeds(seed=seed)
 
 #net=d2lresnet()
 img_size=[chn_num,wind]
-#net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
-net = deepnet(chn_number,n_class,input_window_samples=wind,final_conv_length='auto',) # 81%
+net = timm.create_model('visformer_tiny',num_classes=5,in_chans=1,img_size=img_size)
+#net = deepnet(chn_number,n_class,input_window_samples=wind,final_conv_length='auto',) # 81%
 net = net.to(device)
 
 lr = 0.05
@@ -249,7 +263,7 @@ for epoch in range(epoch_num):
              'loss': epoch_loss
         }
     savepath = model_path + 'checkpoint' + str(epoch) + '.pth'
-    torch.save(state, savepath)
+    #torch.save(state, savepath)
     running_loss = 0.0
     running_corrects = 0
     if epoch % 1 == 0:

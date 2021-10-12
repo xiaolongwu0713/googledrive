@@ -46,9 +46,29 @@ class MSFBCNN(nn.Module):
 
 		self.drop=nn.Dropout(0.5)
 
+		result=self.test_dim(torch.ones(1, 1, self.C, self.T))
 		#Classification
-		self.fc1 = nn.Linear(self.FS*math.ceil(1+(self.T-75)/15), self.output_dim)
+		#self.fc1 = nn.Linear(self.FS*math.ceil(1+(self.T-75)/15), self.output_dim)
+		self.fc1 = nn.Linear(result.shape[1], self.output_dim)
+	def test_dim(self,x):
+		# Layer 1
+		x1 = self.conv1a(x)
+		x2 = self.conv1b(x)
+		x3 = self.conv1c(x)
+		x4 = self.conv1d(x)
 
+		x = torch.cat([x1, x2, x3, x4], dim=1)
+		x = self.batchnorm1(x)
+
+		# Layer 2
+		x = torch.pow(self.batchnorm2(self.conv2(x)), 2)
+		x = self.pooling2(x)
+		x = torch.log(x)
+		x = self.drop(x)
+
+		# FC Layer
+		x = x.view(-1, self.num_flat_features(x))
+		return x
 	def forward(self, x):
 
 		# Layer 1
@@ -148,14 +168,14 @@ class SelectionNet(nn.Module):
 		super(SelectionNet,self).__init__()
 		self.floatTensor = torch.FloatTensor if not torch.cuda.is_available() else torch.cuda.FloatTensor
 
-		self.N = input_dim[0]
-		self.T = input_dim[1]
-		self.M = M
+		self.N = input_dim[0] # 44
+		self.T = input_dim[1] # 1125
+		self.M = M # 3
 		self.input_dim = input_dim
 		self.output_dim = output_dim
 			
-		self.network = MSFBCNN(input_dim=[self.M,self.T],output_dim=output_dim)
-
+		self.network = MSFBCNN(input_dim=[self.M,self.T],output_dim=output_dim) #()
+		#self.network = MSFBCNN(input_dim=[3, 1125], output_dim=4)  # ()
 		self.selection_layer = SelectionLayer(self.N,self.M)
 
 		self.layers = self.create_layers_field()
@@ -163,7 +183,7 @@ class SelectionNet(nn.Module):
 
 	def forward(self,x):
 
-		y_selected = self.selection_layer(x)
+		y_selected = self.selection_layer(x) #x: [16, 1, 44, 1125] y_selected:[16, 1, 3, 1125]
 		out = self.network(y_selected)    
 
 		return out

@@ -309,7 +309,7 @@ def train(train_loader, model, loss_function, optimizer, epoch, weight_decay,lam
 			running_sup_loss = 0.0
 			running_acc = np.array([0,0])
 
-		output = model(data)
+		output = model(data) # shape: torch.Size([16, 1, 44, 1125])
 
 		sup_loss,reg = loss_function(output, labels, model,lamba,weight_decay)
 		loss = sup_loss + reg # regulization

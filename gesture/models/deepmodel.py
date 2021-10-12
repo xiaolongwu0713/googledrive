@@ -13,8 +13,24 @@ from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
 from common_dl import add_channel_dimm,init_weights
 from gesture.models.utils import squeeze_all
 
+class expand_dim(torch.nn.Module):
+    def forward(self, x):
+        while(len(x.shape) < 4):
+            x = x.unsqueeze(1)
+        return x
+
+def swap_time_spat(x):
+    """Swap time and spatial dimensions.
+
+    Returns
+    -------
+    x: torch.Tensor
+        tensor in which last and first dimensions are swapped
+    """
+    return x.permute(0, 1, 3, 2)
 
 #model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
+# expect input shape: (batch_size, channel_number, time_length)
 class deepnet(nn.Sequential):
     """
     Deep ConvNet model from [1]_.
@@ -29,34 +45,10 @@ class deepnet(nn.Sequential):
        Human Brain Mapping , Aug. 2017. Online: http://dx.doi.org/10.1002/hbm.23730
     """
 
-    def __init__(
-        self,
-        in_chans,
-        n_classes,
-        input_window_samples,
-        final_conv_length,
-        n_filters_time=64,
-        n_filters_spat=64,
-        filter_time_length=50,
-        pool_time_length=3,
-        pool_time_stride=3,
-        n_filters_2=50,
-        filter_length_2=10,
-        n_filters_3=50,
-        filter_length_3=10,
-        n_filters_4=50,
-        filter_length_4=10,
-        first_nonlin=elu,
-        first_pool_mode="max",
-        first_pool_nonlin=identity,
-        later_nonlin=elu,
-        later_pool_mode="max",
-        later_pool_nonlin=identity,
-        drop_prob=0.5,
-        double_time_convs=False,
-        split_first_layer=True,
-        batch_norm=True,
-        batch_norm_alpha=0.1,
+    def __init__(self,in_chans,n_classes,input_window_samples,final_conv_length,n_filters_time=64,n_filters_spat=64,filter_time_length=50,
+        pool_time_length=3,pool_time_stride=3,n_filters_2=50,filter_length_2=10,n_filters_3=50,filter_length_3=10,n_filters_4=50,
+        filter_length_4=10,first_nonlin=elu,first_pool_mode="max",first_pool_nonlin=identity,later_nonlin=elu,later_pool_mode="max",
+        later_pool_nonlin=identity,drop_prob=0.5,double_time_convs=False,split_first_layer=True,batch_norm=True,batch_norm_alpha=0.1,
         stride_before_pool=False,
     ):
         super().__init__()
@@ -96,12 +88,12 @@ class deepnet(nn.Sequential):
         else:
             conv_stride = 1
             pool_stride = self.pool_time_stride
-        self.add_module("ensuredims", Ensure4d())
+        self.add_module("Add_dim", expand_dim())
         pool_class_dict = dict(max=nn.MaxPool2d, mean=AvgPool2dWithConv)
         first_pool_class = pool_class_dict[self.first_pool_mode]
         later_pool_class = pool_class_dict[self.later_pool_mode]
         if self.split_first_layer:
-            self.add_module("dimshuffle", Expression(transpose_time_to_spat))
+            self.add_module("dimshuffle", Expression(swap_time_spat))
             self.add_module("conv_time",nn.Conv2d(1,self.n_filters_time,(self.filter_time_length, 1),stride=1,),)
             self.add_module("conv_spat",nn.Conv2d(self.n_filters_time,self.n_filters_spat,(1, self.in_chans),
                                                   stride=(conv_stride, 1),bias=not self.batch_norm,),)
@@ -140,7 +132,7 @@ class deepnet(nn.Sequential):
         # self.add_module('drop_classifier', nn.Dropout(p=self.drop_prob))
         self.eval()
         if self.final_conv_length == "auto":
-            out = self(np_to_var(np.ones((1, self.in_chans, self.input_window_samples, 1),dtype=np.float32,)))
+            out = self(np_to_var(np.ones((1, self.in_chans, self.input_window_samples),dtype=np.float32,)))
             n_channels=out.cpu().data.numpy().shape[1]
             n_out_time,n_out_spatial = out.cpu().data.numpy().shape[2],out.cpu().data.numpy().shape[3]
             self.final_conv_length = n_out_time

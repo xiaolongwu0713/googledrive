@@ -34,7 +34,7 @@ def set_random_seeds(seed):
 
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False
     cuda = torch.cuda.is_available()
     if cuda:
         torch.cuda.manual_seed(seed)

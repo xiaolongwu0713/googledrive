@@ -1,5 +1,9 @@
 import matplotlib.pyplot as plt
 import pywt
+import numpy as np
+import scipy
+from scipy.signal import chirp
+from scipy.fft import fft,fftfreq
 
 
 w = pywt.Wavelet('bior6.8')
@@ -42,20 +46,64 @@ xf = fftfreq(N, 1/1000)[:N//2]
 plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
 
 
-# why the wavelete or scaling function FFT is not bandpass?
-w = pywt.Wavelet('db10')
-(phi_d, psi_d, x) = w.wavefun(level=1)
-N=len(phi_d)
-yf = fft(phi_d)
-xf = fftfreq(N, 1/1000)[:N//2]
-plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
+# test the filter bank
+fs=1000
+Ts=1/fs
+T=4
+t=np.arange(0,int(T*fs))/fs # or t=np.linspace(0.0, N*T, N, endpoint=False), N is number of sample points
+N=len(t)
+original=chirp(t,f0=1,f1=500,t1=T,method='quadratic')
+amp=fft(original)
+freq = fftfreq(N, Ts)[:N//2]
+plt.plot(freq, 2.0/N * np.abs(amp[0:N//2]),color='r')
 
-N=len(psi_d)
-yf = fft(psi_d)
-xf = fftfreq(N, 1/1000)[:N//2]
-plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
-xf = fftfreq(N, 1/1000)
-plt.plot(xf, 2.0/N * np.abs(yf))
+# conv with dec_lo
+filt1l=np.convolve(original,dec_lo,mode='same')
+amp1l=fft(filt1l)
+freq = fftfreq(N, Ts)[:N//2]
+plt.plot(freq, 2.0/N * np.abs(amp1l[0:N//2]),color='g')
+
+filt1h=np.convolve(original,dec_hi,mode='same')
+amp1h=fft(filt1h)
+freq = fftfreq(N, Ts)[:N//2]
+plt.plot(freq, 2.0/N * np.abs(amp1h[0:N//2]),color='g')
 
 
+# no down sample. Low pass the same previous low pass range if no down sampling. Exactly the same as previous effect.
+filt2l=np.convolve(filt1l,dec_lo,mode='same')
+amp2l=fft(filt2l)
+freq = fftfreq(N, Ts)[:N//2]
+plt.plot(freq, 2.0/N * np.abs(amp2l[0:N//2]),color='b')
 
+filt2h=np.convolve(filt1l,dec_hi,mode='same')
+amp2h=fft(filt2h)
+freq = fftfreq(N, Ts)[:N//2]
+plt.plot(freq, 2.0/N * np.abs(amp2h[0:N//2]),color='b')
+
+# down sample. Low pass the lower half of previous low pass range.
+filt1l=filt1l[::2,]
+fs=500
+Ts=1/fs
+filt3l=np.convolve(filt1l,dec_lo,mode='same')
+amp3l=fft(filt3l)
+N3=len(filt3l)
+freq = fftfreq(N3, Ts)[:N3//2]
+plt.plot(freq, 2.0/N3 * np.abs(amp3l[0:N3//2]),color='y')
+
+filt3h=np.convolve(filt1l,dec_hi,mode='same')
+amp3h=fft(filt3h)
+N3=len(filt3h)
+freq = fftfreq(N3, Ts)[:N3//2]
+plt.plot(freq, 2.0/N3 * np.abs(amp3h[0:N3//2]),color='y')
+
+
+# up sample. FFT doesn't change after the upsampling.
+# So to keep sampe number constent: original(N points)-- low pass--down sample(2/N)--up sample the low-passed signal(N)--repeat.
+fs=1000
+Ts=1/fs
+filt3l_up=scipy.signal.resample(filt3l,2*len(filt3l))
+filt3h_up=scipy.signal.resample(filt3h,2*len(filt3h))
+N=len(filt3l_up)
+amp3l_up=fft(filt3l_up)
+freq = fftfreq(N, Ts)[:N//2]
+plt.plot(freq, 2.0/N * np.abs(amp3l_up[0:N//2]),color='aqua')

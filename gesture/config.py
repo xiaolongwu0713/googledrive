@@ -13,8 +13,11 @@ tmp_dir='/tmp/'
 import os, re
 location=os.getcwd()
 if re.compile('/Users/long/').match(location):
-    data_dir='/Volumes/Samsung_T5/data/gesture/' # preprocessed data
-    tmp_data_dir='/Users/long/Documents/data/gesture/'
+    if os.path.exists('/Volumes/Samsung_T5/data/gesture/'):
+        data_dir='/Volumes/Samsung_T5/data/gesture/'
+    else:
+        data_dir = '/Users/long/Documents/data/gesture/'# temp data dir
+    #tmp_data_dir='/Users/long/Documents/data/gesture/'
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
 elif re.compile('/content/drive').match(location):
     data_dir='/content/drive/MyDrive/data/gesture/' # googleDrive

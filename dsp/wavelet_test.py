@@ -34,19 +34,20 @@ from scipy.fft import fft, fftfreq
 import numpy as np
 
 # plot the frequency response
+# indeed it is a low pass filter
 N=len(dec_lo)
 yf = fft(dec_lo)
 xf = fftfreq(N, 1/1000)[:N//2]
 plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
 
-
+# indeed it is a high pass filter
 N=len(dec_hi)
 yf = fft(dec_hi)
 xf = fftfreq(N, 1/1000)[:N//2]
 plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
 
 
-# test the filter bank
+# test the filter bank on chirp signal
 fs=1000
 Ts=1/fs
 T=4
@@ -107,3 +108,7 @@ N=len(filt3l_up)
 amp3l_up=fft(filt3l_up)
 freq = fftfreq(N, Ts)[:N//2]
 plt.plot(freq, 2.0/N * np.abs(amp3l_up[0:N//2]),color='aqua')
+
+
+
+

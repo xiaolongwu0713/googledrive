@@ -183,8 +183,8 @@ img_size=[n_chans,wind]
 #net = timm.create_model('visformer_tiny',num_classes=n_classes,in_chans=1,img_size=img_size)
 #net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
 selection_number=10
-net=MSFBCNN([n_chans,wind],class_number)
 #net = selectionNet(n_chans,class_number,wind,selection_number) # 81%
+net=MSFBCNN([n_chans,wind],class_number)
 
 if cuda:
     net.cuda()
@@ -213,9 +213,13 @@ end_temp=0.1
 temperature_schedule = exponential_decay_schedule(start_temp,end_temp,epoch_num,int(epoch_num*3/4))
 thresh_schedule = exponential_decay_schedule(3.0,1.1,epoch_num,epoch_num)
 
-net.set_freeze(False)
+
+#fig, ax=plt.subplots()
+
+#net.set_freeze(False)
 for epoch in range(epoch_num):
     print("------ epoch " + str(epoch) + " -----")
+    
     if isinstance(net, selectionNet):
         net.set_thresh(thresh_schedule[epoch])
         net.set_temperature(temperature_schedule[epoch])
@@ -240,8 +244,9 @@ for epoch in range(epoch_num):
             loss = criterion(y_pred, trainy.squeeze().cuda().long())
         else:
             loss = criterion(y_pred, trainy.squeeze())
-        reg = net.regularizer(lamba,weight_decay)
-        loss=loss+reg
+        if isinstance(net, selectionNet):
+            reg = net.regularizer(lamba,weight_decay)
+            loss=loss+reg
         loss.backward()  # calculate the gradient and store in .grad attribute.
         optimizer.step()
         running_loss += loss.item() * trainx.shape[0]

@@ -70,7 +70,9 @@ class MSFBCNN(nn.Module):
 		x = x.view(-1, self.num_flat_features(x))
 		return x
 	def forward(self, x):
-
+		# ensure 4-D for input as (batch, channel_number, time)
+		if len(x.shape)<4:
+			x=torch.unsqueeze(x,dim=1)
 		# Layer 1
 		x1 = self.conv1a(x)
 		x2 = self.conv1b(x)

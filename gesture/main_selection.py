@@ -2,11 +2,13 @@
 # raw_data is imported from global config
 
 import os,sys
-os.getcwd()
-
+import socket
+if socket.gethostname() == 'workstation':
+    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
 import sys, os, re
 if len(sys.argv)>2: # command line
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+from gesture.config import *
 
 #%%capture
 #! pip install hdf5storage
@@ -324,5 +326,5 @@ for epoch in range(epoch_num):
     epoch_score[epoch].append(val_acc)
 
 epoch_score=np.asarray(epoch_score)
-filename = result_dir + 'epoch_scores'
+filename = result_dir + 'epoch_scores' + str(selection_lr)+'_'+str(network_lr)
 np.save(filename,epoch_score)

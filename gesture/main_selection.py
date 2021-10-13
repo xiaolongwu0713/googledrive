@@ -1,12 +1,11 @@
 #%cd /content/drive/MyDrive/
 # raw_data is imported from global config
 
-import os,sys
+import sys
 import socket
 if socket.gethostname() == 'workstation':
     sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
-import sys, os, re
-if len(sys.argv)>2: # command line
+elif socket.gethostname() == 'longsMac':
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 from gesture.config import *
 

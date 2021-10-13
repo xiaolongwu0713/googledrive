@@ -216,7 +216,7 @@ criterion = torch.nn.CrossEntropyLoss()
 #optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
 #optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 # Decay LR by a factor of 0.1 every 7 epochs
-lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=epoch_num, gamma=0.1)
+lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
 def exponential_decay_schedule(start_value,end_value,epochs,end_epoch):
     t = torch.FloatTensor(torch.arange(0.0,epochs))

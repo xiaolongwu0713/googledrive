@@ -32,9 +32,9 @@ from sklearn.model_selection import train_test_split
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
 from gesture.models.deepmodel import deepnet,deepnet_resnet
-from gesture.models.selectionModels import selectionNet
 from gesture.models.d2l_resnet import d2lresnet
 from gesture.models.EEGModels import DeepConvNet_210519_512_10
+from gesture.models.tsception import TSception
 
 from gesture.myskorch import on_epoch_begin_callback, on_batch_end_callback
 from gesture.config import *
@@ -46,7 +46,8 @@ set_random_seeds(seed=seed)
 
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
-
+if cuda:
+    torch.backends.cudnn.benchmark = True
 
 import inspect as i
 import sys
@@ -130,7 +131,7 @@ train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_o
 
 
 wind=500
-stride=100
+stride=50
 X_train=[]
 y_train=[]
 X_val=[]
@@ -191,11 +192,12 @@ n_epochs = 200
 one_window=next(iter(train_set))[0]
 n_chans = one_window.shape[0]
 
+
 #net = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 #net = EEGNetv4(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
 
-#net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
-net = selectionNet(n_chans,class_number,wind,10,) # 81%
+net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
+
 #net = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%
 
 #net=d2lresnet() # 92%
@@ -238,7 +240,7 @@ for epoch in range(epoch_num):
             trainx = trainx.float().cuda()
         else:
             trainx = trainx.float()
-        y_pred = net(trainx) # torch.Size([32, 208, 500])
+        y_pred = net(trainx)
         #print("y_pred shape: " + str(y_pred.shape))
         preds = y_pred.argmax(dim=1, keepdim=True)
         #_, preds = torch.max(y_pred, 1)

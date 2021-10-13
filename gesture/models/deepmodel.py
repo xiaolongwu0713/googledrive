@@ -141,7 +141,7 @@ class deepnet(nn.Sequential):
         self.add_module("globalAvgPooling",nn.AvgPool2d((n_out_time,n_out_spatial)))
         self.add_module("squeeze1", Expression(squeeze_all))
         self.add_module("conv_classifier", nn.Linear(n_channels,n_classes))
-        self.add_module("softmax", nn.LogSoftmax(dim=1))
+        #self.add_module("softmax", nn.LogSoftmax(dim=1))
         #self.add_module("squeeze2", Expression(squeeze_final_output))
 
         # Initialization, xavier is same as in our paper...

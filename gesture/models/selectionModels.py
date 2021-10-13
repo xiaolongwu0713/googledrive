@@ -12,7 +12,7 @@ def init_weights(m):
 
 # net2 = selectionNet(n_chans,5,500,M)
 class selectionNet(nn.Module):
-    def __init__(self,chn_number, class_number, wind_size, M, output_dim=5):
+    def __init__(self,chn_number, class_number, wind_size, M, output_dim=5): #output_dim is the class number
         super(selectionNet, self).__init__()
         self.floatTensor = torch.FloatTensor if not torch.cuda.is_available() else torch.cuda.FloatTensor
 
@@ -22,7 +22,8 @@ class selectionNet(nn.Module):
         self.output_dim = output_dim
 
         self.selection_layer = SelectionLayer(self.N, self.M)
-        self.network = MSFBCNN(input_dim=[self.M, self.T], output_dim=class_number)
+        self.network = deepnet(self.M, self.output_dim, input_window_samples=self.T, final_conv_length='auto', )
+        #self.network = MSFBCNN(input_dim=[self.M, self.T], output_dim=class_number) # does not converge at all
         #self.network = deepnet(self.M, class_number,input_window_samples=wind_size, final_conv_length='auto')
 
         self.layers = self.create_layers_field()
@@ -34,9 +35,10 @@ class selectionNet(nn.Module):
             y_selected = self.selection_layer(x)  # x: [16, 1, 44, 1125] y_selected:[16, 1, 3, 1125]
             out = self.network(y_selected)
         elif isinstance(self.network,deepnet):
-            x=torch.unsqueeze(x,dim=1)
-            y_selected = self.selection_layer(x)
-            y_selected=torch.squeeze(y_selected)
+            x=torch.unsqueeze(x,dim=1) # torch.Size([10, 208, 500])
+            y_selected = self.selection_layer(x) #torch.Size([10, 1, 10, 500])
+            y_selected = torch.squeeze(y_selected) #torch.Size([10, 10, 500])
+            #y_selected.permute(0,2,1)
             out = self.network(y_selected)
         return out
 

@@ -1,8 +1,12 @@
 #%cd /content/drive/MyDrive/
 # raw_data is imported from global config
 
-import os
+import os,sys
 os.getcwd()
+
+import sys, os, re
+if len(sys.argv)>2: # command line
+    sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 
 #%%capture
 #! pip install hdf5storage
@@ -21,6 +25,7 @@ from common_dl import myDataset
 from comm_utils import slide_epochs
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
+from gesture.models.deepmodel import deepnet,deepnet_resnet
 from example.gumbelSelection.ChannelSelection.models import MSFBCNN
 from gesture.models.selectionModels import selectionNet
 
@@ -31,13 +36,15 @@ from gesture.preprocess.chn_settings import get_channel_setting
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
-
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
 
-import inspect as i
-import sys
-#sys.stdout.write(i.getsource(deepnet))
+if len(sys.argv)>1: # command line
+    selection_lr = float(sys.argv[1])
+    network_lr = float(sys.argv[2])
+else:
+    selection_lr = 0.001
+    network_lr = 0.05
 
 sid=10 #4
 class_number=5
@@ -118,7 +125,7 @@ train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_o
 
 
 wind=500
-stride=50
+stride=1000
 X_train=[]
 y_train=[]
 X_val=[]
@@ -183,13 +190,21 @@ img_size=[n_chans,wind]
 #net = timm.create_model('visformer_tiny',num_classes=n_classes,in_chans=1,img_size=img_size)
 #net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
 selection_number=10
-net=MSFBCNN([n_chans,wind],class_number)
-#net = selectionNet(n_chans,class_number,wind,selection_number) # 81%
+net = selectionNet(n_chans,class_number,wind,selection_number) # 81%
+#net=MSFBCNN([n_chans,wind],class_number)
 
 if cuda:
     net.cuda()
 
-lr = 0.0005
+optimizer = torch.optim.Adadelta(
+    [
+        {"params": net.selection_layer.parameters(), "lr": selection_lr},
+        {"params": net.network.parameters(),"lr": network_lr},
+    ],
+    lr=0.0,
+)
+
+#lr = 0.002
 #weight_decay = 1e-10
 weight_decay = 5e-4
 lamba=0.1
@@ -197,10 +212,10 @@ epoch_num = 100
 criterion = torch.nn.CrossEntropyLoss()
 #criterion = nn.NLLLoss()
 #optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
-optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
+#optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
 #optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 # Decay LR by a factor of 0.1 every 7 epochs
-lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
+lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=epoch_num, gamma=0.1)
 
 def exponential_decay_schedule(start_value,end_value,epochs,end_epoch):
     t = torch.FloatTensor(torch.arange(0.0,epochs))
@@ -213,9 +228,22 @@ end_temp=0.1
 temperature_schedule = exponential_decay_schedule(start_temp,end_temp,epoch_num,int(epoch_num*3/4))
 thresh_schedule = exponential_decay_schedule(3.0,1.1,epoch_num,epoch_num)
 
-net.set_freeze(False)
+
+import inspect as i
+import sys
+#sys.stdout.write(i.getsource(selectionNet))
+
+if isinstance(net, selectionNet):
+    fig, ax=plt.subplots()
+
+if isinstance(net, selectionNet):
+    net.set_freeze(False)
+
+epoch_score=[]
 for epoch in range(epoch_num):
+    epoch_score.append([])
     print("------ epoch " + str(epoch) + " -----")
+    
     if isinstance(net, selectionNet):
         net.set_thresh(thresh_schedule[epoch])
         net.set_temperature(temperature_schedule[epoch])
@@ -240,8 +268,9 @@ for epoch in range(epoch_num):
             loss = criterion(y_pred, trainy.squeeze().cuda().long())
         else:
             loss = criterion(y_pred, trainy.squeeze())
-        reg = net.regularizer(lamba,weight_decay)
-        loss=loss+reg
+        if isinstance(net, selectionNet):
+            reg = net.regularizer(lamba,weight_decay)
+            loss=loss+reg
         loss.backward()  # calculate the gradient and store in .grad attribute.
         optimizer.step()
         running_loss += loss.item() * trainx.shape[0]
@@ -249,8 +278,9 @@ for epoch in range(epoch_num):
     #print("train_size: " + str(train_size))
     lr_schedulerr.step() # test it
     epoch_loss = running_loss / train_size
-    epoch_acc = running_corrects.double() / train_size
-    print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,epoch_acc.item()))
+    train_acc = running_corrects.double() / train_size
+    epoch_score[epoch].append(train_acc)
+    print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,train_acc.item()))
     #print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
 
     state = {
@@ -262,33 +292,37 @@ for epoch in range(epoch_num):
     savepath = model_path + 'checkpoint' + str(epoch) + '.pth'
     #torch.save(state, savepath)
 
-    H, sel, probas = net.monitor()
-    ax.plot(probas.detach().cpu().numpy())
-    #fig.savefig(result_dir + 'prob_dist' + str(epoch) + '.png')
-    ax.clear()
+    if isinstance(net, selectionNet):
+        H, sel, probas = net.monitor()
+        ax.plot(probas.detach().cpu().numpy())
+        #fig.savefig(result_dir + 'prob_dist' + str(epoch) + '.png')
+        ax.clear()
 
 
     running_loss = 0.0
     running_corrects = 0
     if epoch % 1 == 0:
-        net.eval()
-        # print("Validating...")
         with torch.no_grad():
-            for _, (val_x, val_y) in enumerate(val_loader):
-                if (cuda):
-                    val_x = val_x.float().cuda()
-                    # val_y = val_y.float().cuda()
-                else:
-                    val_x = val_x.float()
-                    # val_y = val_y.float()
-                outputs = net(val_x)
-                #_, preds = torch.max(outputs, 1)
-                preds = outputs.argmax(dim=1, keepdim=True)
+            net.eval()
+            # print("Validating...")
+            with torch.no_grad():
+                for _, (val_x, val_y) in enumerate(val_loader):
+                    if (cuda):
+                        val_x = val_x.float().cuda()
+                        # val_y = val_y.float().cuda()
+                    else:
+                        val_x = val_x.float()
+                        # val_y = val_y.float()
+                    outputs = net(val_x)
+                    #_, preds = torch.max(outputs, 1)
+                    preds = outputs.argmax(dim=1, keepdim=True)
 
-                running_corrects += torch.sum(preds.cpu().squeeze() == val_y.squeeze())
+                    running_corrects += torch.sum(preds.cpu().squeeze() == val_y.squeeze())
 
-        epoch_acc = running_corrects.double() / val_size
-        print("Evaluation accuracy: {:.2f}.".format(epoch_acc.item()))
+            val_acc = running_corrects.double() / val_size
+            print("Evaluation accuracy: {:.2f}.".format(val_acc.item()))
+    epoch_score[epoch].append(val_acc)
 
-
-
+epoch_score=np.asarray(epoch_score)
+filename = result_dir + 'epoch_scores'
+np.save(filename,epoch_score)

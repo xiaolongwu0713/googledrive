@@ -2,12 +2,10 @@
 # raw_data is imported from global config
 
 import os,sys
-os.getcwd()
-
 import sys, os, re
 if len(sys.argv)>2: # command line
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-
+import gesture.config
 #%%capture
 #! pip install hdf5storage
 #! pip install mne==0.23.0

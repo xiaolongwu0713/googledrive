@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 import mne
+import socket
+import os, re,sys
 
 try:
     mne.set_config('MNE_LOGGING_LEVEL', 'ERROR')
@@ -10,16 +12,20 @@ except TypeError as err:
 
 tmp_dir='/tmp/'
 
-import os, re
-location=os.getcwd()
-if re.compile('/Users/long/').match(location):
+if socket.gethostname() == 'longsMac':
+    sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
     if os.path.exists('/Volumes/Samsung_T5/data/gesture/'):
         data_dir='/Volumes/Samsung_T5/data/gesture/'
     else:
         data_dir = '/Users/long/Documents/data/gesture/'# temp data dir
     #tmp_data_dir='/Users/long/Documents/data/gesture/'
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
-elif re.compile('/content/drive').match(location):
+elif socket.gethostname() == 'workstation':
+    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
+    data_dir = 'C:/Users/wuxiaolong/Desktop/BCI/data/gesture/'  # temp data dir
+
+location=os.getcwd()
+if re.compile('/content/drive').match(location):
     data_dir='/content/drive/MyDrive/data/gesture/' # googleDrive
     root_dir='/content/drive/MyDrive/' # googleDrive
 

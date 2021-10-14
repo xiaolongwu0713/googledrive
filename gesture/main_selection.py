@@ -44,7 +44,7 @@ set_random_seeds(seed=seed)
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
 
-if len(sys.argv)>1: # command line
+if len(sys.argv)>2: # command line
     selection_lr = float(sys.argv[1])
     network_lr = float(sys.argv[2])
 else:

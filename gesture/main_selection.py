@@ -1,3 +1,6 @@
+# grid search result not good at all: at chance level.
+# try use different thresh tau parameter=selection_number instead of 3.0
+
 #%cd /content/drive/MyDrive/
 # raw_data is imported from global config
 
@@ -15,7 +18,6 @@ elif socket.gethostname() == 'longsMac':
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 from gesture.config import *
 
-
 import os, re
 import matplotlib.pyplot as plt
 import hdf5storage
@@ -26,27 +28,25 @@ from common_dl import set_random_seeds
 from common_dl import myDataset
 from comm_utils import slide_epochs
 from torch.utils.data import DataLoader
+from sklearn.preprocessing import StandardScaler
 from torch.optim import lr_scheduler
 from gesture.models.deepmodel import deepnet,deepnet_resnet
 from example.gumbelSelection.ChannelSelection.models import MSFBCNN
 from gesture.models.selectionModels import selectionNet
 
 from gesture.myskorch import on_epoch_begin_callback, on_batch_end_callback
-from gesture.config import *
 from gesture.preprocess.chn_settings import get_channel_setting
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
+
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
 
-if len(sys.argv)>1: # command line
-    selection_lr = float(sys.argv[1])
-    network_lr = float(sys.argv[2])
-else:
-    selection_lr = 0.001
-    network_lr = 0.05
+import inspect as i
+import sys
+#sys.stdout.write(i.getsource(deepnet))
 
 sid=10 #4
 class_number=5
@@ -72,7 +72,7 @@ data=np.concatenate((data[0,0],data[0,1]),0)
 del mat
 # standardization
 # no effect. why?
-if 1==0:
+if 1==1:
     chn_data=data[:,-3:]
     data=data[:,:-3]
     scaler = StandardScaler()
@@ -127,7 +127,7 @@ train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_o
 
 
 wind=500
-stride=1000
+stride=50
 X_train=[]
 y_train=[]
 X_val=[]
@@ -198,13 +198,17 @@ net = selectionNet(n_chans,class_number,wind,selection_number) # 81%
 if cuda:
     net.cuda()
 
-optimizer = torch.optim.Adadelta(
+if isinstance(net, selectionNet):
+    optimizer = torch.optim.Adadelta(
     [
-        {"params": net.selection_layer.parameters(), "lr": selection_lr},
-        {"params": net.network.parameters(),"lr": network_lr},
+        {"params": net.selection_layer.parameters(), "lr": 1e-3},
+        {"params": net.network.parameters(),"lr":0.05},
     ],
     lr=0.0,
-)
+    )
+else:
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+
 
 #lr = 0.002
 #weight_decay = 1e-10
@@ -241,9 +245,16 @@ if isinstance(net, selectionNet):
 if isinstance(net, selectionNet):
     net.set_freeze(False)
 
+H=[]
+S=[]
+Z=[]
+
 epoch_score=[]
 for epoch in range(epoch_num):
     epoch_score.append([])
+    H.append([])
+    S.append([])
+    Z.append([])
     print("------ epoch " + str(epoch) + " -----")
     
     if isinstance(net, selectionNet):
@@ -295,7 +306,10 @@ for epoch in range(epoch_num):
     #torch.save(state, savepath)
 
     if isinstance(net, selectionNet):
-        H, sel, probas = net.monitor()
+        hi, sel, probas = net.monitor()
+        H[epoch].append(hi)
+        S[epoch].append(sel)
+        Z[epoch].append(probas)
         ax.plot(probas.detach().cpu().numpy())
         #fig.savefig(result_dir + 'prob_dist' + str(epoch) + '.png')
         ax.clear()
@@ -328,5 +342,14 @@ for epoch in range(epoch_num):
 epoch_score=np.asarray(epoch_score)
 filename = result_dir + 'epoch_scores' + str(selection_lr)+'_'+str(network_lr)
 np.save(filename,epoch_score)
+HH=np.asarray(H)
+filename = result_dir + 'HH' + str(selection_lr)+'_'+str(network_lr)
+np.save(filename,HH)
+SS=np.asarray(S)
+filename = result_dir + 'SS' + str(selection_lr)+'_'+str(network_lr)
+np.save(filename,SS)
+ZZ=np.asarray(Z)
+filename = result_dir + 'ZZ' + str(selection_lr)+'_'+str(network_lr)
+np.save(filename,ZZ)
 
-#result=np.load('/Users/long/Documents/BCI/python_scripts/googleDrive/gesture/epoch_scores0.0001_0.001.npy')
+

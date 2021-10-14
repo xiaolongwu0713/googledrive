@@ -237,7 +237,7 @@ def exponential_decay_schedule(start_value,end_value,epochs,end_epoch):
     out = start_value*torch.pow(end_value/start_value,p)
 
     return out
-start_temp=10
+start_temp=20
 end_temp=0.1
 temperature_schedule = exponential_decay_schedule(start_temp,end_temp,epoch_num,int(epoch_num*3/4))
 thresh_schedule = exponential_decay_schedule(selection_number,1.1,epoch_num,epoch_num)

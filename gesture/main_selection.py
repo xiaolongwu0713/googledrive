@@ -44,6 +44,14 @@ set_random_seeds(seed=seed)
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
 
+if len(sys.argv)>1: # command line
+    selection_lr = float(sys.argv[1])
+    network_lr = float(sys.argv[2])
+else:
+    selection_lr = 0.001
+    network_lr = 0.05
+
+
 import inspect as i
 import sys
 #sys.stdout.write(i.getsource(deepnet))
@@ -199,10 +207,10 @@ if cuda:
     net.cuda()
 
 if isinstance(net, selectionNet):
-    optimizer = torch.optim.Adadelta(
+    optimizer = torch.optim.Adam(
     [
-        {"params": net.selection_layer.parameters(), "lr": 1e-3},
-        {"params": net.network.parameters(),"lr":0.05},
+        {"params": net.selection_layer.parameters(), "lr": selection_lr},
+        {"params": net.network.parameters(),"lr":network_lr},
     ],
     lr=0.0,
     )

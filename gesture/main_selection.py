@@ -1,6 +1,12 @@
 #%cd /content/drive/MyDrive/
 # raw_data is imported from global config
 
+#%%capture
+#! pip install hdf5storage
+#! pip install mne==0.23.0
+#! pip install torch
+#! pip install Braindecode==0.5.1
+
 import sys
 import socket
 if socket.gethostname() == 'workstation':
@@ -9,11 +15,6 @@ elif socket.gethostname() == 'longsMac':
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
 from gesture.config import *
 
-#%%capture
-#! pip install hdf5storage
-#! pip install mne==0.23.0
-#! pip install torch
-#! pip install Braindecode==0.5.1
 
 import os, re
 import matplotlib.pyplot as plt
@@ -227,7 +228,7 @@ def exponential_decay_schedule(start_value,end_value,epochs,end_epoch):
 start_temp=10
 end_temp=0.1
 temperature_schedule = exponential_decay_schedule(start_temp,end_temp,epoch_num,int(epoch_num*3/4))
-thresh_schedule = exponential_decay_schedule(3.0,1.1,epoch_num,epoch_num)
+thresh_schedule = exponential_decay_schedule(selection_number,1.1,epoch_num,epoch_num)
 
 
 import inspect as i
@@ -327,3 +328,5 @@ for epoch in range(epoch_num):
 epoch_score=np.asarray(epoch_score)
 filename = result_dir + 'epoch_scores' + str(selection_lr)+'_'+str(network_lr)
 np.save(filename,epoch_score)
+
+#result=np.load('/Users/long/Documents/BCI/python_scripts/googleDrive/gesture/epoch_scores0.0001_0.001.npy')

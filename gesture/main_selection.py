@@ -207,7 +207,7 @@ if cuda:
     net.cuda()
 
 if isinstance(net, selectionNet):
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.SGD(
     [
         {"params": net.selection_layer.parameters(), "lr": selection_lr},
         {"params": net.network.parameters(),"lr":network_lr},
@@ -347,16 +347,16 @@ for epoch in range(epoch_num):
             print("Evaluation accuracy: {:.2f}.".format(val_acc.item()))
     epoch_score[epoch].append(val_acc)
 
-epoch_score=np.asarray(epoch_score)
+epoch_score=np.asarray(epoch_score.cpu())
 filename = result_dir + 'epoch_scores' + str(selection_lr)+'_'+str(network_lr)
 np.save(filename,epoch_score)
-HH=np.asarray(H)
+HH=np.asarray(H.cpu())
 filename = result_dir + 'HH' + str(selection_lr)+'_'+str(network_lr)
 np.save(filename,HH)
-SS=np.asarray(S)
+SS=np.asarray(S.cpu())
 filename = result_dir + 'SS' + str(selection_lr)+'_'+str(network_lr)
 np.save(filename,SS)
-ZZ=np.asarray(Z)
+ZZ=np.asarray(Z.cpu())
 filename = result_dir + 'ZZ' + str(selection_lr)+'_'+str(network_lr)
 np.save(filename,ZZ)
 

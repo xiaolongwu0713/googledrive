@@ -2,8 +2,75 @@ import math
 import numpy as np
 import torch
 from torch import nn
+from torch.nn import Parameter
+import torch.nn.functional as F
 from gesture.models.deepmodel import deepnet
-from example.gumbelSelection.ChannelSelection.models import SelectionLayer, MSFBCNN
+from example.gumbelSelection.ChannelSelection.models import  MSFBCNN
+
+
+limit_a, limit_b, epsilon = -.1, 1.1, 1e-6
+class SelectionLayer(nn.Module):
+    def __init__(self, N, M, temperature=1.0):
+
+        super(SelectionLayer, self).__init__()
+        self.floatTensor = torch.FloatTensor if not torch.cuda.is_available() else torch.cuda.FloatTensor
+        self.N = N
+        self.M = M
+        self.qz_loga = Parameter(torch.randn(N, M) / 100)  # ~N(0,1)
+
+        self.temperature = self.floatTensor([temperature])
+        self.freeze = False
+        self.thresh = 10.0
+
+    def quantile_concrete(self, x):  # eq: 2
+
+        g = -torch.log(-torch.log(x))  # gumbel distribution
+        y = (self.qz_loga + g) / self.temperature  # beta
+        y = torch.softmax(y, dim=1)  # concrete distribution. torch.Size([16, 44, 3])
+
+        return y
+
+    def regularization(self):
+
+        eps = 1e-10
+        z = torch.clamp(torch.softmax(self.qz_loga, dim=0), eps, 1)
+        H = torch.sum(F.relu(torch.norm(z, 1, dim=1) - self.thresh))
+
+        return H
+
+    def get_eps(self, size):
+
+        eps = self.floatTensor(size).uniform_(epsilon, 1 - epsilon)
+
+        return eps
+
+    def sample_z(self, batch_size, training):
+
+        if training:
+
+            eps = self.get_eps(self.floatTensor(batch_size, self.N, self.M))
+            z = self.quantile_concrete(eps)  # eq: 2  torch.Size([16, 44, 3])
+            z = z.view(z.size(0), 1, z.size(1), z.size(2))  # torch.Size([16, 1, 44, 3])
+
+            return z
+
+        else:
+
+            ind = torch.argmax(self.qz_loga, dim=0)
+            one_hot = self.floatTensor(np.zeros((self.N, self.M)))
+            for j in range(self.M):
+                one_hot[ind[j], j] = 1
+            one_hot = one_hot.view(1, 1, one_hot.size(0), one_hot.size(1))
+            one_hot = one_hot.expand(batch_size, 1, one_hot.size(2), one_hot.size(3))
+
+            return one_hot
+
+    def forward(self, x):
+
+        z = self.sample_z(x.size(0), training=(self.training and not self.freeze))  # torch.Size([16, 1, 44, 3])
+        z_t = torch.transpose(z, 2, 3)  # torch.Size([16, 1, 3, 44])
+        out = torch.matmul(z_t, x)  # x:torch.Size([16, 1, 44, 1125])
+        return out  # out: torch.Size([16, 1, 3, 1125])
 
 
 def init_weights(m):
@@ -115,3 +182,4 @@ class selectionNet(nn.Module):
             for param in m.parameters():
                 param.requires_grad = True
             m.freeze = False
+

@@ -18,6 +18,8 @@ test_acc=np.asarray(test_acc)
 test_acc.max()
 
 
+a='/Users/long/Documents/data/gesture/preprocessing/P10/result1/ZZ0.0001_0.001.npy'
+a=torch.load(a,map_location='cpu')
 
 
 

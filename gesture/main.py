@@ -131,7 +131,7 @@ train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_o
 
 
 wind=500
-stride=50
+stride=500
 X_train=[]
 y_train=[]
 X_val=[]

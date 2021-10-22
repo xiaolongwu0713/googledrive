@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from sklearn.datasets import load_boston
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import scale

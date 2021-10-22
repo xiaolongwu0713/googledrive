@@ -99,7 +99,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             Default: GPU if available else CPU
         verbose : int, default=0
         random_state
-            Random state for cross-validation
+            Random state for validation
         torch_seed
             Torch state for model random initialization
         """
@@ -117,21 +117,21 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
                 partial(torch.optim.Adam, lr=1e-3),
                 partial(torch.optim.SGD, lr=1e-3, momentum=0.9),
             )
-        if isinstance(optim, torch.optim.Optimizer):
+        if isinstance(optim, partial):
             optim = (optim, optim)
         self.optim_init, self.optim_path = optim
         if isinstance(n_iters, int):
             n_iters = (n_iters, n_iters)
         self.n_iters = self.n_iters_init, self.n_iters_path = n_iters
-        if isinstance(patience, int):
+        if patience is None or isinstance(patience, int):
             patience = (patience, patience)
         self.patience = self.patience_init, self.patience_path = patience
         self.tol = tol
         self.backtrack = backtrack
         self.val_size = val_size
-        self.device = device
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = device
 
         self.verbose = verbose
 
@@ -206,7 +206,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         best_val_obj = validation_obj()
         epochs_since_best_val_obj = 0
         if self.backtrack:
-            best_state_dict = self.model.state_dict()
+            best_state_dict = self.model.cpu_state_dict()
             real_best_val_obj = best_val_obj
             real_loss = float("nan")  # if epochs == 0
 
@@ -252,7 +252,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             else:
                 epochs_since_best_val_obj += 1
             if self.backtrack and val_obj < real_best_val_obj:
-                best_state_dict = self.model.state_dict()
+                best_state_dict = self.model.cpu_state_dict()
                 real_best_val_obj = val_obj
                 real_loss = loss
                 n_iters = epoch + 1
@@ -296,12 +296,13 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         The optional `lambda_` argument will also stop the path when
         this value is reached.
         """
-        assert (sample_val := X_val is None) == (
+        assert (X_val is None) == (
             y_val is None
         ), "You must specify both or none of X_val and y_val"
+        sample_val = X_val is None
         if sample_val:
             X_train, X_val, y_train, y_val = train_test_split(
-                X, y, test_size=self.val_size
+                X, y, test_size=self.val_size, random_state=self.random_state
             )
         else:
             X_train, y_train = X, y
@@ -409,6 +410,8 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
         return ans
 
     def load(self, state_dict):
+        if isinstance(state_dict, HistoryItem):
+            state_dict = state_dict.state_dict
         if self.model is None:
             output_shape, input_shape = state_dict["skip.weight"].shape
             self.model = LassoNet(
@@ -418,6 +421,7 @@ class BaseLassoNet(BaseEstimator, metaclass=ABCMeta):
             ).to(self.device)
 
         self.model.load_state_dict(state_dict)
+        return self
 
 
 class LassoNetRegressor(

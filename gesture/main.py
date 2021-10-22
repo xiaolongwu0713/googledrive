@@ -16,7 +16,6 @@ from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 from braindecode.datautil import (create_from_mne_raw, create_from_mne_epochs)
 import torch
-import timm
 import random
 from common_dl import set_random_seeds
 from common_dl import myDataset
@@ -131,7 +130,7 @@ train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_o
 
 
 wind=500
-stride=50
+stride=500
 X_train=[]
 y_train=[]
 X_val=[]

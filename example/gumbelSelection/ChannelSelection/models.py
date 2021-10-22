@@ -140,7 +140,8 @@ class SelectionLayer(nn.Module):
 
 		if training:
 
-			eps = self.get_eps(self.floatTensor(batch_size, self.N, self.M))
+			#eps = self.get_eps(self.floatTensor(batch_size, self.N, self.M))
+			eps = self.get_eps(self.floatTensor(batch_size, 208, 500))
 			z = self.quantile_concrete(eps) # eq: 2  torch.Size([16, 44, 3])
 			z=z.view(z.size(0),1,z.size(1),z.size(2)) # torch.Size([16, 1, 44, 3])
 	 

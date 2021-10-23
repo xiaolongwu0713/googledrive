@@ -105,13 +105,13 @@ def load_data_ml_psd(sid,channel=all): #channel=all/active
         tmp=np.mean(tmp,axis=0) # (208, 129)
         list_of_epochs_bsl_psd.append(tmp)
 
-
+    print("PSD started.")
     list_of_epochs_psd=[]
     for i in range(5):
         (tmp,freq)=mne.time_frequency.psd_welch(list_of_epochs[i],average='mean') # tmp: (300, 208, 129)
         #tmp=np.mean(tmp,axis=0) # (208, 129)
         list_of_epochs_psd.append(tmp)
-
+    print("PSD done.")
     # average across below frequency ranges
     fbands = [[1,4],[4,8],[8,13],[13,30],[60,75],[75,95],[105,125],[125,145],[155,195]]
     chnN=list_of_epochs_psd[0].shape[1]
@@ -144,7 +144,7 @@ def load_data_ml_psd(sid,channel=all): #channel=all/active
         list_of_epochs_psd_avg.append(tmp)
 
     list_of_epochs_psd_avg=np.concatenate(list_of_epochs_psd_avg,axis=0) # (1500, 23*9=207)
-
+    print("Average done/")
 
     list_of_labes=[]
     for i in range(5):

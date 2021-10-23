@@ -49,10 +49,11 @@ if not os.path.exists(selection_dir):
 
 [Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
 
-list_of_epochs_psd_avg,list_of_labes=load_data_ml_psd(10,channel=all)
+list_of_epochs_psd_avg,list_of_labes=load_data_ml_psd(10,channel='all')
+print("Read data done./")
 sss = StratifiedShuffleSplit(n_splits=5, test_size=0.3, random_state=0)
 sss.get_n_splits(list_of_epochs_psd_avg, list_of_labes)
-
+print("Feature selection./")
 # use default SVM parameter--select feature--fine tune/gridsearch the SVM
 feature_selection=True
 if feature_selection:

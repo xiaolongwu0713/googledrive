@@ -14,7 +14,7 @@ from utils import AverageMeter, accuracy
 
 
 parser = argparse.ArgumentParser(description='PyTorch LeNet5 Training')
-parser.add_argument('--epochs', default=200, type=int,
+parser.add_argument('--epochs', default=50, type=int,
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int,
                     help='manual epoch number (useful on restarts)')
@@ -167,8 +167,10 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
-        losses.update(loss.data[0], input_.size(0))
-        top1.update(100 - prec1[0], input_.size(0))
+        #losses.update(loss.data[0], input_.size(0))
+        losses.update(loss.item(), input_.size(0))
+        #top1.update(100 - prec1[0], input_.size(0))
+        top1.update(100 - prec1.item(), input_.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -249,8 +251,8 @@ def validate(val_loader, model, criterion, epoch):
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
-        losses.update(loss.data[0], input_.size(0))
-        top1.update(100 - prec1[0], input_.size(0))
+        losses.update(loss.item(), input_.size(0))
+        top1.update(100 - prec1.item(), input_.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)

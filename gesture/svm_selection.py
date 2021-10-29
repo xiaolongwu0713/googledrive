@@ -16,6 +16,7 @@ from sklearn.feature_selection import RFECV
 from sklearn.metrics import confusion_matrix
 from common_dl import set_random_seeds
 from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -59,8 +60,9 @@ feature_selection=True
 if feature_selection:
     fig, ax = plt.subplots()
     # initiate the clf with parameter calculated from gridsearch
-    svc_clf = SVC(kernel="linear",gamma='auto')
-    #svc_clf = make_pipeline(StandardScaler(), SVC(kernel="linear", gamma='auto'))
+    #svc_clf = SVC(kernel="linear",gamma='auto')
+    svc_clf = LinearSVC(random_state=0, tol=1e-5)
+
     min_features_to_select = 5  # Minimum number of features to consider
     selector = RFECV(estimator=svc_clf, step=1, cv=sss,
                   scoring='accuracy',

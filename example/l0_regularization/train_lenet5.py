@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
+from grasp.utils import cuda_or_cup
 from models import L0LeNet5
 from utils import save_checkpoint
 from dataloaders import mnist
@@ -14,7 +15,7 @@ from utils import AverageMeter, accuracy
 
 
 parser = argparse.ArgumentParser(description='PyTorch LeNet5 Training')
-parser.add_argument('--epochs', default=50, type=int,
+parser.add_argument('--epochs', default=5, type=int,
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int,
                     help='manual epoch number (useful on restarts)')
@@ -24,8 +25,8 @@ parser.add_argument('--lr', '--learning-rate', default=0.001, type=float,
                     help='initial learning rate')
 parser.add_argument('--weight-decay', '--wd', default=0.0005, type=float,
                     help='weight decay (default: 5e-4)')
-parser.add_argument('--print-freq', '-p', default=100, type=int,
-                    help='print frequency (default: 10)')
+parser.add_argument('--print-freq', '-p', default=2, type=int,
+                    help='print frequency (default: 2)')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('--name', default='L0LeNet5', type=str,
@@ -43,7 +44,7 @@ best_prec1 = 100
 writer = None
 total_steps = 0
 exp_flops, exp_l0 = [], []
-
+device=cuda_or_cup()
 
 def main():
     global args, best_prec1, writer, total_steps, exp_flops, exp_l0
@@ -156,7 +157,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
         data_time.update(time.time() - end)
         total_steps += 1
         if torch.cuda.is_available():
-            target = target.cuda(async=True)
+            target = target.cuda()
             input_ = input_.cuda()
         input_var = torch.autograd.Variable(input_)
         target_var = torch.autograd.Variable(target)
@@ -167,9 +168,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
-        #losses.update(loss.data[0], input_.size(0))
         losses.update(loss.item(), input_.size(0))
-        #top1.update(100 - prec1[0], input_.size(0))
         top1.update(100 - prec1.item(), input_.size(0))
 
         # compute gradient and do SGD step
@@ -240,7 +239,7 @@ def validate(val_loader, model, criterion, epoch):
     end = time.time()
     for i, (input_, target) in enumerate(val_loader):
         if torch.cuda.is_available():
-            target = target.cuda(async=True)
+            target = target.cuda()
             input_ = input_.cuda()
         input_var = torch.autograd.Variable(input_, volatile=True)
         target_var = torch.autograd.Variable(target, volatile=True)

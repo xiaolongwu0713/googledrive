@@ -233,7 +233,6 @@ class L0Conv2d(Module):
             expected_flops += num_instances_per_filter * ppos
             expected_l0 += ppos
 
-        #return expected_flops.data[0], expected_l0.data[0]
         return expected_flops.item(), expected_l0.item()
 
     def get_eps(self, size):

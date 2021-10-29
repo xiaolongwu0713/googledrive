@@ -22,7 +22,8 @@ if socket.gethostname() == 'longsMac':
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
 elif socket.gethostname() == 'workstation':
     #sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
-    data_dir = 'C:/Users/wuxiaolong/Desktop/BCI/data/gesture/'  # temp data dir
+    #data_dir = 'C:/Users/wuxiaolong/Desktop/BCI/data/gesture/'  # temp data dir
+    data_dir = 'H:/Long/data/gesture/'  # temp data dir
 
 location=os.getcwd()
 if re.compile('/content/drive').match(location):

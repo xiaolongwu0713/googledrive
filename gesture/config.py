@@ -16,10 +16,12 @@ if socket.gethostname() == 'longsMac':
     #sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
     if os.path.exists('/Volumes/Samsung_T5/data/gesture/'):
         data_dir='/Volumes/Samsung_T5/data/gesture/'
+        info_dir = '/Volumes/Samsung_T5/data/gesture/preprocessing/'  # temp data dir
     else:
         data_dir = '/Users/long/Documents/data/gesture/'# temp data dir
     #tmp_data_dir='/Users/long/Documents/data/gesture/'
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
+
 elif socket.gethostname() == 'workstation':
     #sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
     #data_dir = 'C:/Users/wuxiaolong/Desktop/BCI/data/gesture/'  # temp data dir

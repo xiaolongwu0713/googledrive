@@ -1,4 +1,4 @@
-from gesture.models.EEGModels import DeepConvNet_210519_512_10
+from gesture.models.EEGModels_tf import DeepConvNet_210519_512_10
 import numpy as np
 from scipy.io import savemat
 from sklearn.model_selection import StratifiedKFold

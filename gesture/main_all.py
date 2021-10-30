@@ -14,6 +14,7 @@ from sklearn.model_selection import StratifiedKFold
 import matplotlib.pyplot as plt
 from braindecode.datautil import (create_from_mne_raw, create_from_mne_epochs)
 import torch
+import timm
 import random
 from common_dl import set_random_seeds
 from common_dl import myDataset
@@ -30,8 +31,7 @@ from sklearn.model_selection import train_test_split
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
 from gesture.models.deepmodel import deepnet,deepnet_resnet
 from gesture.models.d2l_resnet import d2lresnet
-from gesture.models.EEGModels import DeepConvNet_210519_512_10
-from gesture.models.tsception import TSception
+#from gesture.models.tsception import TSception
 
 from gesture.config import *
 from gesture.preprocess.chn_settings import get_channel_setting
@@ -45,15 +45,16 @@ device = 'cuda' if cuda else 'cpu'
 if cuda:
     torch.backends.cudnn.benchmark = True
 
-
-sid = int(float(sys.argv[1]))
-model_name = sys.argv[2]
-
-#sid=10 #4
+if len(sys.argv)>3:
+    sid = int(float(sys.argv[1]))
+    model_name = sys.argv[2]
+    fs = int(float(sys.argv[3]))
+else: # debug in IDE
+    sid=2
+    fs=1000
 class_number=5
-Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
+#Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
-fs=1000
 
 model_path=data_dir + 'model_pth/'+str(sid)+'/'
 result_path=data_dir+'training_result/'+str(sid)+'/'
@@ -62,12 +63,11 @@ if not os.path.exists(model_path):
 if not os.path.exists(result_path):
     os.makedirs(result_path)
 
-[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
-sids=Frequencies[:,0]
 data_path = data_dir+'preprocessing/'+'P'+str(sid)+'/preprocessing2.mat'
 mat=hdf5storage.loadmat(data_path)
 data = mat['Datacell']
 channelNum=int(mat['channelNum'][0,0])
+# total channel = channelNum + 4(2*emg + 1*trigger_indexes + 1*emg_trigger)
 data=np.concatenate((data[0,0],data[0,1]),0)
 del mat
 # standardization
@@ -81,15 +81,15 @@ if 1==0:
     data=np.concatenate((data,chn_data),axis=1)
 
 # stim0 is trigger channel, stim1 is trigger position calculated from EMG signal.
-chn_names=np.append(["seeg"]*len(UseChn),["stim0", "emg","stim1"])
-chn_types=np.append(["seeg"]*len(UseChn),["stim", "emg","stim"])
+chn_names=np.append(["seeg"]*channelNum,["emg0","emg1","stim_trigger","stim_emg"])
+chn_types=np.append(["seeg"]*channelNum,["emg","emg","stim","stim"])
 info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
 raw = mne.io.RawArray(data.transpose(), info)
 
 
 # gesture/events type: 1,2,3,4,5
-events0 = mne.find_events(raw, stim_channel='stim0')
-events1 = mne.find_events(raw, stim_channel='stim1')
+events0 = mne.find_events(raw, stim_channel='stim_trigger')
+events1 = mne.find_events(raw, stim_channel='stim_emg')
 # events number should start from 0: 0,1,2,3,4, instead of 1,2,3,4,5
 events0=events0-[0,0,1]
 events1=events1-[0,0,1]
@@ -185,13 +185,15 @@ n_epochs = 200
 #one_window.shape : (208, 500)
 
 # Extract number of chans and time steps from dataset
-one_window=next(iter(train_set))[0]
-n_chans = one_window.shape[0]
+one_window=next(iter(train_loader))[0]
+n_chans = one_window.shape[1]
+input_window_samples=one_window.shape[2]
 
+model_name='resnet'
 if model_name=='eegnet':
-    net = EEGNetv4(n_chans, n_classes, input_window_samples=input_window_samples, final_conv_length='auto', )
+    net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', )
 elif model_name=='shallowFBCSPnet':
-    net = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
+    net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 elif model_name=='deepnet':
     net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
 elif model_name=='resnet':

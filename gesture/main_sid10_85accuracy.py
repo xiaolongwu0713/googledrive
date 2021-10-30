@@ -25,7 +25,7 @@ from sklearn.preprocessing import StandardScaler
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
 from gesture.models.deepmodel import deepnet,deepnet_resnet
-from gesture.models.EEGModels import DeepConvNet_210519_512_10
+from gesture.models.EEGModels_tf import DeepConvNet_210519_512_10
 from gesture.models.tsception import TSception
 
 from gesture.myskorch import on_epoch_begin_callback, on_batch_end_callback

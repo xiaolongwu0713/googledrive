@@ -11,7 +11,7 @@ from scipy.io import savemat
 from sklearn.model_selection import StratifiedKFold
 import os
 import h5py
-from gesture.models.EEGModels import DeepConvNet_210519_512_10, EEGNet, EEGNet_lsj
+from gesture.models.EEGModels_tf import DeepConvNet_210519_512_10, EEGNet, EEGNet_lsj
 from gesture.config import root_dir, data_dir
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 

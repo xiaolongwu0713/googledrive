@@ -291,18 +291,20 @@ for epoch in range(epoch_num):
         print("Evaluation accuracy: {:.2f}.".format(val_acc))
     if epoch==0:
         best_acc=val_acc
-    if val_acc>best_acc:
-        best_acc=val_acc
         patient=patients
-        state = {
-            'net': net.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'epoch': epoch,
-            #'loss': epoch_loss
-        }
-
     else:
-        patient=patients-1
+        if val_acc>best_acc:
+            best_acc=val_acc
+            patient=patients
+            state = {
+                'net': net.state_dict(),
+                'optimizer': optimizer.state_dict(),
+                'epoch': epoch,
+                #'loss': epoch_loss
+            }
+
+        else:
+            patient=patient-1
     print("patients left: {:d}".format(patient))
     if patient==0:
         savepath = model_path + 'checkpoint_'+model_name+'_' + str(epoch) + '.pth'

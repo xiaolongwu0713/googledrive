@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 cwd=`pwd`
 if [[ $HOSTNAME == "workstation"  ]];then
 	source /cygdrive/c/Users/wuxiaolong/venv/Scripts/activate
@@ -11,10 +11,24 @@ if [[ $HOSTNAME == "longsMac"  ]];then
 	echo "longsMac"
 fi
 
-for sid in 2 3 4 5 7 8 9 10 11 12 13 14 16 17 18 19 20 21 22 23 24 25 26 29 30 31 32 34 35 41
+inputfile="H:/Long/data/gesture/preprocessing/Info.text"
+#declare -a sids
+sids=()
+while IFS= read -r line
 do
+ sid=${line%,*}
+ sids+=("$sid")
+ #echo $sid
+ #echo ${sids[@]}
+done < "$inputfile"
+#echo ${sids[@]}
+
+for sid in ${sids[@]}
+do
+  echo $sid
   for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet'
   do
       python main_all.py $sid $network
   done
 done
+

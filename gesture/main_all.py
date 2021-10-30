@@ -298,7 +298,7 @@ for epoch in range(epoch_num):
             'net': net.state_dict(),
             'optimizer': optimizer.state_dict(),
             'epoch': epoch,
-            'loss': epoch_loss
+            #'loss': epoch_loss
         }
 
     else:

@@ -65,7 +65,7 @@ if not os.path.exists(result_path):
     os.makedirs(result_path)
 
 [Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
-
+sids=Frequencies[:,0]
 data_path = data_dir+'preprocessing/'+'P'+str(sid)+'/preprocessing2.mat'
 mat=hdf5storage.loadmat(data_path)
 data = mat['Datacell']

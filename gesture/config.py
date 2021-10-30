@@ -24,6 +24,7 @@ elif socket.gethostname() == 'workstation':
     #sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
     #data_dir = 'C:/Users/wuxiaolong/Desktop/BCI/data/gesture/'  # temp data dir
     data_dir = 'H:/Long/data/gesture/'  # temp data dir
+    info_dir = 'H:/Long/data/gesture/preprocessing/'  # temp data dir
 
 location=os.getcwd()
 if re.compile('/content/drive').match(location):
@@ -37,10 +38,11 @@ default_frequency=1000
 
 # participants details
 classNum = 5
-Frequencies = np.array([[2, 1000], [3, 1000], [ 4, 1000], [5, 1000], [ 7, 1000], [ 8, 1000], [ 9, 1000], [ 10, 2000],
-    [13, 2000], [ 16, 2000], [ 17, 2000], [ 18, 2000], [ 19, 2000], [ 20, 1000], [ 21, 1000], [ 22, 2000], [ 23, 2000],  #[24, 2000], [ 25, 2000], [ 26, 2000],
-     [  29, 2000], [ 30, 2000], [ 31, 2000], [ 32, 2000], [ 34, 2000], [ 35, 1000],
-    [36, 2000], [ 37, 2000], [41, 2000]])
+# Frequencies = np.array([[2, 1000], [3, 1000], [ 4, 1000], [5, 1000], [ 7, 1000], [ 8, 1000], [ 9, 1000], [ 10, 2000],
+#     [13, 2000], [ 16, 2000], [ 17, 2000], [ 18, 2000], [ 19, 2000], [ 20, 1000], [ 21, 1000], [ 22, 2000], [ 23, 2000],  #[24, 2000], [ 25, 2000], [ 26, 2000],
+#      [  29, 2000], [ 30, 2000], [ 31, 2000], [ 32, 2000], [ 34, 2000], [ 35, 1000],
+#     [36, 2000], [ 37, 2000], [41, 2000]])
+Frequencies = np.load(info_dir+'Info.npy', allow_pickle=True)
 
 fbands=[] #delta, theta, alpha,beta,gamma
 fbands.append([0.5, 4])

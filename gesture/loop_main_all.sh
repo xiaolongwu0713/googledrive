@@ -11,7 +11,7 @@ if [[ $HOSTNAME == "longsMac"  ]];then
 	echo "longsMac"
 fi
 
-inputfile="H:/Long/data/gesture/preprocessing/Info.text"
+inputfile="H:/Long/data/gesture/preprocessing/Info.txt"
 #declare -a sids
 sids=()
 while IFS= read -r line
@@ -25,10 +25,12 @@ done < "$inputfile"
 
 for sid in ${sids[@]}
 do
-  echo $sid
+  echo "Start sid: $sid"
   for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet'
   do
-      python main_all.py $sid $network
+     #echo "something"	
+     python main_all.py $sid $network
+     echo "Training finish for sid: $sid on $network" 
   done
 done
 

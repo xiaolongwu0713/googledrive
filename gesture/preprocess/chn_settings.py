@@ -324,5 +324,5 @@ def get_channel_setting(pn):
         #TrigChn=[46:50];
     else:
         print("No participant ID found.")
-    return Session_num,UseChn,EmgChn,TrigChn,activeChn
+    return Session_num,UseChn,EmgChn,TrigChn
 

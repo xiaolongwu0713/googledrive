@@ -1,12 +1,10 @@
-#%cd /content/drive/MyDrive/
-# raw_data is imported from global config
-
-#%%capture
-#! pip install hdf5storage
-#! pip install mne==0.23.0
-#! pip install torch
-#! pip install Braindecode==0.5.1
-#! pip install timm
+import sys
+import socket
+if socket.gethostname() == 'workstation':
+    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
+elif socket.gethostname() == 'longsMac':
+    sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+from gesture.config import *
 
 import os, re
 import hdf5storage
@@ -48,12 +46,12 @@ if cuda:
     torch.backends.cudnn.benchmark = True
 
 
-sid = float(sys.argv[1])
-model_name = float(sys.argv[2])
+sid = int(float(sys.argv[1]))
+model_name = sys.argv[2]
 
 #sid=10 #4
 class_number=5
-Session_num,UseChn,EmgChn,TrigChn, activeChan = get_channel_setting(sid)
+Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
 fs=1000
 

@@ -29,7 +29,7 @@ do
   for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet'
   do
      #python main_all.py $sid $network fs wind stride
-     python main_all.py $sid $network 1000 500 20
+     python main_all.py $sid $network 1000 $1 $2
      echo "Training finish for sid: $sid on $network" 
   done
 done

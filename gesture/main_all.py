@@ -49,8 +49,8 @@ if len(sys.argv)>3:
     sid = int(float(sys.argv[1]))
     model_name = sys.argv[2]
     fs = int(float(sys.argv[3]))
-    wind = float(sys.argv[4])
-    stride = float(sys.argv[5])
+    wind = int(float(sys.argv[4]))
+    stride = int(float(sys.argv[5]))
 else: # debug in IDE
     sid=2
     fs=1000

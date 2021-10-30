@@ -28,8 +28,8 @@ do
   echo "Start sid: $sid"
   for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet'
   do
-     #echo "something"	
-     python main_all.py $sid $network
+     #python main_all.py $sid $network fs wind stride
+     python main_all.py $sid $network 1000 500 20
      echo "Training finish for sid: $sid on $network" 
   done
 done

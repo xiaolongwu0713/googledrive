@@ -49,9 +49,13 @@ if len(sys.argv)>3:
     sid = int(float(sys.argv[1]))
     model_name = sys.argv[2]
     fs = int(float(sys.argv[3]))
+    wind = float(sys.argv[4])
+    stride = float(sys.argv[5])
 else: # debug in IDE
     sid=2
     fs=1000
+    wind = 500
+    stride = 500
 class_number=5
 #Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
@@ -126,8 +130,7 @@ val_epochs=[epochi[val_trials[clas],:,:] for clas,epochi in enumerate(list_of_ep
 train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_of_epochs)]
 
 
-wind=500
-stride=500
+
 X_train=[]
 y_train=[]
 X_val=[]

@@ -204,6 +204,9 @@ net = selectionNet(n_chans,class_number,wind,selection_number) # 81%
 if cuda:
     net.cuda()
 
+selection_lr = 0.01
+network_lr = 0.01
+
 if isinstance(net, selectionNet):
     optimizer = torch.optim.Adadelta(
     [
@@ -214,8 +217,7 @@ if isinstance(net, selectionNet):
     )
 else:
     optimizer = torch.optim.Adam(net.parameters(), lr=network_lr)
-selection_lr = 0.0001
-network_lr = 0.01
+
 optimizer = torch.optim.Adam(net.parameters(), lr=network_lr)
 
 

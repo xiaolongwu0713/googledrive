@@ -298,7 +298,7 @@ for epoch in range(epoch_num):
             loss = criterion(y_pred, trainy.squeeze())
         if isinstance(net, selectionNet):
             reg = net.regularizer(lamba,weight_decay)
-            print("---------")
+            #print("---------")
             #print(reg)
             #print(loss)
             loss=loss+reg

@@ -23,7 +23,8 @@ do
 done < "$inputfile"
 #echo ${sids[@]}
 
-for sid in ${sids[@]}
+#for sid in ${sids[@]}
+for sid in 10
 do
   echo "Start sid: $sid"
   for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet'

@@ -214,7 +214,8 @@ if isinstance(net, selectionNet):
     )
 else:
     optimizer = torch.optim.Adam(net.parameters(), lr=network_lr)
-
+selection_lr = 0.0001
+network_lr = 0.01
 optimizer = torch.optim.Adam(net.parameters(), lr=network_lr)
 
 

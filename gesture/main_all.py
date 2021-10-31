@@ -227,7 +227,7 @@ train_losses=[]
 train_accs=[]
 val_accs=[]
 for epoch in range(epoch_num):
-    print("------ epoch " + str(epoch) + " -----")
+    print("------ epoch" + str(epoch) + ": sid"+str(sid)+"@"+model_name+"-----")
     net.train()
 
     loss_epoch = 0
@@ -262,7 +262,7 @@ for epoch in range(epoch_num):
     train_acc = (running_corrects.double() / train_size).item()
     train_losses.append(train_loss)
     train_accs.append(train_acc)
-    print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(train_loss,train_acc))
+    #print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(train_loss,train_acc))
     #print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
 
     running_loss = 0.0
@@ -288,7 +288,7 @@ for epoch in range(epoch_num):
 
         val_acc = (running_corrects.double() / val_size).item()
         val_accs.append(val_acc)
-        print("Evaluation accuracy: {:.2f}.".format(val_acc))
+        print("Training loss:{:.2f},Accuracy:{:.2f}; Evaluation accuracy:{:.2f}.".format(train_loss, train_acc,val_acc))
     if epoch==0:
         best_acc=val_acc
         patient=patients

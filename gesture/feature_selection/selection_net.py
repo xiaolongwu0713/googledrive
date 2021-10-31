@@ -64,12 +64,10 @@ Session_num,UseChn,EmgChn,TrigChn, activeChan = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
 fs=1000
 
-result_dir=data_dir+'preprocessing'+'/P'+str(sid)+'/' + 'result' + '/'
-model_path=data_dir+'preprocessing'+'/P'+str(sid)+'/' + 'pth' +'/'
+result_dir=data_dir+'selection/gumbel/'+'P'+str(sid)
 if not os.path.exists(result_dir):
     os.makedirs(result_dir)
-if not os.path.exists(model_path):
-    os.makedirs(model_path)
+
 
 [Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
 
@@ -363,7 +361,7 @@ for epoch in range(epoch_num):
     # ax.clear()
     mean_entropy = torch.mean(hi.data)
     if mean_entropy<limit_entropy and patient==0:
-        savepath = model_path + 'checkpoint' + str(epoch) + '.pth'
+        savepath = result_dir + 'checkpoint' + str(epoch) + '.pth'
         torch.save(state, savepath)
         break
 

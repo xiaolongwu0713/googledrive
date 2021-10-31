@@ -35,7 +35,7 @@ class SelectionLayer(nn.Module):
         eps = 1e-10
         z = torch.clamp(torch.softmax(self.qz_loga, dim=0), eps, 1) # torch.Size([208, 10])
         H = torch.sum(F.relu(torch.norm(z, 1, dim=1) - self.thresh))
-        print(max(torch.norm(z, 1, dim=1)-self.thresh))
+        #print(max(torch.norm(z, 1, dim=1)-self.thresh)) # penalize
 
         return H
 

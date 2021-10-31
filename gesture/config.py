@@ -19,6 +19,7 @@ if socket.gethostname() == 'longsMac':
         info_dir = '/Volumes/Samsung_T5/data/gesture/preprocessing/'  # temp data dir
     else:
         data_dir = '/Users/long/Documents/data/gesture/'# temp data dir
+        info_dir = '/Users/long/Documents/data/gesture/preprocessing/'  # temp data dir
     #tmp_data_dir='/Users/long/Documents/data/gesture/'
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
 

@@ -88,15 +88,14 @@ if 1==1:
     data=np.concatenate((data,chn_data),axis=1)
 
 # stim0 is trigger channel, stim1 is trigger position calculated from EMG signal.
-chn_names=np.append(["seeg"]*len(UseChn),["stim0", "emg","stim1"])
-chn_types=np.append(["seeg"]*len(UseChn),["stim", "emg","stim"])
+chn_names=np.append(["seeg"]*channelNum,["emg0","emg1","stim_trigger","stim_emg"])
+chn_types=np.append(["seeg"]*channelNum,["emg","emg","stim","stim"])
 info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
 raw = mne.io.RawArray(data.transpose(), info)
 
-
 # gesture/events type: 1,2,3,4,5
-events0 = mne.find_events(raw, stim_channel='stim0')
-events1 = mne.find_events(raw, stim_channel='stim1')
+events0 = mne.find_events(raw, stim_channel='stim_trigger')
+events1 = mne.find_events(raw, stim_channel='stim_emg')
 # events number should start from 0: 0,1,2,3,4, instead of 1,2,3,4,5
 events0=events0-[0,0,1]
 events1=events1-[0,0,1]

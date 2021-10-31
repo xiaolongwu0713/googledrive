@@ -60,7 +60,7 @@ import sys
 
 sid=10 #4
 class_number=5
-Session_num,UseChn,EmgChn,TrigChn, activeChan = get_channel_setting(sid)
+
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
 fs=1000
 

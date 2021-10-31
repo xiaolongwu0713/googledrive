@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 cwd=`pwd`
 if [[ $HOSTNAME == "workstation"  ]];then
 	source /cygdrive/c/Users/wuxiaolong/venv/Scripts/activate

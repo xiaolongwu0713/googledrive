@@ -192,7 +192,7 @@ one_window=next(iter(train_loader))[0]
 n_chans = one_window.shape[1]
 input_window_samples=one_window.shape[2]
 
-model_name='resnet'
+#model_name='resnet'
 if model_name=='eegnet':
     net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', )
 elif model_name=='shallowFBCSPnet':

@@ -33,6 +33,7 @@ location=os.getcwd()
 if re.compile('/content/drive').match(location):
     data_dir='/content/drive/MyDrive/data/gesture/' # googleDrive
     root_dir='/content/drive/MyDrive/' # googleDrive
+    info_dir = '/content/drive/MyDrive/data/gesture/preprocessing/'
 
 # paradigm definition
 # channel:  SEEG+EMG+class

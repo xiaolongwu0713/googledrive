@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 sid=10
 #result_dir=data_dir+'preprocessing'+'/P'+str(sid)+'/' + 'selection/gumbel/'
-result_dir='/Users/long/OneDrive/share/selection/gumbel/P10'
+result_dir='/Users/long/OneDrive/share/selection/gumbel/3/P10'
 scores = np.load(result_dir + 'epoch_scores.npy') # (train acc, val acc)
 h=np.load(result_dir+'HH.npy')
 s=np.load(result_dir+'SS.npy') # selection
@@ -23,16 +23,21 @@ plt.plot(mean_entropy)
 #best_train= np.where(scores == max(scores[:,1]))
 best_epoch=70
 # plot matrix
-plt.imshow(z[2,:,:])
+plt.imshow(z[-1,:,:])
 
-# find the best channel
+# find the best channel: however there are duplicated selection
 best_channels=np.argmax(z[best_epoch,:,:],axis=0) # array([148, 153, 148, 153, 149, 152, 153, 152, 152, 149])
 best_channels=set(best_channels)
 
+#get the highest 10 distinct channel
+a=z[best_epoch,:,:]
+b=np.sum(a,axis=1)
+indices = (-b).argsort()[:10]
+(-np.sum(z[5,:,:],axis=1)).argsort()[:10]
+
+
 norms=[np.linalg.norm(z[best_epoch,channeli,:], ord=1, axis=0) for channeli in best_channels] # [2.9731846, 2.8495638, 1.7497481, 1.4582942]
 [np.linalg.norm(z[6,channeli,:], ord=1, axis=0) for channeli in np.arange(208)]
-
-penalty=norms-thrshold
 
 # penalty
 

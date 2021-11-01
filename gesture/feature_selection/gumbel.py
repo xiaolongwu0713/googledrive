@@ -1,3 +1,15 @@
+# grid search result not good at all: at chance level.
+# try use different thresh tau parameter=selection_number instead of 3.0
+
+#%cd /content/drive/MyDrive/
+# raw_data is imported from global config
+
+#%%capture
+#! pip install hdf5storage
+#! pip install mne==0.23.0
+#! pip install torch
+#! pip install Braindecode==0.5.1
+
 import sys
 import socket
 if socket.gethostname() == 'workstation':
@@ -7,33 +19,22 @@ elif socket.gethostname() == 'longsMac':
 from gesture.config import *
 
 import os, re
+import matplotlib.pyplot as plt
 import hdf5storage
 import numpy as np
-from scipy.io import savemat
-from sklearn.model_selection import StratifiedKFold
-import matplotlib.pyplot as plt
-from braindecode.datautil import (create_from_mne_raw, create_from_mne_epochs)
 import torch
-import timm
 import random
 from common_dl import set_random_seeds
 from common_dl import myDataset
 from comm_utils import slide_epochs
 from torch.utils.data import DataLoader
-from torch.optim import lr_scheduler
-from skorch.callbacks import LRScheduler
-from skorch.helper import predefined_split
-from braindecode import EEGClassifier
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-
-from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
+from torch.optim import lr_scheduler
 from gesture.models.deepmodel import deepnet,deepnet_resnet
-from gesture.models.d2l_resnet import d2lresnet
-#from gesture.models.tsception import TSception
+from example.gumbelSelection.ChannelSelection.models import MSFBCNN
+from gesture.models.selectionModels import selectionNet
 
-from gesture.config import *
+from gesture.myskorch import on_epoch_begin_callback, on_batch_end_callback
 from gesture.preprocess.chn_settings import get_channel_setting
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -42,42 +43,43 @@ set_random_seeds(seed=seed)
 
 cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
 device = 'cuda' if cuda else 'cpu'
-if cuda:
-    torch.backends.cudnn.benchmark = True
 
-if len(sys.argv)>3:
-    sid = int(float(sys.argv[1]))
-    model_name = sys.argv[2]
-    fs = int(float(sys.argv[3]))
-    wind = int(float(sys.argv[4]))
-    stride = int(float(sys.argv[5]))
-else: # debug in IDE
-    sid=10
-    fs=1000
-    wind = 500
-    stride = 500
-    model_name='eegnet'
+
+if socket.gethostname() == 'workstation' or socket.gethostname() == 'longsMac':
+    if len(sys.argv)>2: # command line
+        selection_lr = float(sys.argv[1])
+        network_lr = float(sys.argv[2])
+else:
+    selection_lr = 0.0001
+    network_lr = 0.01
+
+
+import inspect as i
+import sys
+#sys.stdout.write(i.getsource(deepnet))
+
+sid=10 #4
 class_number=5
-#Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
+
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
+fs=1000
 
-model_path=data_dir + 'model_pth/'+str(sid)+'/'
-result_path=data_dir+'training_result/'+str(sid)+'/'
-if not os.path.exists(model_path):
-    os.makedirs(model_path)
-if not os.path.exists(result_path):
-    os.makedirs(result_path)
+result_dir=data_dir+'selection/gumbel/'+'P'+str(sid)
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir)
 
-data_path = data_dir+'preprocessing/'+'P'+str(sid)+'/preprocessing2.mat'
-mat=hdf5storage.loadmat(data_path)
+
+[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
+
+loadPath = data_dir+'preprocessing'+'/P'+str(sid)+'/preprocessing2.mat'
+mat=hdf5storage.loadmat(loadPath)
 data = mat['Datacell']
 channelNum=int(mat['channelNum'][0,0])
-# total channel = channelNum + 4(2*emg + 1*trigger_indexes + 1*emg_trigger)
 data=np.concatenate((data[0,0],data[0,1]),0)
 del mat
 # standardization
 # no effect. why?
-if 1==0:
+if 1==1:
     chn_data=data[:,-3:]
     data=data[:,:-3]
     scaler = StandardScaler()
@@ -90,7 +92,6 @@ chn_names=np.append(["seeg"]*channelNum,["emg0","emg1","stim_trigger","stim_emg"
 chn_types=np.append(["seeg"]*channelNum,["emg","emg","stim","stim"])
 info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
 raw = mne.io.RawArray(data.transpose(), info)
-
 
 # gesture/events type: 1,2,3,4,5
 events0 = mne.find_events(raw, stim_channel='stim_trigger')
@@ -131,7 +132,8 @@ val_epochs=[epochi[val_trials[clas],:,:] for clas,epochi in enumerate(list_of_ep
 train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_of_epochs)]
 
 
-
+wind=500
+stride=50
 X_train=[]
 y_train=[]
 X_val=[]
@@ -181,7 +183,7 @@ val_size=len(val_loader.dataset)
 test_size=len(test_loader.dataset)
 
 # These values we found good for shallow network:
-lr = 0.0001
+#lr = 0.0001
 weight_decay = 1e-10
 batch_size = 32
 n_epochs = 200
@@ -189,46 +191,91 @@ n_epochs = 200
 #one_window.shape : (208, 500)
 
 # Extract number of chans and time steps from dataset
-one_window=next(iter(train_loader))[0]
-n_chans = one_window.shape[1]
-input_window_samples=one_window.shape[2]
-
-#model_name='resnet'
-if model_name=='eegnet':
-    net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', )
-elif model_name=='shallowFBCSPnet':
-    net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
-elif model_name=='deepnet':
-    net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
-elif model_name=='resnet':
-    net=d2lresnet() # 92%
-#net = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%
-#net=TSception(208)
-#net=TSception(1000,n_chans,3,3,0.5)
+one_window=next(iter(train_set))[0]
+n_chans = one_window.shape[0]
 
 img_size=[n_chans,wind]
 #net = timm.create_model('visformer_tiny',num_classes=n_classes,in_chans=1,img_size=img_size)
+#net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
+selection_number=10
+net = selectionNet(n_chans,class_number,wind,selection_number) # 81%
+#net=MSFBCNN([n_chans,wind],class_number)
+
 if cuda:
     net.cuda()
 
-lr = 0.05
-weight_decay = 1e-10
+selection_lr = 0.01
+network_lr = 0.01 # 0.001 in original paper
 
+if isinstance(net, selectionNet):
+    optimizer = torch.optim.Adadelta(
+    [
+        {"params": net.selection_layer.parameters(), "lr": selection_lr},
+        {"params": net.network.parameters(),"lr":network_lr},
+    ],
+    lr=0.0,
+    )
+else:
+    optimizer = torch.optim.Adam(net.parameters(), lr=network_lr)
+
+optimizer = torch.optim.Adam(net.parameters(), lr=network_lr)
+
+
+#lr = 0.002
+#weight_decay = 1e-10
+weight_decay = 5e-4
+epoch_num = 200
 criterion = torch.nn.CrossEntropyLoss()
 #criterion = nn.NLLLoss()
 #optimizer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9)
-optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
+#optimizer = torch.optim.Adadelta(net.parameters(), lr=lr)
 #optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 # Decay LR by a factor of 0.1 every 7 epochs
-lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
+lr_schedulerr = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
-epoch_num = 100
+def exponential_decay_schedule(start_value,end_value,epochs,end_epoch):
+    t = torch.FloatTensor(torch.arange(0.0,epochs))
+    p = torch.clamp(t/end_epoch,0,1)
+    out = start_value*torch.pow(end_value/start_value,p)
+    return out
+
+start_temp=10
+end_temp=0.1
+# temperature_schedule: discrete level, smaller means more discrete
+temperature_schedule = exponential_decay_schedule(start_temp,end_temp,epoch_num,int(epoch_num*3/4))
+thresh_schedule = exponential_decay_schedule(2,1.1,epoch_num,epoch_num) #
+#lamba=400.0 
+
+import inspect as i
+import sys
+#sys.stdout.write(i.getsource(selectionNet))
+
+
+fig, ax=plt.subplots()
+
+lamba=1.0 # penalty of selecting the same channel.
+
+if isinstance(net, selectionNet):
+    net.set_freeze(False)
+
+H=[]
+S=[]
+Z=[]
+
 patients=10
-train_losses=[]
-train_accs=[]
-val_accs=[]
+patient = patients
+limit_entropy=0.1
+epoch_score=[]
 for epoch in range(epoch_num):
-    print("------ epoch" + str(epoch) + ": sid"+str(sid)+"@"+model_name+"-----")
+    epoch_score.append([])
+    H.append([])
+    S.append([])
+    Z.append([])
+    print("------ epoch " + str(epoch) + " -----")
+    
+    if isinstance(net, selectionNet):
+        net.set_thresh(thresh_schedule[epoch])
+        net.set_temperature(temperature_schedule[epoch])
     net.train()
 
     loss_epoch = 0
@@ -236,8 +283,6 @@ for epoch in range(epoch_num):
     running_loss = 0.0
     running_corrects = 0
     for batch, (trainx, trainy) in enumerate(train_loader):
-        if isinstance(net, timm.models.visformer.Visformer):
-            trainx=torch.unsqueeze(trainx,dim=1)
         optimizer.zero_grad()
         if (cuda):
             trainx = trainx.float().cuda()
@@ -252,29 +297,33 @@ for epoch in range(epoch_num):
             loss = criterion(y_pred, trainy.squeeze().cuda().long())
         else:
             loss = criterion(y_pred, trainy.squeeze())
-
+        if isinstance(net, selectionNet):
+            reg = net.regularizer(lamba,weight_decay)
+            #print("---------")
+            #print(reg)
+            #print(loss)
+            loss=loss+reg
+            #print(loss)
         loss.backward()  # calculate the gradient and store in .grad attribute.
         optimizer.step()
         running_loss += loss.item() * trainx.shape[0]
         running_corrects += torch.sum(preds.cpu().squeeze() == trainy.squeeze())
     #print("train_size: " + str(train_size))
-    lr_schedulerr.step() # test it
-    train_loss = running_loss / train_size
-    train_acc = (running_corrects.double() / train_size).item()
-    train_losses.append(train_loss)
-    train_accs.append(train_acc)
-    #print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(train_loss,train_acc))
+    #lr_schedulerr.step() # test it
+    epoch_loss = running_loss / train_size
+    train_acc = running_corrects.double() / train_size
+    epoch_score[epoch].append(train_acc)
+    #print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,train_acc.item()))
     #print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
+
 
     running_loss = 0.0
     running_corrects = 0
-    if epoch % 1 == 0:
+    with torch.no_grad():
         net.eval()
         # print("Validating...")
         with torch.no_grad():
             for _, (val_x, val_y) in enumerate(val_loader):
-                if isinstance(net, timm.models.visformer.Visformer):
-                    val_x = torch.unsqueeze(val_x, dim=1)
                 if (cuda):
                     val_x = val_x.float().cuda()
                     # val_y = val_y.float().cuda()
@@ -287,68 +336,56 @@ for epoch in range(epoch_num):
 
                 running_corrects += torch.sum(preds.cpu().squeeze() == val_y.squeeze())
 
-        val_acc = (running_corrects.double() / val_size).item()
-        val_accs.append(val_acc)
-        print("Training loss:{:.2f},Accuracy:{:.2f}; Evaluation accuracy:{:.2f}.".format(train_loss, train_acc,val_acc))
-    if epoch==0:
-        best_acc=val_acc
-        patient=patients
+        val_acc = running_corrects.double() / val_size
+        print("Training loss: {:.2f}, Accuracy: {:.2f}; Evaluation accuracy: {:.2f}.".format(epoch_loss,train_acc.item(),val_acc.item()))
+    epoch_score[epoch].append(val_acc)
+
+    epoch_threshold=net.selection_layer.thresh
+    epoch_penalty = net.selection_layer.H
+    print("Threshold: "+str(epoch_threshold)+".")
+    print("Panelty: " + str(epoch_penalty) + ".")
+
+    if epoch == 0:
+        best_acc = val_acc
     else:
-        if val_acc>best_acc:
-            best_acc=val_acc
-            patient=patients
+        if val_acc > best_acc:
+            best_acc = val_acc
+            patient = patients
             state = {
                 'net': net.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'epoch': epoch,
-                #'loss': epoch_loss
+                'loss': epoch_loss
             }
-
         else:
-            patient=patient-1
-    print("patients left: {:d}".format(patient))
-    if patient==0:
-        savepath = model_path + 'checkpoint_'+model_name+'_' + str(epoch) + '.pth'
-        torch.save(state, savepath)
+            patient = patient - 1
 
+    hi, sel, probas = net.monitor()
+    H[epoch].append(hi.detach().cpu().numpy())
+    S[epoch].append(sel.detach().cpu().numpy())
+    Z[epoch].append(probas.detach().cpu().numpy())
+    # ax.plot(probas.detach().cpu().numpy())
+    # fig.savefig(result_dir + 'prob_dist' + str(epoch) + '.png')
+    # ax.clear()
+    mean_entropy = torch.mean(hi.data)
+    if mean_entropy<limit_entropy and patient==0:
+        savepath = result_dir + 'checkpoint' + str(epoch) + '.pth'
+        torch.save(state, savepath)
         break
 
-checkpoint = torch.load(savepath)
-net.load_state_dict(checkpoint['net'])
-optimizer.load_state_dict(checkpoint['optimizer'])
+# start to penalize at epoch =63
+epoch_score=np.asarray(epoch_score)
+filename = result_dir + 'epoch_scores'
+np.save(filename,epoch_score)
+HH=np.asarray(H)
+filename = result_dir + 'HH'
+np.save(filename,HH)
+SS=np.asarray(S) # selection 
+filename = result_dir + 'SS'
+np.save(filename,SS)
+ZZ=np.asarray(Z) # probability
+filename = result_dir + 'ZZ'
+np.save(filename,ZZ)
 
-net.eval()
-# print("Validating...")
-with torch.no_grad():
-    running_corrects = 0
-    for _, (test_x, test_y) in enumerate(test_loader):
-        if isinstance(net, timm.models.visformer.Visformer):
-            test_x = torch.unsqueeze(test_x, dim=1)
-        if (cuda):
-            test_x = test_x.float().cuda()
-            # val_y = val_y.float().cuda()
-        else:
-            test_x = test_x.float()
-            # val_y = val_y.float()
-        outputs = net(test_x)
-        #_, preds = torch.max(outputs, 1)
-        preds = outputs.argmax(dim=1, keepdim=True)
-
-        running_corrects += torch.sum(preds.cpu().squeeze() == test_y.squeeze())
-test_acc = (running_corrects.double() / test_size).item()
-print("Test accuracy: {:.2f}.".format(test_acc))
-
-train_result={}
-train_result['train_losses']=train_losses
-train_result['train_accs']=train_accs
-train_result['val_accs']=val_accs
-train_result['test_acc']=test_acc
-
-filename=result_path + 'training_result_'+model_name
-np.save(filename,train_result)
-
-#load
-#train_result = np.load(filename+'.npy',allow_pickle='TRUE').item()
-#print(read_dictionary['train_losses'])
 
 

@@ -237,12 +237,12 @@ def exponential_decay_schedule(start_value,end_value,epochs,end_epoch):
     t = torch.FloatTensor(torch.arange(0.0,epochs))
     p = torch.clamp(t/end_epoch,0,1)
     out = start_value*torch.pow(end_value/start_value,p)
-
     return out
+
 start_temp=10
 end_temp=0.1
 temperature_schedule = exponential_decay_schedule(start_temp,end_temp,epoch_num,int(epoch_num*3/4))
-thresh_schedule = exponential_decay_schedule(5,1.1,epoch_num,epoch_num) #
+thresh_schedule = exponential_decay_schedule(2,1.1,epoch_num,epoch_num) #
 #lamba=400.0 
 
 import inspect as i
@@ -312,7 +312,7 @@ for epoch in range(epoch_num):
     epoch_loss = running_loss / train_size
     train_acc = running_corrects.double() / train_size
     epoch_score[epoch].append(train_acc)
-    print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,train_acc.item()))
+    #print("Training loss: {:.2f}; Accuracy: {:.2f}.".format(epoch_loss,train_acc.item()))
     #print("Training " + str(epoch) + ": loss: " + str(epoch_loss) + "," + "Accuracy: " + str(epoch_acc.item()) + ".")
 
 
@@ -336,8 +336,13 @@ for epoch in range(epoch_num):
                 running_corrects += torch.sum(preds.cpu().squeeze() == val_y.squeeze())
 
         val_acc = running_corrects.double() / val_size
-        print("Evaluation accuracy: {:.2f}.".format(val_acc.item()))
+        print("Training loss: {:.2f}, Accuracy: {:.2f}; Evaluation accuracy: {:.2f}.".format(epoch_loss,train_acc.item(),val_acc.item()))
     epoch_score[epoch].append(val_acc)
+
+    epoch_threshold=net.selection_layer.thresh
+    epoch_penalty = net.selection_layer.H
+    print("Threshold: "+str(epoch_threshold)+".")
+    print("Panelty: " + str(epoch_penalty) + ".")
 
     if epoch == 0:
         best_acc = val_acc

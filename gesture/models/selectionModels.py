@@ -21,6 +21,7 @@ class SelectionLayer(nn.Module):
         self.temperature = self.floatTensor([temperature])
         self.freeze = False
         self.thresh = 10.0
+        self.H=0.0
 
     def quantile_concrete(self, x):  # eq: 2
 
@@ -34,10 +35,10 @@ class SelectionLayer(nn.Module):
 
         eps = 1e-10
         z = torch.clamp(torch.softmax(self.qz_loga, dim=0), eps, 1) # torch.Size([208, 10])
-        H = torch.sum(F.relu(torch.norm(z, 1, dim=1) - self.thresh))
+        self.H = torch.sum(F.relu(torch.norm(z, 1, dim=1) - self.thresh)) # L1 norm = sum(abs(xi))
         #print(max(torch.norm(z, 1, dim=1)-self.thresh)) # penalize
 
-        return H
+        return self.H
 
     def get_eps(self, size):
 

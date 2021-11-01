@@ -195,7 +195,7 @@ input_window_samples=one_window.shape[2]
 
 #model_name='resnet'
 if model_name=='eegnet':
-    net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', )
+    net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', drop_prob=0.5)
 elif model_name=='shallowFBCSPnet':
     net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 elif model_name=='deepnet':

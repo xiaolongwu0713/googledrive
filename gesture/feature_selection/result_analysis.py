@@ -1,3 +1,4 @@
+import hdf5storage
 import numpy as np
 from gesture.config import *
 import matplotlib.pyplot as plt
@@ -5,6 +6,7 @@ import torch
 import torch.nn.functional as F
 
 sid=10
+fs=1000
 #result_dir=data_dir+'preprocessing'+'/P'+str(sid)+'/' + 'selection/gumbel/'
 result_dir='/Users/long/OneDrive/share/selection/gumbel/3/P10'
 scores = np.load(result_dir + 'epoch_scores.npy') # (train acc, val acc)
@@ -23,29 +25,43 @@ plt.plot(mean_entropy)
 #best_train= np.where(scores == max(scores[:,1]))
 best_epoch=70
 # plot matrix
-plt.imshow(z[-1,:,:])
+plt.imshow(z[-1,130:170,:])
 
-# find the best channel: however there are duplicated selection
-best_channels=np.argmax(z[best_epoch,:,:],axis=0) # array([148, 153, 148, 153, 149, 152, 153, 152, 152, 149])
-best_channels=set(best_channels)
+selected_channels=np.argmax(z[-1,:,:],axis=0)
+selected_channels=list(set(selected_channels)) # [143, 144, 146, 147, 148, 149, 150, 151, 152, 167]
 
-#get the highest 10 distinct channel
-a=z[best_epoch,:,:]
-b=np.sum(a,axis=1)
-indices = (-b).argsort()[:10]
-(-np.sum(z[5,:,:],axis=1)).argsort()[:10]
+loadPath = data_dir+'preprocessing'+'/P'+str(sid)+'/preprocessing2.mat'
+mat=hdf5storage.loadmat(loadPath)
+data = mat['Datacell']
+channelNum=int(mat['channelNum'][0,0])
+data=np.concatenate((data[0,0],data[0,1]),0)
+del mat
+
+# stim0 is trigger channel, stim1 is trigger position calculated from EMG signal.
+chn_names=np.append(["seeg"]*channelNum,["emg0","emg1","stim_trigger","stim_emg"])
+chn_types=np.append(["seeg"]*channelNum,["emg","emg","stim","stim"])
+info = mne.create_info(ch_names=list(chn_names), ch_types=list(chn_types), sfreq=fs)
+raw = mne.io.RawArray(data.transpose(), info)
+
+# gesture/events type: 1,2,3,4,5
+events0 = mne.find_events(raw, stim_channel='stim_trigger')
+events1 = mne.find_events(raw, stim_channel='stim_emg')
+# events number should start from 0: 0,1,2,3,4, instead of 1,2,3,4,5
+events0=events0-[0,0,1]
+events1=events1-[0,0,1]
+
+#print(events[:5])  # show the first 5
+# Epoch from 4s before(idle) until 4s after(movement) stim1.
+raw=raw.pick(["seeg"])
+rawd=raw.load_data().get_data() # (208, 1052092)
+raw_selected=raw.pick(selected_channels).get_data() # (10, 1052092)
+
+rawd[143,:10]
 
 
-norms=[np.linalg.norm(z[best_epoch,channeli,:], ord=1, axis=0) for channeli in best_channels] # [2.9731846, 2.8495638, 1.7497481, 1.4582942]
-[np.linalg.norm(z[6,channeli,:], ord=1, axis=0) for channeli in np.arange(208)]
 
-# penalty
 
-eps = 1e-10
-z = torch.clamp(torch.softmax(self.qz_loga, dim=0), eps, 1)  # torch.Size([208, 10])
-H = torch.sum(F.relu(torch.norm(z, 1, dim=1) - self.thresh))
-# print(max(torch.norm(z, 1, dim=1)-self.thresh)) # penalize
-torch.sum(F.relu(torch.norm(z, 1, dim=1)))
+
 
 
 

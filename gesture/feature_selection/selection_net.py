@@ -308,7 +308,7 @@ for epoch in range(epoch_num):
         running_loss += loss.item() * trainx.shape[0]
         running_corrects += torch.sum(preds.cpu().squeeze() == trainy.squeeze())
     #print("train_size: " + str(train_size))
-    lr_schedulerr.step() # test it
+    #lr_schedulerr.step() # test it
     epoch_loss = running_loss / train_size
     train_acc = running_corrects.double() / train_size
     epoch_score[epoch].append(train_acc)

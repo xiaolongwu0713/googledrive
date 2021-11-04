@@ -26,16 +26,13 @@ done < "$inputfile"
 for sid in ${sids[@]}
 #for sid in 10
 do
-if [ $sid -gt 9 ]
-then 
   echo "Start sid: $sid"
-  for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet'
+  for network in 'eegnet'# 'shallowFBCSPnet' 'deepnet' 'resnet'
   do
      echo "*************Sid $sid on $network*************"
      #python main_all.py $sid $network fs wind stride
      python main_all.py $sid $network 1000 $1 $2
      echo "Training finish for sid: $sid on $network" 
   done
-fi
 done
 

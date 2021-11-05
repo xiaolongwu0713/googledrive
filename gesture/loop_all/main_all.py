@@ -195,6 +195,7 @@ input_window_samples=one_window.shape[2]
 
 #model_name='resnet'
 if model_name=='eegnet':
+    print('Here')
     net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', drop_prob=0.5)
 elif model_name=='shallowFBCSPnet':
     net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
@@ -293,6 +294,12 @@ for epoch in range(epoch_num):
     if epoch==0:
         best_acc=val_acc
         patient=patients
+        state = {
+            'net': net.state_dict(),
+            'optimizer': optimizer.state_dict(),
+            'epoch': epoch,
+            # 'loss': epoch_loss
+        }
     else:
         if val_acc>best_acc:
             best_acc=val_acc

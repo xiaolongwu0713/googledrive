@@ -27,12 +27,13 @@ for sid in ${sids[@]}
 #for sid in 10
 do
   echo "Start sid: $sid"
-  for network in 'eegnet'# 'shallowFBCSPnet' 'deepnet' 'resnet'
-  do
+  network='eegnet'
+  #for network in 'eegnet'# 'shallowFBCSPnet' 'deepnet' 'resnet'
+  #do
      echo "*************Sid $sid on $network*************"
      #python main_all.py $sid $network fs wind stride
      python main_all.py $sid $network 1000 $1 $2
      echo "Training finish for sid: $sid on $network" 
-  done
+  #done
 done
 

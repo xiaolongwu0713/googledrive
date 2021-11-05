@@ -106,7 +106,7 @@ len(raw.ch_names)
 
 selected_channels=[143, 144, 146, 147, 148, 149, 150, 151, 152, 167]
 
-select=False
+select=True
 if select:
     raw=raw.pick(selected_channels)
 
@@ -142,7 +142,7 @@ train_epochs=[epochi[train_trials[clas],:,:] for clas,epochi in enumerate(list_o
 
 
 wind=500
-stride=500
+stride=50
 X_train=[]
 y_train=[]
 X_val=[]
@@ -206,10 +206,10 @@ one_window=next(iter(train_set))[0]
 n_chans = one_window.shape[0]
 
 
-net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
+#net = ShallowFBCSPNet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 
 #net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', drop_prob=0.5)
-#net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
+net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
 
 #net = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%
 

@@ -29,7 +29,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet,deepnet_resnet
+from gesture.models.deepmodel import deepnet,deepnet_seq,deepnet_rnn
 from gesture.models.d2l_resnet import d2lresnet
 #from gesture.models.tsception import TSception
 
@@ -56,7 +56,7 @@ else: # debug in IDE
     fs=1000
     wind = 500
     stride = 500
-    model_name='eegnet'
+    model_name='deepnet_rnn'
 class_number=5
 #Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
@@ -195,12 +195,16 @@ input_window_samples=one_window.shape[2]
 
 #model_name='resnet'
 if model_name=='eegnet':
-    print('Here')
+    #print('Here')
     net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', drop_prob=0.5)
 elif model_name=='shallowFBCSPnet':
     net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 elif model_name=='deepnet':
     net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
+elif model_name == 'deepnet2':
+    net = deepnet2(n_chans, class_number, wind, )  # 81%
+elif model_name == 'deepnet_rnn':
+    net = deepnet_rnn(n_chans, class_number, wind, )  # 81%
 elif model_name=='resnet':
     net=d2lresnet() # 92%
 #net = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%

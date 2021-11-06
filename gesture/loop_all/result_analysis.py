@@ -8,7 +8,7 @@ info=info_dir+'info.npy'
 info=np.load(info,allow_pickle=True)
 model_name=['eegnet','shallowFBCSPnet', 'deepnet', 'resnet']
 decoding_accuracy=[]
-results_path = realsorted([str(pth) for pth in Path(training_result_dir).iterdir()])# if pth.suffix == '.npy']
+results_path = realsorted([str(pth) for pth in Path(training_result_dir).iterdir() if 'DS_Store' not in str(pth) ])# if pth.suffix == '.npy']
 for i,modeli in enumerate(model_name):
     decoding_accuracy.append([])
     for path in results_path:

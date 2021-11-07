@@ -1,3 +1,11 @@
+import sys
+import socket
+if socket.gethostname() == 'workstation':
+    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
+elif socket.gethostname() == 'longsMac':
+    sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+from gesture.config import *
+
 # Input expected by sklean: X(samples, features), Y(samples,). For example X(1000,20),y(1000,). Each sample is a 1D vector.
 
 import hdf5storage

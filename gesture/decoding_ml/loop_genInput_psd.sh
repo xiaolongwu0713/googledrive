@@ -29,13 +29,7 @@ activ_channel='all'
 for sid in ${sids[@]}
 do
   echo "Start sid: $sid"
-  network='eegnet'
-  #for network in 'eegnet'# 'shallowFBCSPnet' 'deepnet' 'resnet'
-  #do
-     echo "*************Sid $sid on $network*************"
-     #python main_all.py $sid $network fs wind stride
-     python genInput_psd.py $sid $activ_channel
-     echo "Training finish for sid: $sid on $network"
+    python genInput_psd.py $sid $activ_channel
   #done
 done
 

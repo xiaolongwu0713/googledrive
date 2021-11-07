@@ -1,10 +1,12 @@
-import sys
-import socket
-if socket.gethostname() == 'workstation':
-    sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
-elif socket.gethostname() == 'longsMac':
-    sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-from gesture.config import *
+#%cd /content/drive/MyDrive/
+# raw_data is imported from global config
+
+#%%capture
+#! pip install hdf5storage
+#! pip install mne==0.23.0
+#! pip install torch
+#! pip install Braindecode==0.5.1
+#! pip install timm
 
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV
@@ -52,6 +54,7 @@ print("Feature selection./")
 # use default SVM parameter--select feature--fine tune/gridsearch the SVM
 feature_selection=True
 if feature_selection:
+    fig, ax = plt.subplots()
     # initiate the clf with parameter calculated from gridsearch
     #svc_clf = SVC(kernel="linear",gamma='auto')
     svc_clf = LinearSVC(random_state=0, tol=1e-5)
@@ -65,12 +68,19 @@ if feature_selection:
     #selector.fit(list_of_epochs_psd_avg, list_of_labes)
     print("Optimal number of features : %d" % selector.n_features_) #feature number corresponds to highest accuracy
 
+    ax.set_xlabel("Number of features selected")
+    ax.set_ylabel("Cross validation score (accuracy)")
+    ax.plot(range(min_features_to_select, len(selector.grid_scores_) + min_features_to_select),
+             selector.grid_scores_)
     filename = result_dir + 'SVM_accVSfeat_' + str(sid)
     np.save(filename,np.asarray(selector.grid_scores_))
+    fig.savefig(filename)
+    ax.clear()
 
     ranks=selector.ranking_
+    ax.plot(ranks)
     filename = result_dir + 'SVM_feature_rank_' + str(sid) + '.pdf'
-    np.save(filename, np.asarray(ranks))
+    fig.savefig(filename)
     print('Feature selection done.')
 
 grid_search=False
@@ -120,8 +130,5 @@ if train_only:
     accuracy = np.asarray(accuracy)
     filename = selection_dir + 'accuracy_sid' + str(sid)
     np.save(filename, accuracy)
-
-
-
 
 

@@ -8,17 +8,15 @@
 #! pip install Braindecode==0.5.1
 #! pip install timm
 
-import os, re
-import hdf5storage
 import matplotlib.pyplot as plt
-from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV, StratifiedKFold, train_test_split
+from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import confusion_matrix
 from common_dl import set_random_seeds
-from sklearn.pipeline import make_pipeline, Pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from gesture.load_data_ml import load_data_ml_psd
+from gesture.decoding_ml.genInput_psd import load_data_ml_psd
 from gesture.config import *
 from gesture.preprocess.chn_settings import get_channel_setting
 
@@ -31,8 +29,6 @@ device = 'cuda' if cuda else 'cpu'
 if cuda:
     torch.backends.cudnn.benchmark = True
 
-import inspect as i
-import sys
 #sys.stdout.write(i.getsource(deepnet))
 
 sid=10 #4

@@ -8,7 +8,7 @@ info=info_dir+'info.npy'
 info=np.load(info,allow_pickle=True)
 model_name=['eegnet','shallowFBCSPnet', 'deepnet', 'resnet']
 decoding_accuracy=[]
-results_path = realsorted([str(pth) for pth in Path(training_result_dir).iterdir() if 'DS_Store' not in str(pth) ])# if pth.suffix == '.npy']
+results_path = realsorted([str(pth) for pth in Path(training_result_dir).iterdir() if 'DS_Store' not in str(pth) and 'pdf' not in str(pth)])# if pth.suffix == '.npy']
 for i,modeli in enumerate(model_name):
     decoding_accuracy.append([])
     for path in results_path:
@@ -29,11 +29,12 @@ for i, modei in enumerate(model_name):
 ax.legend(model_name,loc="upper right",bbox_to_anchor=(0.7,0.9,0.1,0.1),fontsize='small')
 loc=range(len(info))
 ax.set_xticks(loc)
-val=info[:,0]
+#val=info[:,0] # sid as x-axis
+val=np.arange(1,31)
 ax.set_xticklabels(val,rotation = 45, position=(0,0))
 ax.tick_params(axis='x', labelsize=5)
 
-filename=training_result_dir+'decodingAcc_subjects.pdf'
+filename=training_result_dir+'decodingAcc_all.pdf'
 fig.savefig(filename)
 
 mean_accs=np.mean(np.asarray(decoding_accuracy),0)

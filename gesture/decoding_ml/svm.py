@@ -58,7 +58,7 @@ if feature_selection:
 
     min_features_to_select = 5  # Minimum number of features to consider
     selector = RFECV(estimator=svc_clf, step=1, cv=sss,
-                  scoring='accuracy',
+                  scoring='accuracy', n_jobs=-1,
                   min_features_to_select=min_features_to_select)
     selec_pipe=make_pipeline(StandardScaler(), selector)
     selec_pipe.fit(list_of_epochs_psd_avg, list_of_labes)

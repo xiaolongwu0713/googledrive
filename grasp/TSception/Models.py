@@ -147,6 +147,8 @@ class TSception2(nn.Module):
         x = torch.squeeze(x, dim=0)
         batch_size=x.shape[0]
         # y1 = self.Tception1(x)
+        if (len(x.shape) < 4):
+            x=torch.unsqueeze(x,dim=1)
         y2 = self.Tception2(x)
         y3 = self.Tception3(x)
         y4 = self.Tception4(x)

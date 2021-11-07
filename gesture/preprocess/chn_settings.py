@@ -1,3 +1,6 @@
+def get_active_channel(sid):
+    # not implemented yet.
+    return sid
 
 def get_channel_setting(pn):
     if pn==2:

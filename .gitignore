@@ -12,7 +12,7 @@
 
 Icon*
 grasp/
-#data/
+data/
 result_*/
 __pycache__/
 gesture_classification.py

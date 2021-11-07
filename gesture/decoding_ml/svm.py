@@ -28,9 +28,12 @@ device = 'cuda' if cuda else 'cpu'
 if cuda:
     torch.backends.cudnn.benchmark = True
 
-#sys.stdout.write(i.getsource(deepnet))
+#python svm.py $sid
+if len(sys.argv)>1:
+    sid = int(float(sys.argv[1]))
+else: # debug in IDE
+    sid=10
 
-sid=10 #4
 class_number=5
 Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]

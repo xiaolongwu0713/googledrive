@@ -68,11 +68,11 @@ if feature_selection:
     #selector.fit(list_of_epochs_psd_avg, list_of_labes)
     print("Optimal number of features : %d" % selector.n_features_) #feature number corresponds to highest accuracy
 
-    filename = result_dir + 'SVM_accVSfeat_' + str(sid)
+    filename = result_dir + 'SVM_accVSfeat'
     np.save(filename,np.asarray(selector.grid_scores_))
 
     ranks=selector.ranking_
-    filename = result_dir + 'SVM_feature_rank_' + str(sid) + '.pdf'
+    filename = result_dir + 'SVM_feature_rank'
     np.save(filename, np.asarray(ranks))
     print('Feature selection done.')
 

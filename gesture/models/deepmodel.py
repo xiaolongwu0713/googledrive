@@ -159,7 +159,7 @@ class deepnet_da(nn.Module):
         #self.seq0=nn.Sequential(self.bn0,self.nonlinear0,self.drop0)
         self.seq0 = nn.Sequential(self.drop0)
 
-        self.seq = nn.Sequential(self.conv_time, self.conv_spatial, self.bn1, self.nonlinear1, self.mp1,
+        self.seq = nn.Sequential(self.conv_time, self.drop0, self.conv_spatial, self.bn1, self.nonlinear1, self.mp1,
                                  self.drop1, self.conv2, self.bn2, self.nonlinear2, self.drop2, self.conv3, self.bn3,
                                  self.nonlinear3, self.drop3, self.conv4, self.bn4, self.nonlinear4, self.drop4)
 

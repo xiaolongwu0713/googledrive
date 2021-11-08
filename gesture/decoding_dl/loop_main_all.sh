@@ -23,12 +23,12 @@ do
 done < "$inputfile"
 #echo ${sids[@]}
 
-#for sid in ${sids[@]}
+for sid in ${sids[@]}
 #for sid in 12 14
-#do
-sid='14'
-echo "Start sid: $sid"
-  network='shallowFBCSPnet'
+do
+#sid='14'
+  echo "Start sid: $sid"
+  network='deepnet_da'
   #for network in 'eegnet'# 'shallowFBCSPnet' 'deepnet' 'resnet'
   #do
      echo "*************Sid $sid on $network*************"
@@ -36,5 +36,5 @@ echo "Start sid: $sid"
      python main_all.py $sid $network 1000 $1 $2
      echo "Training finish for sid: $sid on $network" 
   #done
-#done
+done
 

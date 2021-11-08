@@ -44,7 +44,6 @@ cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses t
 device = 'cuda' if cuda else 'cpu'
 if cuda:
     torch.backends.cudnn.benchmark = True
-
 if len(sys.argv)>3:
     sid = int(float(sys.argv[1]))
     model_name = sys.argv[2]

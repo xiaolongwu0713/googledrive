@@ -104,32 +104,6 @@ min_erd=np.argmin(erd_mean,axis=1)
 max_ers=np.argmax(ers_mean,axis=1)
 
 
-erd_wind_avg = np.convolve(tf[:,erd_start_f_index:erd_end_f_index], np.ones(erd_wind) / erd_wind, mode='valid')
-ers_wind_avg = np.convolve(tf[:,ers_start_f_index:ers_end_f_index], np.ones(ers_wind) / ers_wind,mode='valid')
-
-
-
-import numpy as np
-
-# Sample from a normal distribution using numpy's random number generator
-samples = np.random.normal(size=10000)
-
-# Compute a histogram of the sample
-bins = np.linspace(-1, 1, 1000)
-histogram, bins = np.histogram(samples, bins=bins, density=True)
-
-bin_centers = 0.5*(bins[1:] + bins[:-1])
-
-# Compute the PDF on the bin centers from scipy distribution object
-from scipy import stats
-pdf = stats.norm.pdf(bin_centers)
-
-from matplotlib import pyplot as plt
-plt.figure(figsize=(6, 4))
-plt.plot(bin_centers, histogram, label="Histogram of samples")
-plt.plot(bin_centers, pdf, label="PDF")
-plt.legend()
-plt.show()
 
 
 

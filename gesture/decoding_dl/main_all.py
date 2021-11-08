@@ -29,7 +29,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet,deepnet_seq,deepnet_rnn
+from gesture.models.deepmodel import deepnet,deepnet_seq,deepnet_rnn, deepnet_da
 from gesture.models.d2l_resnet import d2lresnet
 from gesture.models.deepmodel import TSception2
 
@@ -56,7 +56,7 @@ else: # debug in IDE
     fs=1000
     wind = 500
     stride = 500
-    model_name='tsception'
+    model_name='deepnet_da'
 class_number=5
 #Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
@@ -209,6 +209,9 @@ elif model_name=='resnet':
     net=d2lresnet() # 92%
 elif model_name=='tsception':
     net = TSception2(1000, n_chans, 3, 3, 0.5)
+elif model_name=='deepnet_da':
+    net = deepnet_da(n_chans, class_number, wind)
+
 #net = deepnet_resnet(n_chans,n_classes,input_window_samples=input_window_samples,expand=True) # 50%
 #net=TSception(208)
 #net=TSception(1000,n_chans,3,3,0.5)

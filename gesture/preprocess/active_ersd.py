@@ -12,97 +12,57 @@ import matplotlib.pyplot as plt
 from gesture.config import *
 from gesture.preprocess.utils import *
 
-sid=2
-decimated_fs=250
-tf_dir=data_dir + '/tfAnalysis/P'+str(sid)+'/'
-tf=tf_dir+'tf_data.npy'
-tf=np.load(tf)
-chnNum=tf.shape[0]
-lent=tf.shape[2]
+savefile=data_dir+'tfAnalysis/ERSD_activation.npy'
+filename=data_dir+'info/Info.npy'
+info=np.load(filename,allow_pickle=True)
+sids=info[:,0]
 
+decimated_fs=250
 fMin,fMax=2,150
 fstep=1
 freqs=np.arange(fMin,fMax,fstep) #148
+erdf=[5,20] #[5,20] as index in tfplot = [7,22] in real frequency
+ersf=[40,100] #=[42,102]
+onset=3.5-0.5 # after decimated in tf analysis. ERS/D are 0.5s ahead of movement.
+baseline_num=int(onset*decimated_fs)
+corr_sid={}
+for sid in sids:
 
-erd_wind=5
-ers_wind=5
-erd_end_f=40
-ers_start_f=40
-erd_start_f_index = getIndex(fMin, fMax, fstep, fMin)
-erd_end_f_index = getIndex(fMin, fMax, fstep, erd_end_f)  # 30
-ers_start_f_index = getIndex(fMin, fMax, fstep, ers_start_f)  # 50
-ers_end_f_index = getIndex(fMin, fMax, fstep, fMax)
+    tf_dir=data_dir + '/tfAnalysis/P'+str(sid)+'/'
+    tf=tf_dir+'tf_data.npy'
+    tf=np.load(tf) #(chnNum,time,frequency)
+    chnNum=tf.shape[0]
+    lent=tf.shape[2]
 
-erd_num=erd_end_f_index-erd_start_f_index+1-erd_wind+1
-ers_num=ers_end_f_index-ers_start_f_index+1-ers_wind+1
-erd_mean=np.zeros((chnNum,erd_num))
-ers_mean=np.zeros((chnNum,ers_num))
-onset=3.5 # after decimated in tf analysis
-baseline_num=int(3.5*decimated_fs)
-tmp=[[1]*baseline_num,[-1]*(lent-baseline_num)]
-erd_shape=np.concatenate(tmp)
-tmp=[[-1]*baseline_num,[1]*(lent-baseline_num)]
-ers_shape=np.concatenate(tmp)
+    tmp=[[1]*baseline_num,[-1]*(lent-baseline_num-int(0.5*decimated_fs))]
+    erd_shape=np.concatenate(tmp)
+    tmp=[[-1]*baseline_num,[1]*(lent-baseline_num-int(0.5*decimated_fs))]
+    ers_shape=np.concatenate(tmp)
 
-from scipy.stats import spearmanr
-import itertools
-import random
-from scipy.stats import norm
+    from scipy.stats import spearmanr
+    import itertools
+    import random
+    from scipy.stats import norm
 
-perm_num=2500
-best_erd = np.zeros(chnNum,)
-best_ers = np.zeros(chnNum,)
-best_p_value_erd = np.zeros(chnNum,)
-best_p_value_ers = np.zeros(chnNum,)
-for c in range(chnNum):
-    print("channel "+str(c)+".")
-    for i in range(erd_num):
-        tmp=np.mean(tf[c,erd_start_f_index+i:erd_start_f_index+i+erd_wind,:],axis=0)
-        corr, _ = spearmanr(tmp, erd_shape)
-        r_pdf=np.zeros((perm_num))
-        for j in range(perm_num):
-            index_list=list(range(len(tmp)))
-            random.shuffle(index_list)
-            tmp_perm =tmp[index_list]
-            r_pdf[j], _ = spearmanr(tmp_perm, erd_shape)
-            # test r_pdf as a norm distribution:
-            # plt.hist(r_pdf)
-        p_value = 2 * scipy.stats.norm.cdf(-abs(corr), np.mean(r_pdf), np.std(r_pdf))
-        if i==0:
-            best_p_value_erd[c]=p_value
-            best_erd[c] = i
-        if p_value < best_p_value_erd[c]:
-            best_p_value_erd[c]=p_value
-            best_erd[c]=i
+    perm_num=2500
+    corr=np.zeros((2,chnNum))
+    for c in range(chnNum):
+        print("channel "+str(c)+".")
 
-    for i in range(ers_num):
-        tmp = np.mean(tf[c, ers_start_f_index + i:ers_start_f_index + i + ers_wind, :], axis=0)
-        corr, _ = spearmanr(tmp, ers_shape)
-        r_pdf = np.zeros((perm_num))
-        for j in range(perm_num):
-            index_list = list(range(len(tmp)))
-            random.shuffle(index_list)
-            tmp_perm = tmp[index_list]
-            r_pdf[j], _ = spearmanr(tmp_perm, ers_shape)
-        p_value = 2 * scipy.stats.norm.cdf(-abs(corr), np.mean(r_pdf), np.std(r_pdf))
-        if i==0:
-            best_p_value_ers[c]=p_value
-            best_ers[c] = i
-        if p_value < best_p_value_ers[c]:
-            best_p_value_ers[c] = p_value
-            best_ers[c] = i
+        tmp1 = np.mean(tf[c,erdf[0]:erdf[1],:-int(0.5*decimated_fs)],axis=0)
+        corr[0,c], _ = spearmanr(tmp1, erd_shape)
 
-erd_freq = np.zeros(chnNum,)
-ers_freq = np.zeros(chnNum,)
-for c in range(chnNum):
-    erd_freq[c]=erd_start_f_index+best_erd[c]
-    ers_freq[c]=ers_start_f_index+best_ers[c]
+        tmp2 = np.mean(tf[c,ersf[0]:ersf[1],:-int(0.5*decimated_fs)], axis=0)
+        corr[1,c], _ = spearmanr(tmp2, ers_shape)
 
-a=np.argpartition(np.min(erd_mean,axis=1),10)
-b=np.argpartition(np.max(ers_mean,axis=1),-10)
-min_erd=np.argmin(erd_mean,axis=1)
-max_ers=np.argmax(ers_mean,axis=1)
 
+    # get 10 largest correlation
+    erd_index = corr[0,:].argsort()[::-1]
+    ers_index = corr[1,:].argsort()[-10:]
+    comm_chn=np.intersect1d(erd_index,ers_index)
+    corr_sid[str(sid)]=corr
+np.save(savefile, corr_sid)
+#read_dictionary = np.load(savefile,allow_pickle='TRUE').item()
 
 
 

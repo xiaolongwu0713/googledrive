@@ -1,3 +1,7 @@
+'''
+To slow: 1 hours for 1 channel.
+'''
+
 import sys
 import socket
 

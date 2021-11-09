@@ -47,8 +47,6 @@ for sid in sids:
     perm_num=2500
     corr=np.zeros((2,chnNum))
     for c in range(chnNum):
-        print("channel "+str(c)+".")
-
         tmp1 = np.mean(tf[c,erdf[0]:erdf[1],:-int(0.5*decimated_fs)],axis=0)
         corr[0,c], _ = spearmanr(tmp1, erd_shape)
 

@@ -4,11 +4,15 @@ import numpy as np
 from gesture.config import  *
 from natsort import natsorted,realsorted
 
+training_result_dir=data_dir+'training_result/'
+save_dir=training_result_dir+'ana_dl/'
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
 info=info_dir+'info.npy'
 info=np.load(info,allow_pickle=True)
-model_name=['eegnet','shallowFBCSPnet', 'deepnet', 'resnet']
+model_name=['eegnet','shallowFBCSPnet', 'deepnet', 'resnet', 'deepnet_da']
 decoding_accuracy=[]
-results_path = realsorted([str(pth) for pth in Path(training_result_dir).iterdir() if 'DS_Store' not in str(pth) and 'pdf' not in str(pth)])# if pth.suffix == '.npy']
+results_path = realsorted([str(pth) for pth in Path(training_result_dir+'deepLearning/').iterdir() if 'DS_Store' not in str(pth) and 'pdf' not in str(pth)])# if pth.suffix == '.npy']
 for i,modeli in enumerate(model_name):
     decoding_accuracy.append([])
     for path in results_path:
@@ -23,18 +27,20 @@ for i,modeli in enumerate(model_name):
         decoding_accuracy[i].append(test_acc)
 
 fig,ax=plt.subplots(figsize=(6,3))
-colors=['b','g','r','m']
+colors=['b','g','r','m','y']
 for i, modei in enumerate(model_name):
     ax.plot(decoding_accuracy[i],color=colors[i])
+# true sid
 ax.legend(model_name,loc="upper right",bbox_to_anchor=(0.7,0.9,0.1,0.1),fontsize='small')
 loc=range(len(info))
 ax.set_xticks(loc)
 #val=info[:,0] # sid as x-axis
-val=np.arange(1,31)
+#val=np.arange(1,31)
+val=info[:,0]
 ax.set_xticklabels(val,rotation = 45, position=(0,0))
 ax.tick_params(axis='x', labelsize=5)
 
-filename=training_result_dir+'decodingAcc_all.pdf'
+filename=save_dir+'decodingAcc_all.pdf'
 fig.savefig(filename)
 
 mean_accs=np.mean(np.asarray(decoding_accuracy),0)
@@ -71,8 +77,8 @@ for i,modeli in enumerate(model_name):
 
 bar_width=0.1
 ax.bar(range(len(model_name)), bar_mean, yerr=np.asarray(bar_range).transpose(), width=bar_width, color=colors,error_kw=dict(ecolor='gray', lw=1, capsize=3, capthick=2))
-ax.set_xticks([0,1,2,3]) #指定要标记的坐标
+ax.set_xticks([0,1,2,3,4]) #指定要标记的坐标
 ax.set_xticklabels(model_name,rotation = 0, position=(0,0))
 ax.set_ylabel('Decoding accuracy', fontsize=10, labelpad=5)
-filename=training_result_dir+'decodingAcc_model.pdf'
+filename=save_dir+'decodingAcc_model.pdf'
 fig.savefig(filename)

@@ -60,8 +60,8 @@ class_number=5
 #Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
 
-model_path=data_dir + 'model_pth/'+str(sid)+'/'
-result_path=data_dir+'training_result/'+str(sid)+'/'
+model_path=data_dir + '/training_result/model_pth/'+str(sid)+'/'
+result_path=data_dir+'training_result/deepLearning/'+str(sid)+'/'
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 if not os.path.exists(result_path):
@@ -199,7 +199,7 @@ if model_name=='eegnet':
 elif model_name=='shallowFBCSPnet':
     net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 elif model_name=='deepnet':
-    net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%
+    net = deepnet(n_chans,class_number,wind) # 81%
 elif model_name == 'deepnet2':
     net = deepnet2(n_chans, class_number, wind, )
 elif model_name == 'deepnet_rnn':

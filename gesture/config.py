@@ -20,7 +20,6 @@ if socket.gethostname() == 'longsMac':
     else:
         data_dir = '/Users/long/Documents/data/gesture/'# temp data dir
     info_dir = '/Users/long/Documents/data/gesture/info/'  # sub info
-    training_result_dir = '/Users/long/Documents/data/gesture/training_result/'
     #tmp_data_dir='/Users/long/Documents/data/gesture/'
     root_dir = '/Users/long/BCI/python_scripts/googleDrive/'  # this is project root
 

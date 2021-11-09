@@ -54,8 +54,8 @@ else: # debug in IDE
     sid=10
     fs=1000
     wind = 500
-    stride = 500
-    model_name='deepnet_da'
+    stride = 50
+    model_name='deepnet'
 class_number=5
 #Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
@@ -201,7 +201,7 @@ elif model_name=='shallowFBCSPnet':
 elif model_name=='deepnet':
     net = deepnet(n_chans,class_number,wind) # 81%
 elif model_name == 'deepnet2':
-    net = deepnet2(n_chans, class_number, wind, )
+    net = deepnet_seq(n_chans, class_number, wind, )
 elif model_name == 'deepnet_rnn':
     net = deepnet_rnn(n_chans, class_number, wind, )  # 65%
 elif model_name=='resnet':

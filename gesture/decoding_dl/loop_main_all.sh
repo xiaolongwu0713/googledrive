@@ -1,5 +1,6 @@
 #!/bin/bash
 # usage: ./loop_main_all.sh wind stride
+# ./loop_main_all.sh 500 50 | ./loop_main_all.sh 200 50
 if [[ $HOSTNAME == "workstation"  ]];then
 	source /cygdrive/c/Users/wuxiaolong/venv/Scripts/activate
 	echo "workstation"
@@ -28,13 +29,13 @@ for sid in ${sids[@]}
 do
 #sid='14'
   echo "Start sid: $sid"
-  network='deepnet_da'
-  #for network in 'eegnet'# 'shallowFBCSPnet' 'deepnet' 'resnet'
-  #do
+  #network='deepnet_da'
+  for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet' 'deepnet_da'
+  do
      echo "*************Sid $sid on $network*************"
      #python main_all.py $sid $network fs wind stride
      python main_all.py $sid $network 1000 $1 $2
      echo "Training finish for sid: $sid on $network" 
-  #done
+  done
 done
 

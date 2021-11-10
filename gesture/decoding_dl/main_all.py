@@ -54,8 +54,8 @@ else: # debug in IDE
     sid=10
     fs=1000
     wind = 500
-    stride = 50
-    model_name='deepnet'
+    stride = 500
+    model_name='deepnet_da'
 class_number=5
 #Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
@@ -300,6 +300,7 @@ for epoch in range(epoch_num):
         val_accs.append(val_acc)
         print("Training loss:{:.2f},Accuracy:{:.2f}; Evaluation accuracy:{:.2f}.".format(train_loss, train_acc,val_acc))
     if epoch==0:
+        best_epoch=0
         best_acc=val_acc
         patient=patients
         state = {
@@ -310,6 +311,7 @@ for epoch in range(epoch_num):
         }
     else:
         if val_acc>best_acc:
+            best_epoch=epoch
             best_acc=val_acc
             patient=patients
             state = {
@@ -323,7 +325,7 @@ for epoch in range(epoch_num):
             patient=patient-1
     print("patients left: {:d}".format(patient))
     if patient==0:
-        savepath = model_path + 'checkpoint_'+model_name+'_' + str(epoch) + '.pth'
+        savepath = model_path + 'checkpoint_'+model_name+'_' + str(best_epoch) + '.pth'
         torch.save(state, savepath)
 
         break

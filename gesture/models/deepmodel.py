@@ -94,14 +94,17 @@ class deepnet(nn.Module):
         self.nonlinear1=nn.ELU()
         self.mp1=nn.MaxPool2d(kernel_size=(1,3), stride=(1,3), padding=0, dilation=1, ceil_mode=False)
         self.drop1=nn.Dropout(p=0.5, inplace=False)
+
         self.conv2=nn.Conv2d(64, 50, kernel_size=(1,10), stride=(1, 1), bias=False)
         self.bn2=nn.BatchNorm2d(50, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         self.nonlinear2=nn.ELU()
         self.drop2=nn.Dropout(p=0.5, inplace=False)
+
         self.conv3=nn.Conv2d(50, 50, kernel_size=(1,10), stride=(1, 1), bias=False)
         self.bn3=nn.BatchNorm2d(50, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         self.nonlinear3=nn.ELU()
         self.drop3=nn.Dropout(p=0.5, inplace=False)
+
         self.conv4=nn.Conv2d(50, 50, kernel_size=(1,10), stride=(1, 1), bias=False)
         self.bn4=nn.BatchNorm2d(50, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         self.nonlinear4=nn.ELU()
@@ -184,6 +187,50 @@ class deepnet_da(nn.Module):
         y=y.squeeze()
         y=self.final_linear(y)
         return y
+
+
+# model = deepnet(n_chans,n_classes,input_window_samples=input_window_samples,final_conv_length='auto',)
+class deepnet_changeDepth(nn.Module):
+    def __init__(self, chn_num, class_num, wind, blocks):
+        super().__init__()
+        self.blocks=blocks
+        self.chn_num = chn_num
+        self.class_num = class_num
+        self.wind = wind
+        self.conv_time = nn.Conv2d(1, 64, kernel_size=(1, 50), stride=(1, 1))
+        self.conv_spatial = nn.Conv2d(64, 50, kernel_size=(self.chn_num, 1), stride=(1, 1), bias=False)
+        self.bn1 = nn.BatchNorm2d(50, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        self.nonlinear1 = nn.ELU()
+        self.mp1 = nn.MaxPool2d(kernel_size=(1, 3), stride=(1, 3), padding=0, dilation=1, ceil_mode=False)
+        self.drop1 = nn.Dropout(p=0.5, inplace=False)
+
+        self.seq=nn.Sequential(nn.Conv2d(50, 50, kernel_size=(1, 10), stride=(1, 1), bias=False),
+        nn.BatchNorm2d(50, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+        nn.ELU(), nn.Dropout(p=0.5, inplace=False))
+
+        self.block_seq=[]
+        for b in range(self.blocks):
+            self.block_seq.append([])
+            self.block_seq[b]=self.seq
+
+
+        self.seq = nn.Sequential(self.conv_time, self.conv_spatial, self.bn1, self.nonlinear1, self.mp1, self.drop1,
+                                 *self.block_seq)
+        out = self.seq(np_to_var(np.ones((1, 1, self.chn_num, self.wind), dtype=np.float32)))
+        len = out.shape[3]
+
+        self.ap = nn.AvgPool2d(kernel_size=(1, len), stride=(1, len), padding=0)
+        self.final_linear = nn.Linear(in_features=50, out_features=self.class_num, bias=True)
+
+    def forward(self, x):
+        # expect input shape: (batch_size, channel_number, time_length)
+        x = x.unsqueeze(1)
+        y = self.seq(x)
+        y = self.ap(y)
+        y = y.squeeze()
+        y = self.final_linear(y)
+        return y
+
 
 
 # net = deepnet(n_chans,class_number,input_window_samples=wind,final_conv_length='auto',) # 81%

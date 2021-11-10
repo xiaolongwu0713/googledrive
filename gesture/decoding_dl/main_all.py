@@ -29,7 +29,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet,deepnet_seq,deepnet_rnn, deepnet_da
+from gesture.models.deepmodel import deepnet,deepnet_seq,deepnet_rnn, deepnet_da,deepnet_changeDepth
 from gesture.models.d2l_resnet import d2lresnet
 from gesture.models.deepmodel import TSception2
 
@@ -50,12 +50,13 @@ if len(sys.argv)>3:
     fs = int(float(sys.argv[3]))
     wind = int(float(sys.argv[4]))
     stride = int(float(sys.argv[5]))
+    depth=int(float(sys.argv[6]))
 else: # debug in IDE
     sid=10
     fs=1000
     wind = 500
     stride = 500
-    model_name='deepnet_da'
+    model_name='deepnet_varyBlocks'
 class_number=5
 #Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
 #fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
@@ -200,6 +201,9 @@ elif model_name=='shallowFBCSPnet':
     net = ShallowFBCSPNet(n_chans,class_number,input_window_samples=input_window_samples,final_conv_length='auto',) # 51%
 elif model_name=='deepnet':
     net = deepnet(n_chans,class_number,wind) # 81%
+elif model_name=='deepnet_changeDepth':
+    net = deepnet_varyBlocks(n_chans,class_number,wind,depth) # 81%
+    model_name='deepnet_changeDepth_'+str(depth)
 elif model_name == 'deepnet2':
     net = deepnet_seq(n_chans, class_number, wind, )
 elif model_name == 'deepnet_rnn':

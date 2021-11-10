@@ -50,7 +50,11 @@ if len(sys.argv)>3:
     fs = int(float(sys.argv[3]))
     wind = int(float(sys.argv[4]))
     stride = int(float(sys.argv[5]))
-    depth=int(float(sys.argv[6]))
+    try:
+        depth=int(float(sys.argv[6]))
+        print("Depth: "+ str(depth))
+    except IndexError:
+        pass
 else: # debug in IDE
     sid=10
     fs=1000
@@ -202,7 +206,7 @@ elif model_name=='shallowFBCSPnet':
 elif model_name=='deepnet':
     net = deepnet(n_chans,class_number,wind) # 81%
 elif model_name=='deepnet_changeDepth':
-    net = deepnet_varyBlocks(n_chans,class_number,wind,depth) # 81%
+    net = deepnet_changeDepth(n_chans,class_number,wind,depth) # 81%
     model_name='deepnet_changeDepth_'+str(depth)
 elif model_name == 'deepnet2':
     net = deepnet_seq(n_chans, class_number, wind, )

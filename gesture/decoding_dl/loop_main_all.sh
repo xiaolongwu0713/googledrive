@@ -27,6 +27,8 @@ done < "$inputfile"
 for sid in ${sids[@]}
 #for sid in 12 14
 do
+if [ $sid -gt 20 ]
+then
 #sid='14'
   echo "Start sid: $sid"
   #network='deepnet_da'
@@ -37,5 +39,6 @@ do
      python main_all.py $sid $network 1000 $1 $2
      echo "Training finish for sid: $sid on $network" 
   done
+fi
 done
 

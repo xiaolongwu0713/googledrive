@@ -24,19 +24,19 @@ done < "$inputfile"
 #echo ${sids[@]}
 
 #for sid in ${sids[@]}
-for sid in 4 10 13 36
-do
-#sid='14'
+#for sid in 4 10 13 41
+#do
+sid='41'
   echo "Start sid: $sid"
   network='deepnet_changeDepth'
   #for network in 'eegnet'# 'shallowFBCSPnet' 'deepnet' 'resnet'
   #do
-  for depth in 2 3 4 5 6 7 8 9
+  for depth in  1 2 3 4 5 6
   do
      echo "*************Sid $sid on $network*************"
      #python main_all.py $sid $network fs wind stride
      python main_all.py $sid $network 1000 $1 $2 $depth
      echo "Training finish for sid: $sid on $network" 
   done
-done
+#done
 

@@ -12,7 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # from FBCSP_V3 import FBCSP_V3
-from FBCSP_V4 import FBCSP_V4
+from example.fbcsp.FBCSP_V4 import FBCSP_V4
 
 import time
 

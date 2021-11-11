@@ -36,7 +36,8 @@ class FBCSP_V4():
         
         # Filtered signal list
         self.filtered_band_signal_list = []
-        
+
+        #freqs_band=np.array([1,4],[4,8],[8,13],[13,30],[60,75],[75,95],[105,125],[125,145],[155,195])
         # Frequencies band
         if isinstance(freqs_band, np.ndarray):
             self.freqs = freqs_band
@@ -75,14 +76,16 @@ class FBCSP_V4():
             The order of the filter. The default is 3.
 
         """
-        
+        mybands = [[1, 4], [4, 8], [8, 13], [13, 30], [60, 75], [75, 95], [105, 125], [125, 145], [155, 195]]
         # Cycle for the frequency bands
-        for i in range(len(self.freqs) - 1):  
+        #for i in range(len(self.freqs) - 1):
+        for i in range(9):
             # Dict for selected band that will contain the various filtered signals
             filt_trial_dict = {}
-            
+
+
             # "Create" the band
-            band = [self.freqs[i], self.freqs[i+1]]
+            band = [mybands[i][0], mybands[i][1]]
             
             # Cycle for the classes
             for key in self.trials_dict.keys(): 

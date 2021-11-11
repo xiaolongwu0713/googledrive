@@ -11,8 +11,8 @@ from FBCSP_support_function import cleanWorkspaec
 # cleanWorkspaec()
 
 #%%
-from example.FBCSP-Python.FBCSP_support_function import loadDatasetD2, computeTrialD2, createTrialsDictD2, loadTrueLabel, loadDatasetD2_Merge
-from FBCSP_Multiclass import FBCSP_Multiclass
+from example.fbcsp.FBCSP_support_function import loadDatasetD2, computeTrialD2, createTrialsDictD2, loadTrueLabel, loadDatasetD2_Merge
+from example.fbcsp.FBCSP_Multiclass import FBCSP_Multiclass
 
 import numpy as np
 
@@ -63,7 +63,7 @@ for rep in range(repetition):
         
         # Path for 4 classes dataset
         path_train = '/Volumes/Samsung_T5/data/BCI_competition/BCICIV_2a_gdf/Train'
-        path_train_label = 'Dataset/D2/v1/True Label/A0' + str(idx) + 'T.mat'
+        path_train_label = '/Volumes/Samsung_T5/data/BCI_competition/true_labels/A0'+str(idx) + 'E.mat'
         
         data, event_matrix = loadDatasetD2(path_train, idx)
         
@@ -73,14 +73,14 @@ for rep in range(repetition):
         
         trials_dict = createTrialsDictD2(trials, labels, labels_name)
         
-        FBCSP_multi_clf = FBCSP_Multiclass(trials_dict, fs, print_var = print_var)
+        FBCSP_multi_clf = FBCSP_Multiclass(trials_dict, 1000, print_var = print_var)
         # FBCSP_multi_clf = FBCSP_Multiclass(trials_dict, fs, classifier = SVC(kernel = 'rbf', probability = True), print_var = print_var)
         
         #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
         # Test set
         
         path_test = '/Volumes/Samsung_T5/data/BCI_competition/BCICIV_2a_gdf/Test'
-        path_test_label = 'Dataset/D2/v1/True Label/A0' + str(idx) + 'E.mat'
+        path_test_label = '/Volumes/Samsung_T5/data/BCI_competition/true_labels/A04E.mat'
         
         data_test, event_matrix_test = loadDatasetD2(path_test, idx)
         trials_test, labels_test = computeTrialD2(data_test, event_matrix_test, fs)
@@ -101,7 +101,7 @@ for rep in range(repetition):
         correct_prediction_1 = labels_predict_value[labels_predict_value == labels_true_value_1]
         perc_correct_1 = len(correct_prediction_1)/len(labels_true_value_1)
         accuracy_list.append(perc_correct_1)
-            
+
         
         print('\nPercentage of correct prediction: ', perc_correct_1)
         print("# # # # # # # # # # # # # # # # # # # # #\n")

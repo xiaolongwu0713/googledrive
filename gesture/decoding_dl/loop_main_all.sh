@@ -25,13 +25,14 @@ done < "$inputfile"
 #echo ${sids[@]}
 
 #for sid in ${sids[@]}
-#for sid in 4 10 13 41
-#do
-sid='41'
+for sid in 4 10 13 41
+do
+#sid='41'
   echo "Start sid: $sid"
   #network='deepnet_da'
-  for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet' 'deepnet_da'
-  do
+  #for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet' 'deepnet_da'
+  #do
+  network='resnet'
      echo "*************Sid $sid on $network*************"
      #python main_all.py $sid $network fs wind stride
      python main_all.py $sid $network 1000 $1 $2

@@ -1,7 +1,6 @@
 import sys
 import socket
-
-import scipy
+from scipy.stats import spearmanr
 
 if socket.gethostname() == 'workstation':
     sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
@@ -39,11 +38,6 @@ for sid in sids:
     tmp=[[-1]*baseline_num,[1]*(lent-baseline_num-int(0.5*decimated_fs))]
     ers_shape=np.concatenate(tmp)
 
-    from scipy.stats import spearmanr
-    import itertools
-    import random
-    from scipy.stats import norm
-
     perm_num=2500
     corr=np.zeros((2,chnNum))
     for c in range(chnNum):
@@ -55,7 +49,7 @@ for sid in sids:
 
 
     # get 10 largest correlation
-    erd_index = corr[0,:].argsort()[::-1]
+    erd_index = corr[0,:].argsort()[-10:] #[::-1]
     ers_index = corr[1,:].argsort()[-10:]
     comm_chn=np.intersect1d(erd_index,ers_index)
     corr_sid[str(sid)]=corr

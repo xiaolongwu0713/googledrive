@@ -1,5 +1,5 @@
 import numpy as np
-from example.fbcsp_code.bin.CSP import CSP
+from gesture.decoding_ml.fbcsp.CSP import CSP
 
 class FBCSP:
     def __init__(self,m_filters):

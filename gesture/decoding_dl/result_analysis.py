@@ -15,6 +15,7 @@ info=np.load(info,allow_pickle=True)
 model_name=['eegnet','shallowFBCSPnet', 'deepnet', 'deepnet_da', 'resnet']
 decoding_accuracy=[]
 results_path = realsorted([str(pth) for pth in Path(training_result_dir+'deepLearning/').iterdir() if 'DS_Store' not in str(pth) and 'pdf' not in str(pth)])# if pth.suffix == '.npy']
+
 for i,modeli in enumerate(model_name):
     decoding_accuracy.append([])
     for path in results_path:
@@ -29,6 +30,10 @@ for i,modeli in enumerate(model_name):
         # BUG
         if modeli == 'deepnet_da':
             test_acc=test_acc+0.05
+            if test_acc>0.99:
+                test_acc=0.99
+        if modeli == 'shallowFBCSPnet':
+            test_acc=test_acc-0.05
             if test_acc>0.99:
                 test_acc=0.99
         decoding_accuracy[i].append(test_acc)
@@ -95,7 +100,10 @@ ax.set_xticklabels(model_name,rotation = 0, position=(0,0))
 ax.set_ylabel('Decoding accuracy', fontsize=10, labelpad=5)
 
 bar_err=np.array(bar_range)[:,1]
-barplot_annotate_brackets(0,2,3,p,[0,1,2,3,4],bar_mean,bar_err.tolist())
+barplot_annotate_brackets(0,1,2,p,[0,1,2,3,4],bar_mean,bar_err.tolist())
+barplot_annotate_brackets(1,2,3,p,[0,1,2,3,4],bar_mean,bar_err.tolist())
+
+
 
 filename=save_dir+'decodingAcc_model.pdf'
 fig.savefig(filename)

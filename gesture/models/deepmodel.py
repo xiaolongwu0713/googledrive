@@ -213,8 +213,7 @@ class deepnet_changeDepth(nn.Module):
             self.block_seq.append([])
             self.block_seq[b]=self.seq
 
-
-        self.seq = nn.Sequential(self.conv_time, self.conv_spatial, self.bn1, self.nonlinear1, self.mp1, self.drop1,
+        self.seq = nn.Sequential(self.conv_time, self.drop0,self.conv_spatial, self.bn1, self.nonlinear1, self.mp1, self.drop1,
                                  *self.block_seq)
         out = self.seq(np_to_var(np.ones((1, 1, self.chn_num, self.wind), dtype=np.float32)))
         len = out.shape[3]

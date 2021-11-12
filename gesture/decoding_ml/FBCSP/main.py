@@ -1,18 +1,8 @@
-
-#%%
-from sklearn.preprocessing import StandardScaler
-
-from example.fbcsp.FBCSP_support_function import loadDatasetD2, computeTrialD2, createTrialsDictD2, loadTrueLabel, loadDatasetD2_Merge
-from example.fbcsp.FBCSP_Multiclass import FBCSP_Multiclass
-import numpy as np
-
-import matplotlib.pyplot as plt
-
-from sklearn.svm import LinearSVC,SVC
-from sklearn.calibration import CalibratedClassifierCV
-from scipy.io import loadmat
-import time
 import sys
+sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
+from gesture.decoding_ml.FBCSP.MLEngine import MLEngine
+
+
 import socket
 if socket.gethostname() == 'workstation':
     sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
@@ -115,7 +105,7 @@ list_of_epoch=np.concatenate((epoch1,epoch2,epoch3,epoch4,epoch5),axis=0) # (100
 list_of_labes=[]
 for i in range(5):
     trialNum=epoch1.shape[0]
-    label=[[i+1,]*trialNum]
+    label=[[i,]*trialNum]
     list_of_labes.append(label)
 list_of_labes=np.squeeze(np.asarray(list_of_labes))
 list_of_labes=np.squeeze(list_of_labes.reshape((1,-1))) # (100,)
@@ -123,88 +113,18 @@ list_of_labes=np.squeeze(list_of_labes.reshape((1,-1))) # (100,)
 from sklearn.model_selection import train_test_split
 X_train,X_val,y_train,y_val=train_test_split(list_of_epoch,list_of_labes,test_size=0.3,random_state=222) # (70, 208, 4001)
 
-#%%
-fs = 500
-n_w = 2
-n_features = 4
 
-labels_name = {}
-labels_name[0] = '0'
-labels_name[1] = '1'
-labels_name[2] = '2'
-labels_name[3] = '3'
-labels_name[4] = '4'
-labels_name[5] = '5'
 
-print_var = True
+dataset_details={
+    'data_path' : "/Volumes/Samsung_T5/data/BCI_competition/BCICIV_2a_gdf",
+    'file_to_load': 'A01T.gdf',
+    'ntimes': 1,
+    'kfold':10,
+    'm_filters':2,
+    'window_details':{'tmin':0.0,'tmax':4.0},
+    'X_train':X_train,
+    'y_train':y_train
+}
 
-accuracy_list = []
-accuracy_matrix = []
-
-# idx_list = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-# idx_list = [1, 2, 3, 6, 7, 8]
-idx_list = [4]
-repetition = 1
-
-#%%
-debug=False
-for rep in range(repetition):
-    for idx in idx_list:
-    # for idx in range(1, 10):
-        print('Subject n.', str(idx))
-        
-        #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # Train
-        if not 'dubug':
-            # Path for 4 classes dataset
-            path_train = '/Volumes/Samsung_T5/data/BCI_competition/BCICIV_2a_gdf/Train'
-            path_train_label = '/Volumes/Samsung_T5/data/BCI_competition/true_labels/A0'+str(idx) + 'E.mat'
-
-            data, event_matrix = loadDatasetD2(path_train, idx)
-
-            trials, labels = computeTrialD2(data, event_matrix, 250, remove_corrupt = False) # (192, 22, 1000),labels:[1,2,3,4,5]
-            labels_1 = np.squeeze(loadmat(path_train_label)['classlabel'])
-            labels_2 = loadTrueLabel(path_train_label)
-            trials_dict = createTrialsDictD2(trials, labels, labels_name)
-        else:
-            trials_dict = createTrialsDictD2(X_train, y_train, labels_name) #
-        #mybands=np.array([1, 4, 8, 13, 30, 50, 75, 100, 125, 150, 175])
-        mybands = np.array([[1,4],[4,8],[8,13],[13,30],[60,75],[75,95],[105,125],[125,145],[155,195]])
-        #svc_clf = LinearSVC(random_state=0, tol=1e-5)
-        #clf = CalibratedClassifierCV(svc_clf)
-
-        #FBCSP_multi_clf = FBCSP_Multiclass(trials_dict, fs, freqs_band=mybands, classifier=clf, print_var = print_var)
-        FBCSP_multi_clf = FBCSP_Multiclass(trials_dict, fs, freqs_band=mybands,classifier =None,  print_var = print_var)
-        #SVC(kernel = 'rbf', probability = True),
-        #- - - - - - - - - - - - - - - - - - - - - - - - - - - -
-        # Test set
-        if not 'dubug':
-            path_test = '/Volumes/Samsung_T5/data/BCI_competition/BCICIV_2a_gdf/Test'
-            path_test_label = '/Volumes/Samsung_T5/data/BCI_competition/true_labels/A04E.mat'
-
-            data_test, event_matrix_test = loadDatasetD2(path_test, idx)
-            trials_test, labels_test = computeTrialD2(data_test, event_matrix_test, fs)
-            data_test = -data_test
-
-            labels_true_value_1 = np.squeeze(loadmat(path_test_label)['classlabel'])
-            labels_predict_value = FBCSP_multi_clf.evaluateTrial(trials_test)
-
-        # test
-        else:
-            labels_true_value_1=y_val
-            labels_predict_value = FBCSP_multi_clf.evaluateTrial(X_val)
-        
-        a1 = FBCSP_multi_clf.pred_label_array
-        a2 = FBCSP_multi_clf.pred_prob_array
-        a3 = FBCSP_multi_clf.pred_prob_list
-        
-        # Percentage of correct prediction
-        correct_prediction_1 = labels_predict_value[labels_predict_value == labels_true_value_1]
-        perc_correct_1 = len(correct_prediction_1)/len(labels_true_value_1)
-        accuracy_list.append(perc_correct_1)
-
-        
-        print('\nPercentage of correct prediction: ', perc_correct_1)
-        print("# # # # # # # # # # # # # # # # # # # # #\n")
-        
-    accuracy_matrix.append(accuracy_list)
+ML_experiment = MLEngine(**dataset_details)
+ML_experiment.experiment()

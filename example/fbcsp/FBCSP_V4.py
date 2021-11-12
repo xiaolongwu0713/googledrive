@@ -42,7 +42,9 @@ class FBCSP_V4():
         if isinstance(freqs_band, np.ndarray):
             self.freqs = freqs_band
         elif(freqs_band == None):
-            self.freqs = np.linspace(4, 40, 10)
+            pass
+            #self.freqs = np.array([1,4,8,13,30,50,75,100,125,150,175])
+            #self.freqs = np.linspace(4, 200, 10)
         else:
             raise ValueError('freqs_band must be a Numpy Array')
         
@@ -76,16 +78,17 @@ class FBCSP_V4():
             The order of the filter. The default is 3.
 
         """
-        mybands = [[1, 4], [4, 8], [8, 13], [13, 30], [60, 75], [75, 95], [105, 125], [125, 145], [155, 195]]
+        #mybands = [[1, 4], [4, 8], [8, 13], [13, 30], [60, 75], [75, 95], [105, 125], [125, 145], [155, 195]]
         # Cycle for the frequency bands
-        #for i in range(len(self.freqs) - 1):
-        for i in range(9):
+        for i in range(len(self.freqs)):
+        #for i in range(9):
             # Dict for selected band that will contain the various filtered signals
             filt_trial_dict = {}
 
 
             # "Create" the band
-            band = [mybands[i][0], mybands[i][1]]
+            band = [self.freqs[i][0], self.freqs[i][1]]
+            #band = [mybands[i][0], mybands[i][1]]
             
             # Cycle for the classes
             for key in self.trials_dict.keys(): 
@@ -163,7 +166,8 @@ class FBCSP_V4():
             cov_2_white = np.dot(P, np.dot(cov_2, np.transpose(P)))
             
             # Since CSP requires the eigenvalues and eigenvector be sorted in descending order we find and sort the generalized eigenvalues and eigenvector
-            E, U = la.eig(cov_1_white, cov_2_white)
+            E, U = la.eig(cov_1_white, cov_2_white) # E is complex number, U is real number
+            U=np.abs(U)
             order = np.argsort(E)
             order = order[::-1]
             E = E[order]
@@ -204,7 +208,7 @@ class FBCSP_V4():
         return mean_cov
     
     
-    def whitening(self, sigma, mode = 2):
+    def whitening(self, sigma, mode = 1):
         """
         Calculate the whitening matrix for the input matrix sigma
     
@@ -377,8 +381,10 @@ class FBCSP_V4():
     
     
     def changeShapeMutualInformationList(self):
+        bandNum=self.freqs.shape[0]
         # 1D-Array with all the mutual information value
-        mutual_information_vector = np.zeros(9 * 2 * self.n_w)
+        #mutual_information_vector = np.zeros(9 * 2 * self.n_w)
+        mutual_information_vector = np.zeros(bandNum * 2 * self.n_w)
             
         # Since the CSP features are coupled (First with last etc) in this matrix I save the couple.
         # I will also save the original band and the position in the original band
@@ -467,7 +473,8 @@ class FBCSP_V4():
             # Twin/Couple feature of the current features
             current_features_twin = sorted_other_info[i, 0]
             
-            if(current_features_twin in selected_features): 
+            #if(current_features_twin in selected_features):
+            if False:
                 # If I also select its counterpart I only add the current feaures because the counterpart will be added in future iteration of the cycle
                 
                 # Save the features as tuple with (original band, original position in the original band)
@@ -592,11 +599,11 @@ class FBCSP_V4():
         else: self.classifier = classifier
         
         # Train Classifier
-        self.classifier.fit(train_data, train_label)
+        self.classifier.fit(train_data, train_label) # (52, 8)
         if(self.print_var): print("Accuracy on TRAIN set: ", self.classifier.score(train_data, train_label))
         
         # Test parameters
-        if(self.print_var): print("Accuracy on TEST set: ", self.classifier.score(test_data, test_label), "\n")
+        if(self.print_var): print("Accuracy on TEST set: ", self.classifier.score(test_data, test_label), "\n") # (18, 8)
         
         # print("total: ", self.classifier.score(train_data, train_label) * self.classifier.score(test_data, test_label))
         
@@ -627,11 +634,11 @@ class FBCSP_V4():
         
         # Compute and extract the features for the training
         features_input = self.extractFeatures(trials_matrix)
-        self. a = features_input
+        #self. a = features_input
 
         # Classify the trials
         # print(features_input.shape)
-        y = self.classifier.predict(features_input)
+        y = self.classifier.predict(features_input) # (30,8)
         
         # Evaluate the probabilty
         # if(self.classifier.__class__.__name__ == 'LinearDiscriminantAnalysis'):
@@ -652,9 +659,9 @@ class FBCSP_V4():
         features_input = np.zeros((trials_matrix.shape[0], len(self.classifier_features)))
         
         # Frequency filtering, spatial filtering, features evaluation
-        for i in range(len(self.freqs) - 1):              
+        for i in range(len(self.freqs)):
             # "Create" the band
-            band = [self.freqs[i], self.freqs[i+1]]
+            band = [self.freqs[i][0], self.freqs[i][1]]
             
             # Retrieve spatial filter
             W = self.W_list_band[i]

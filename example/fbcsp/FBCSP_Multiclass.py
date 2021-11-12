@@ -46,8 +46,8 @@ class FBCSP_Multiclass():
             if(print_var): print("Binary Dicionary create")
             
             # Create the FBCSP object and train it
-            if(classifier != None): tmp_FBCSP_clf = FBCSP_V4(tmp_binary_dict, fs, n_w = n_w, n_features = n_features, classifier = classifier, print_var = print_var)
-            else: tmp_FBCSP_clf = FBCSP_V4(tmp_binary_dict, fs, n_w = n_w, n_features = n_features, print_var = print_var)
+            if(classifier != None): tmp_FBCSP_clf = FBCSP_V4(tmp_binary_dict, fs, n_w = n_w, freqs_band=freqs_band, n_features = n_features, classifier = classifier, print_var = print_var)
+            else: tmp_FBCSP_clf = FBCSP_V4(tmp_binary_dict, fs, n_w = n_w, freqs_band=freqs_band, n_features = n_features, print_var = print_var)
             if(print_var): print("FBCSP object creation and training complete")
             
             # Add the classifier to the list

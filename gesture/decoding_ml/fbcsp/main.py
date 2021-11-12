@@ -1,6 +1,6 @@
 import sys
 sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-from gesture.decoding_ml.FBCSP.MLEngine import MLEngine
+from gesture.decoding_ml.fbcsp.MLEngine import MLEngine
 
 
 import socket
@@ -13,25 +13,15 @@ from gesture.config import *
 import os, re
 import hdf5storage
 from common_dl import set_random_seeds
-
-
 from gesture.config import *
-from gesture.preprocess.chn_settings import get_channel_setting
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
 
-cuda = torch.cuda.is_available()  # check if GPU is available, if True chooses to use it
-device = 'cuda' if cuda else 'cpu'
-if cuda:
-    torch.backends.cudnn.benchmark = True
 if len(sys.argv)>3:
     sid = int(float(sys.argv[1]))
-    model_name = sys.argv[2]
-    fs = int(float(sys.argv[3]))
-    wind = int(float(sys.argv[4]))
-    stride = int(float(sys.argv[5]))
+    fs = int(float(sys.argv[2]))
     try:
         depth=int(float(sys.argv[6]))
         print("Depth: "+ str(depth))
@@ -40,20 +30,9 @@ if len(sys.argv)>3:
 else: # debug in IDE
     sid=10
     fs=1000
-    wind = 500
-    stride = 500
-    model_name='deepnet_varyBlocks'
+
+result_dir=data_dir+'training_result/machineLearning/FBCSP/'
 class_number=5
-#Session_num,UseChn,EmgChn,TrigChn = get_channel_setting(sid)
-#fs=[Frequencies[i,1] for i in range(Frequencies.shape[0]) if Frequencies[i,0] == sid][0]
-
-model_path=data_dir + '/training_result/model_pth/'+str(sid)+'/'
-result_path=data_dir+'training_result/deepLearning/'+str(sid)+'/'
-if not os.path.exists(model_path):
-    os.makedirs(model_path)
-if not os.path.exists(result_path):
-    os.makedirs(result_path)
-
 data_path = data_dir+'preprocessing/'+'P'+str(sid)+'/preprocessing2.mat'
 mat=hdf5storage.loadmat(data_path)
 data = mat['Datacell']
@@ -113,8 +92,6 @@ list_of_labes=np.squeeze(list_of_labes.reshape((1,-1))) # (100,)
 from sklearn.model_selection import train_test_split
 X_train,X_val,y_train,y_val=train_test_split(list_of_epoch,list_of_labes,test_size=0.3,random_state=222) # (70, 208, 4001)
 
-
-
 dataset_details={
     'data_path' : "/Volumes/Samsung_T5/data/BCI_competition/BCICIV_2a_gdf",
     'file_to_load': 'A01T.gdf',
@@ -122,9 +99,12 @@ dataset_details={
     'kfold':10,
     'm_filters':2,
     'window_details':{'tmin':0.0,'tmax':4.0},
-    'X_train':X_train,
-    'y_train':y_train
+    'X_train':list_of_epoch,
+    'y_train':list_of_labes
 }
 
 ML_experiment = MLEngine(**dataset_details)
-ML_experiment.experiment()
+test_acc=ML_experiment.experiment()
+result_file=result_dir+str(sid)
+np.save(result_file,test_acc)
+

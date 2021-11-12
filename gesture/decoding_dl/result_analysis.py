@@ -45,6 +45,7 @@ _, p = stats.ttest_rel(a[2,:],a[3,:]) #p=0.0007531051933323021
 best=a.max()
 np.where(a==best)
 
+# TODO: change to bar graph
 fig,ax=plt.subplots(figsize=(6,3))
 colors=['b','g','r','m','y']
 for i, modei in enumerate(model_name):

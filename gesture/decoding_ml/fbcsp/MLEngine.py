@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.signal as signal
 from scipy.signal import cheb2ord
-from gesture.decoding_ml.FBCSP import FBCSP
-from gesture.decoding_ml.FBCSP.Classifier import Classifier
+from gesture.decoding_ml.fbcsp.FBCSP import FBCSP
+from gesture.decoding_ml.fbcsp.Classifier import Classifier
 from sklearn.svm import SVR
 
 
@@ -96,6 +96,7 @@ class MLEngine:
         print(f'Mean Training Accuracy = {str(mean_training_accuracy)}\n')
         print(f'Mean Testing Accuracy = {str(mean_testing_accuracy)}')
         print('*' * 10, '\n')
+        return mean_testing_accuracy
 
     def cross_validate_Ntimes_Kfold(self, y_labels, ifold=0):
         from sklearn.model_selection import StratifiedKFold

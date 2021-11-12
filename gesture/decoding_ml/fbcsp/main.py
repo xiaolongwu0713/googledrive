@@ -16,7 +16,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 seed = 20200220  # random seed to make results reproducible
 set_random_seeds(seed=seed)
 
-if len(sys.argv)>3:
+if len(sys.argv)>2:
     sid = int(float(sys.argv[1]))
     fs = int(float(sys.argv[2]))
     try:

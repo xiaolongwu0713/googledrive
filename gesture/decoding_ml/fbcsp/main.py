@@ -1,14 +1,11 @@
 import sys
-sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-from gesture.decoding_ml.fbcsp.MLEngine import MLEngine
-
-
 import socket
 if socket.gethostname() == 'workstation':
     sys.path.extend(['C:/Users/wuxiaolong/Desktop/BCI/googledrive'])
 elif socket.gethostname() == 'longsMac':
     sys.path.extend(['/Users/long/Documents/BCI/python_scripts/googleDrive'])
-from gesture.config import *
+
+from gesture.decoding_ml.fbcsp.MLEngine import MLEngine
 
 import os, re
 import hdf5storage

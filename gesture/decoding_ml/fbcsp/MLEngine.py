@@ -83,8 +83,8 @@ class MLEngine:
                 te_acc =np.sum(y_test_predicted_multi == y_test, dtype=np.float) / len(y_test)
 
 
-                print(f'Training Accuracy = {str(tr_acc)}\n')
-                print(f'Testing Accuracy = {str(te_acc)}\n \n')
+                #print(f'Training Accuracy = {str(tr_acc)}\n')
+                #print(f'Testing Accuracy = {str(te_acc)}\n \n')
 
                 training_accuracy.append(tr_acc)
                 testing_accuracy.append(te_acc)

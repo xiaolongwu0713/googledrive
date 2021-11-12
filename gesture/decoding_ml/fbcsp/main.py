@@ -70,7 +70,8 @@ events1=events1-[0,0,1]
 # Epoch from 4s before(idle) until 4s after(movement) stim1.
 raw=raw.pick(["seeg"])
 raw=raw.pick(list(np.arange(162,168)))
-epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None).load_data().resample(500)
+if fs==1000:
+    epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None).load_data().resample(500)
 # or epoch from 0s to 4s which only contain movement data.
 # epochs = mne.Epochs(raw, events1, tmin=0, tmax=4,baseline=None)
 

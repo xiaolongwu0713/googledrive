@@ -29,6 +29,8 @@ else: # debug in IDE
     fs=1000
 
 result_dir=data_dir+'training_result/machineLearning/FBCSP/'
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir)
 class_number=5
 data_path = data_dir+'preprocessing/'+'P'+str(sid)+'/preprocessing2.mat'
 mat=hdf5storage.loadmat(data_path)

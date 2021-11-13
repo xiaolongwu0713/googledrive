@@ -44,7 +44,7 @@ sid_list=[3,8,11,24,30]
 ax.set_xticks(x)
 ax.set_xticklabels(['sid '+str(i) for i in sid_list], position=(0,0.01))
 save_dir=data_dir+'training_result/compare_result/'
-filename=save_dir+'compare_depths.pdf'
+filename=save_dir+'compare_wind_size.pdf'
 fig.savefig(filename)
 
 

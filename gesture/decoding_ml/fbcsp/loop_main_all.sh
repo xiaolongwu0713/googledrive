@@ -24,8 +24,8 @@ do
 done < "$inputfile"
 #echo ${sids[@]}
 
-for sid in ${sids[@]}
-#for sid in 4 10 13 41
+#for sid in ${sids[@]}
+for sid in 11 12
 do
 #sid='41'
   echo "Start sid: $sid"

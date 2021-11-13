@@ -100,7 +100,7 @@ dataset_details={
     'ntimes': 1,
     'kfold':10,
     'm_filters':2,
-    'window_details':{'tmin':0.0,'tmax':4.0},
+    #'window_details':{'tmin':0.0,'tmax':4.0},
     'X_train':list_of_epoch,
     'y_train':list_of_labes
 }

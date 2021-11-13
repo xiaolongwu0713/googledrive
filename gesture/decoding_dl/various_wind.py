@@ -1,5 +1,6 @@
 '''
-deepconv decoding performance with different depth
+resnet decoding performance with different window size
+TODO: run p29.sh
 '''
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -9,37 +10,36 @@ from natsort import natsorted,realsorted
 from common_plot import barplot_annotate_brackets
 
 top5_sid=[4,10,13,29,41]
-depths=[1,2,3,4,5,6]
+winds=[100,200,300,400,500]
 data_dir = '/Users/long/Documents/data/gesture/'# temp data dir
-training_result_dir=data_dir+'training_result/dl_depth/'
+training_result_dir=data_dir+'training_result/wind_size/'
 
 accuracy_all=[]
-for sid in top5_sid:
-    sid_acc=[]
-    tmp = realsorted([pth for pth in Path(training_result_dir+str(sid)).iterdir() if pth.suffix == '.npy' and 'changeDepth' in str(pth)])
-    for depth in depths:
-        result = np.load(str(tmp[depth-1]), allow_pickle=True).item()
-        sid_acc.append(result['test_acc'])
-    accuracy_all.append(sid_acc)
+for i,wind in enumerate(winds):
+    accuracy_all.append([])
+    for sid in top5_sid:
+        filename=training_result_dir+str(wind)+'ms/'+str(sid)+'/training_result_resnet.npy'
+        result = np.load(filename, allow_pickle=True).item()['test_acc']
+        accuracy_all[i].append(result)
 # perform best at depth=1
+accuracy_all=np.asarray(accuracy_all)# (sid,wind_size)
 
 from matplotlib.patches import Patch
-colors=['orangered','yellow', 'gold','orange','springgreen','aquamarine']#,'skyblue']
-depth_label=[(str(i)+' layer') if i==1 else (str(i)+' layers') for i in depths]
-cmap = dict(zip([str(i) for i in depth_label], colors))
+colors=['orangered','yellow', 'gold','orange','springgreen']#,'aquamarine']#,'skyblue']
+wind_label=[(str(i)+' ms')  for i in winds]
+cmap = dict(zip([str(i) for i in wind_label], colors))
 patches = [Patch(color=v, label=k) for k, v in cmap.items()]
 fig,ax=plt.subplots()
-x=[1,2,3,4,5,6] # 6 depths
-#BUG
-accuracy_all_bug=np.asarray(accuracy_all)
-accuracy_all_bug[:,1]=np.clip(accuracy_all_bug[:,1]+0.1,0,0.99)
 
+ax.clear()
+x=[1,2,3,4,5] # 5 wind sizes
 for i,sid in enumerate(sorted(top5_sid)):
-    ax.bar(x, accuracy_all_bug[i], width=0.3,color=colors)
+    ax.bar(x, accuracy_all[i], width=0.3,color=colors)
     x=[i+10 for i in x]
     if i==0:
-        ax.legend(depth_label,ncol=3,handles=patches,fontsize='small',loc='upper left', bbox_to_anchor=(0.0, 1.15))
-x=[5,15,25,35,45]
+        ax.legend(wind_label,ncol=3,handles=patches,fontsize='small',loc='upper left', bbox_to_anchor=(0.0, 1.15))
+
+x=[3,13,23,33,43]
 sid_list=[3,8,11,24,30]
 ax.set_xticks(x)
 ax.set_xticklabels(['sid '+str(i) for i in sid_list], position=(0,0.01))

@@ -1,3 +1,6 @@
+'''
+calculate correlation between ERS/ERD and task status using fixed low and high frequency range.
+'''
 import sys
 import socket
 from scipy.stats import spearmanr
@@ -53,7 +56,7 @@ for sid in sids:
     ers_index = corr[1,:].argsort()[-10:]
     comm_chn=np.intersect1d(erd_index,ers_index)
     corr_sid[str(sid)]=corr
-np.save(savefile, corr_sid)
+np.save(savefile, corr_sid) # corr_sid: dict with key=sid. ersd['sid'].shape=(2,channel number)
 #read_dictionary = np.load(savefile,allow_pickle='TRUE').item()
 
 

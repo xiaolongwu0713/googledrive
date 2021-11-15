@@ -28,7 +28,8 @@ done < "$inputfile"
 #for sid in 4 10 13 41
 for wind in 500 400 300 200 100
 do
-sid='29'
+for sid in 4 10 13 29 41 #='29'
+do
   echo "Start sid: $sid"
   #network='deepnet_da'
   #for network in 'eegnet' 'shallowFBCSPnet' 'deepnet' 'resnet' 'deepnet_da'
@@ -39,5 +40,6 @@ sid='29'
      python main_all.py $sid $network 1000 $wind 50
      echo "Training finish for sid: $sid on $network" 
   #done
+done
 done
 

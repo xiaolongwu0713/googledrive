@@ -369,9 +369,9 @@ train_result['train_accs']=train_accs
 train_result['val_accs']=val_accs
 train_result['test_acc']=test_acc
 
-filename=result_path + 'training_result_'+model_name
-if sid==29:
-    filename=result_path + 'training_result_'+model_name+str(sid)+str(wind)
+#filename=result_path + 'training_result_'+model_name
+
+filename=result_path + 'training_result_'+model_name+str(sid)+str(wind)
 np.save(filename,train_result)
 
 #load

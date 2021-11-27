@@ -1,6 +1,5 @@
 '''
 resnet decoding performance with different window size
-TODO: run p29.sh
 '''
 from pathlib import Path
 import matplotlib.pyplot as plt

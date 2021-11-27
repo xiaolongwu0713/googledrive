@@ -29,7 +29,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
 from braindecode.models import ShallowFBCSPNet,EEGNetv4,Deep4Net
-from gesture.models.deepmodel import deepnet,deepnet_seq,deepnet_rnn, deepnet_da,deepnet_changeDepth
+from gesture.models.deepmodel import deepnet,deepnet_seq,deepnet_rnn, deepnet_da,deepnet_changeDepth,deepnet_expandPlan
 from gesture.models.d2l_resnet import d2lresnet
 from gesture.models.deepmodel import TSception2
 
@@ -197,7 +197,7 @@ one_window=next(iter(train_loader))[0]
 n_chans = one_window.shape[1]
 input_window_samples=one_window.shape[2]
 
-#model_name='resnet'
+model_name='deepnet_da'
 if model_name=='eegnet':
     #print('Here')
     net = EEGNetv4(n_chans, class_number, input_window_samples=input_window_samples, final_conv_length='auto', drop_prob=0.5)

@@ -7,8 +7,8 @@ import torch.nn.functional as F
 
 sid=10
 fs=1000
-#result_dir=data_dir+'preprocessing'+'/P'+str(sid)+'/' + 'selection/gumbel/'
-result_dir='/Users/long/OneDrive/share/selection/gumbel/3/P10'
+result_dir=data_dir+'training_result/selection'+'/P'+str(sid)+'/' + 'selection/gumbel/'
+#result_dir='/Users/long/OneDrive/share/selection/gumbel/3/P10'
 scores = np.load(result_dir + 'epoch_scores.npy') # (train acc, val acc)
 h=np.load(result_dir+'HH.npy')
 s=np.load(result_dir+'SS.npy') # selection

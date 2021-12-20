@@ -4,6 +4,7 @@ Linear regression.
 2, polynomial regression
 Note: nn.MSE_loss() will do average itself.
 3, It will produce mse of individual trial for all 4 movements, so statistic analysis can be done.
+Try to use SPoC: https://mne.tools/stable/auto_examples/decoding/decoding_spoc_CMC.html#sphx-glr-auto-examples-decoding-decoding-spoc-cmc-py
 '''
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,7 +34,7 @@ if not os.path.exists(plot_dir):
     os.makedirs(plot_dir)
 
 polynomial=False # polynomial fitting
-input_freq_for_linear_reg=True # True: frequency + raw. False: Raw input.
+input_freq_for_linear_reg=False # True: frequency + raw. False: Raw input.
 standardization=True
 print('Polynomial: '+ str(polynomial)+'.')
 
@@ -116,7 +117,7 @@ if standardization==True:
         test_stat_x[i] = np.transpose(scaler.transform(np.transpose(test_stat_x[i]),copy=True))
 
 linear_reg=LinearRegression()
-criterion = nn.MSELoss()
+criterion = nn.MSELoss() # reduction='sum'
 if polynomial==True:
     poly_features=PolynomialFeatures(degree=2)
     lr_model = Pipeline(steps=[('poly_feature', poly_features), ('regressor', linear_reg)])
@@ -126,8 +127,15 @@ else:
 print('Fitting.')
 lr_model.fit(train_x, train_y)
 print('Predict on test dataset.')
-pred_tmp=lr_model.predict(test_x) # (126009, 114)
+pred_tmp=lr_model.predict(test_x)
 mse_loss=criterion(torch.from_numpy(pred_tmp),torch.from_numpy(test_y.copy()))
+## BUG
+b=test_y/(1.75/0.7)
+b_mean=np.ones((len(b),))*b.mean() # b.mean()=0.17
+change_loss=criterion(torch.from_numpy(b),torch.from_numpy(b_mean)) # 0.04
+# scale down will decrease MSE
+mse_loss2=criterion(torch.from_numpy(pred_tmp/(1.75/0.7)),torch.from_numpy(test_y.copy()/(1.75/0.7))) # 0.03
+
 #avg_loss=a_loss/sum(test_trials_num)
 #norm_loss=avg_loss*(default_frequency/new_frequency)
 print('MSE loss for SID'+str(sid)+' is: '+str(np.round(mse_loss.numpy(),4)))
